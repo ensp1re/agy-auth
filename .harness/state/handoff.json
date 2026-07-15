@@ -1,78 +1,65 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-15T22:56:12Z",
-  "goal": "Establish a version-scoped Linux isolated-home contract without reading or copying Antigravity credentials.",
-  "scope": [
-    "phase-3-linux-isolated-home-contract"
-  ],
+  "updatedAt": "2026-07-15T23:01:26Z",
+  "goal": "Implement and verify a TTY-preserving isolated client launcher without accessing authentication state.",
+  "scope": ["phase-3-tty-isolated-launcher"],
   "status": "ready_for_review",
   "git": {
-    "branch": "feature/linux-isolated-home-contract",
-    "head": "9edeb984bf6a503dbf54418627514052bcb739ce",
+    "branch": "feature/tty-isolated-launcher",
+    "head": "c71f0d583568591ee89b86ae1f5bd07182898794",
     "worktree": "clean"
   },
   "completed": [
-    "The diagnostics-only v0.1.0-rc.1 prerelease was published from merged commit 4aa3b93 with reproducible Linux artifacts.",
-    "The product owner approved a clearly labeled, version-scoped reverse-engineered isolated-home strategy for legitimate work/personal account separation.",
-    "Private APIs, OAuth implementation, token parsing/copying, keyring enumeration, and quota-driven switching remain excluded.",
-    "ADR 0007 and the synthetic process primitive establish distinct cleared environments while production profile capabilities remain disabled."
+    "PR 18 merged ADR 0007 and the synthetic cleared-environment primitive at d443d626674bbeaaf5d6867c6269463a1f21375e.",
+    "The user authorized read-only reverse engineering of the installed agy client; destructive actions and secret retention remain excluded.",
+    "The TTY-preserving launcher inherits standard streams, returns exact child status, validates TERM, and preserves the cleared environment boundary.",
+    "Installed agy 1.1.2 returned --version from two empty disposable homes without creating files; all disposable state was removed."
   ],
   "nextActions": [
-    "Review and merge the ADR 0007 isolated-home contract; then implement the TTY-preserving fake-client launcher without real accounts."
+    "Review and merge the TTY-preserving launcher, then implement managed profile directories and fake-client add/exec contracts."
   ],
   "decisions": [
-    "Supersede ADR 0006 with ADR 0007 while leaving production profile switching disabled until the black-box evidence gate passes.",
-    "Delegate login, refresh, and model requests exclusively to the official agy process in separate project-managed homes."
+    "Interactive children inherit standard streams but not ambient environment variables.",
+    "TERM is the only new variable and uses a conservative name allowlist."
   ],
   "openQuestions": [
-    "Which minimal TTY and D-Bus environment is required for two dedicated agy 1.1.2 accounts without cross-home identity reuse?",
-    "Which secret-safe observation can confirm the expected dedicated account without retaining a full email?"
+    "Which D-Bus/keyring variables are actually required for a later dedicated-account login experiment?"
   ],
   "verification": {
     "passed": [
-      "python3 scripts/check.py: passing; 35 tests and all local gates",
+      "python3 scripts/check.py: passing; 37 tests and all local gates",
       "cargo deny check: advisories, bans, licenses, and sources passing",
-      "synthetic work/personal environments: distinct HOME/XDG/runtime roots and no inherited USER",
-      "unsafe permission, shared-root, and symlink isolation fixtures: refused",
+      "fake interactive child: inherited streams, exact exit 23, direct argv, cleared USER, validated TERM",
+      "installed agy 1.1.2: two isolated --version probes passed and left homes/runtime empty",
       "strict harness validation: 0 errors and 0 warnings",
       "context budgets: root instructions and live startup state passing"
     ],
     "failed": [],
     "notRun": [
-      "No real account login or authentication-state experiment is authorized in this task.",
-      "macOS, Windows, desktop keyrings, and hosted CI are not tested."
+      "No login, account identity observation, model prompt, logout, or credential inspection is included.",
+      "Hosted CI, macOS, Windows, and desktop keyrings remain untested."
     ]
   },
   "risks": [
-    "Antigravity may discover identity outside HOME/XDG roots; any reuse across clean homes must stop enablement.",
-    "The strategy is unofficial and must be reverified for every agy version change."
+    "TTY inheritance alone does not prove authentication isolation.",
+    "Antigravity may require a separately isolated D-Bus/Secret Service session for real login."
   ],
   "touchedPaths": [
-    "AGENTS.md",
     "crates/agy-auth-process/src/lib.rs",
-    "docs/01-product-scope.md",
-    "docs/04-architecture.md",
     "docs/07-cli-specification.md",
-    "docs/08-security-policy.md",
-    "docs/10-delivery-roadmap.md",
-    "docs/12-open-questions.md",
-    "docs/releases/v0.1.0-rc.1.md",
-    "docs/adr/0006-diagnostics-only-until-supported-profile-contract.md",
-    "docs/adr/0007-versioned-unofficial-isolated-homes.md",
     "docs/plans/phase-3-linux-isolated-home-contract.md",
-    "scripts/check_release_preflight.py",
+    "docs/plans/phase-3-tty-isolated-launcher.md",
     ".harness/state/work.json",
     ".harness/state/handoff.json"
   ],
   "doNotRepeat": [
     "Do not inspect, hash, copy, diff, print, or retain credential contents or private Antigravity logs.",
-    "Do not enable real profile commands based only on discovered filenames or a single-account launch."
+    "Do not launch an interactive real-account session in this task; use --version only."
   ],
   "contextSources": [
-    "docs/01-product-scope.md",
-    "docs/04-architecture.md",
+    "docs/07-cli-specification.md",
     "docs/08-security-policy.md",
     "docs/adr/0007-versioned-unofficial-isolated-homes.md",
-    "docs/plans/phase-3-linux-isolated-home-contract.md"
+    "docs/plans/phase-3-tty-isolated-launcher.md"
   ]
 }

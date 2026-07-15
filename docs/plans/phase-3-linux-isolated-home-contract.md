@@ -16,7 +16,8 @@ separate project-managed Linux homes, without reading or copying authentication 
 
 1. Prove two synthetic clients receive distinct `HOME`, XDG data, and runtime roots.
 2. Prove non-allowlisted inherited variables are absent and unsafe roots fail closed.
-3. Design an interactive TTY-preserving launcher and managed-directory lifecycle.
+3. Design an interactive TTY-preserving launcher with inherited standard streams, direct argv,
+   validated `TERM`, and the same cleared environment boundary.
 4. Add fake-client contracts for `add` and `exec`; do not use real accounts yet.
 5. Review and explicitly approve a two-dedicated-account Linux experiment.
 6. Enable Linux capability only after ADR 0007's complete evidence gate passes.
