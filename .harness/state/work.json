@@ -48,7 +48,7 @@
     {
       "id": "phase-1-profile-registry",
       "title": "Implement the versioned non-secret profile registry",
-      "status": "active",
+      "status": "passing",
       "source": "docs/05-repository-structure.md",
       "plan": "docs/plans/phase-1-profile-registry.md",
       "acceptance": [
@@ -74,6 +74,43 @@
           "command": "build-agent-harness validate_harness.py --strict",
           "revision": "05dbd82cfc2c8b2154cc92dd92d3bf03d0976314",
           "outcome": "0 errors and 0 warnings"
+        }
+      ],
+      "completion": {
+        "commit": "73f24b65889f78b6e44bf77c53424ca896db55ee",
+        "review": "https://github.com/ensp1re/gemini-auth/pull/2",
+        "completedAt": "2026-07-15T19:59:35Z"
+      }
+    },
+    {
+      "id": "phase-1-client-discovery",
+      "title": "Implement safe official-client discovery and process execution",
+      "status": "active",
+      "source": "docs/10-delivery-roadmap.md",
+      "plan": "docs/plans/phase-1-client-discovery.md",
+      "acceptance": [
+        "Gemini CLI and Antigravity CLI executables can be discovered through PATH or an explicit override without shell evaluation.",
+        "Discovery rejects missing, non-regular, non-executable, and unsafe explicit paths with typed errors.",
+        "A bounded process runner captures version output, exit status, timeout, and truncation without retaining credential-bearing output.",
+        "Child arguments are passed as argv values and fake-client tests prove shell metacharacters are never evaluated.",
+        "The installed agy executable is detected and version 1.1.2 is reported through the new abstraction without accessing authentication state."
+      ],
+      "blocker": null,
+      "verification": [
+        {
+          "command": "python3 scripts/check.py",
+          "revision": "c506fcc8f17ceee7df1cb593f7d3cc719e32a08c",
+          "outcome": "passing; 20 tests and 1 expected ignored installed-client smoke test"
+        },
+        {
+          "command": "cargo deny check",
+          "revision": "c506fcc8f17ceee7df1cb593f7d3cc719e32a08c",
+          "outcome": "advisories, bans, licenses, and sources passing"
+        },
+        {
+          "command": "GEMINI_AUTH_TEST_AGY=/root/.local/bin/agy GEMINI_AUTH_TEST_AGY_VERSION=1.1.2 cargo test -p gemini-auth-process --test installed_client -- --ignored --exact discovers_and_probes_installed_agy_without_authentication",
+          "revision": "c506fcc8f17ceee7df1cb593f7d3cc719e32a08c",
+          "outcome": "passing; agy 1.1.2 discovered and probed without authentication access"
         }
       ],
       "completion": null

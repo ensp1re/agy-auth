@@ -178,6 +178,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "gemini-auth-process"
+version = "0.1.0"
+
+[[package]]
 name = "gemini-auth-storage"
 version = "0.1.0"
 dependencies = [

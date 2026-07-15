@@ -4,6 +4,7 @@ members = [
   "crates/gemini-auth-app",
   "crates/gemini-auth-cli",
   "crates/gemini-auth-domain",
+  "crates/gemini-auth-process",
   "crates/gemini-auth-storage",
   "crates/gemini-auth-test-support",
   "crates/provider-antigravity-cli",
