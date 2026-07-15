@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "status": "operational",
+  "project": {
+    "name": "gemini-auth",
+    "root": "."
+  },
+  "sources": {
+    "instructions": [
+      "AGENTS.md"
+    ],
+    "product": [
+      "docs/01-product-scope.md",
+      "docs/07-cli-specification.md"
+    ],
+    "architecture": [
+      "docs/03-stack-decision.md",
+      "docs/04-architecture.md",
+      "docs/05-repository-structure.md"
+    ],
+    "security": [
+      "docs/08-security-policy.md"
+    ],
+    "workState": ".harness/state/work.json",
+    "handoff": ".harness/state/handoff.json",
+    "events": null
+  },
+  "commands": {
+    "context": "python3 scripts/harness/context.py",
+    "check": "python3 scripts/harness/validate.py",
+    "verify": "python3 scripts/harness/validate.py"
+  },
+  "budgets": [
+    {
+      "name": "root-instructions",
+      "paths": [
+        "AGENTS.md"
+      ],
+      "maxBytes": 8000
+    },
+    {
+      "name": "live-startup-state",
+      "paths": [
+        ".harness/state/work.json",
+        ".harness/state/handoff.json"
+      ],
+      "maxBytes": 16000
+    }
+  ],
+  "clients": {
+    "canonical": "agents-md",
+    "adapters": {}
+  }
+}

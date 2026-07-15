@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "parallelMode": false,
+  "allowedStatuses": [
+    "not_started",
+    "active",
+    "blocked",
+    "passing"
+  ],
+  "retention": "Keep the active item and at most two recently passing items; durable outcomes belong in specifications, ADRs, commits, and reviews.",
+  "items": [
+    {
+      "id": "phase-0-repository-foundation",
+      "title": "Create the Rust workspace foundation and delivery checks",
+      "status": "active",
+      "source": "docs/10-delivery-roadmap.md",
+      "plan": null,
+      "acceptance": [
+        "The proposed Cargo workspace and crate dependency direction are represented.",
+        "An empty CLI builds and its help output is testable.",
+        "Formatting, Clippy, tests, dependency policy, and secret scanning have executable checks.",
+        "SECURITY.md and CONTRIBUTING.md encode the approved security and fixture boundaries."
+      ],
+      "blocker": null,
+      "verification": [],
+      "completion": null
+    }
+  ]
+}

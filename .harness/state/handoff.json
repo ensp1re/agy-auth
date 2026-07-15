@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-07-15T17:48:00Z",
+  "goal": "Begin Phase 0 by creating the Rust workspace foundation and its delivery checks.",
+  "scope": [
+    "phase-0-repository-foundation"
+  ],
+  "status": "active",
+  "git": {
+    "branch": "main",
+    "head": "633fd9dbade1228b0ad2c008f77211e91633a6fd",
+    "worktree": "dirty"
+  },
+  "completed": [
+    "Approved product, stack, architecture, security boundaries, and roadmap are documented.",
+    "The Core project harness was designed around the existing authoritative documents."
+  ],
+  "nextActions": [
+    "Create the Phase 0 Cargo workspace and enforce the documented crate dependency direction."
+  ],
+  "decisions": [
+    "Use the Core harness profile only; no hooks, daemon, event journal, database, or client adapter.",
+    "Treat the numbered documentation and ADRs as authoritative rather than duplicating them in agent instructions."
+  ],
+  "openQuestions": [
+    "The MVP research questions in docs/12-open-questions.md must be resolved before claiming Gemini profile isolation works."
+  ],
+  "verification": {
+    "passed": [
+      "python3 scripts/harness/validate.py: passing",
+      "python3 scripts/harness/context.py: state consistent",
+      "build-agent-harness validate_harness.py --strict: 0 errors and 0 warnings",
+      "build-agent-harness evaluate_context_budget.py: both budgets passing",
+      "python3 -m py_compile scripts/harness/context.py scripts/harness/validate.py: passing"
+    ],
+    "failed": [],
+    "notRun": [
+      "Rust checks are not applicable until the Cargo workspace exists.",
+      "Cross-client portability is untested; only the canonical AGENTS.md surface is configured."
+    ]
+  },
+  "risks": [
+    "GEMINI_CLI_HOME credential isolation is an unverified product assumption and must not be represented as proven behavior."
+  ],
+  "touchedPaths": [
+    "AGENTS.md",
+    ".harness/manifest.json",
+    ".harness/state/work.json",
+    ".harness/state/handoff.json",
+    "scripts/harness/context.py",
+    "scripts/harness/validate.py"
+  ],
+  "doNotRepeat": [],
+  "contextSources": [
+    "docs/01-product-scope.md",
+    "docs/04-architecture.md",
+    "docs/08-security-policy.md",
+    "docs/10-delivery-roadmap.md",
+    "docs/12-open-questions.md"
+  ]
+}
