@@ -35,6 +35,11 @@ count, `profileSwitching: false`, `authStateMutation: false`, and the stable rea
 executable paths, registry paths, environment values, account identity, or client output other than
 the validated version line. Until safe repair actions exist, `--repair` is an explicit no-op.
 
+Filesystem diagnostics report `dataDirectoryState`, `ownerMatches`, `permissionsSecure`, and only the
+count of `interruptedTransactions`. They never emit paths or transaction names. An absent data root
+is healthy and is not created. Unsafe ownership, permissions, symlinks, or file types return exit 8;
+one or more project-owned transaction markers return exit 10 without reading marker contents.
+
 ### `list` and `current`
 
 ```text

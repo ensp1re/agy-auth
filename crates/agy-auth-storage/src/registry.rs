@@ -24,6 +24,7 @@ pub struct RegistryFile {
 /// Read-only health probe for project-owned registry metadata.
 #[derive(Debug)]
 pub struct RegistryDoctorProbe {
+    data_root: PathBuf,
     registry: RegistryFile,
 }
 
@@ -34,23 +35,151 @@ impl RegistryDoctorProbe {
     ///
     /// Returns an error when the path has no parent or filename.
     pub fn new(path: impl Into<PathBuf>) -> Result<Self, RegistryStoreError> {
-        RegistryFile::new(path).map(|registry| Self { registry })
+        let path = path.into();
+        let data_root = path
+            .parent()
+            .ok_or(RegistryStoreError::MissingParent)?
+            .to_owned();
+        RegistryFile::new(path).map(|registry| Self {
+            data_root,
+            registry,
+        })
     }
 }
 
 impl DoctorRegistryProbe for RegistryDoctorProbe {
     fn probe(&self) -> RegistryDiagnostic {
+        let filesystem = match inspect_data_root(&self.data_root) {
+            Ok(filesystem) => filesystem,
+            Err(code) => {
+                return RegistryDiagnostic {
+                    healthy: false,
+                    profile_count: None,
+                    error_code: Some(code.to_owned()),
+                    data_directory_state: "unsafe",
+                    owner_matches: None,
+                    permissions_secure: None,
+                    interrupted_transactions: 0,
+                };
+            }
+        };
+        if filesystem.interrupted_transactions > 0 {
+            return RegistryDiagnostic {
+                healthy: false,
+                profile_count: None,
+                error_code: Some("transaction_recovery_required".to_owned()),
+                data_directory_state: filesystem.state,
+                owner_matches: filesystem.owner_matches,
+                permissions_secure: filesystem.permissions_secure,
+                interrupted_transactions: filesystem.interrupted_transactions,
+            };
+        }
         match self.registry.load() {
             Ok(registry) => RegistryDiagnostic {
                 healthy: true,
                 profile_count: Some(registry.profiles().len()),
                 error_code: None,
+                data_directory_state: filesystem.state,
+                owner_matches: filesystem.owner_matches,
+                permissions_secure: filesystem.permissions_secure,
+                interrupted_transactions: 0,
             },
             Err(error) => RegistryDiagnostic {
                 healthy: false,
                 profile_count: None,
                 error_code: Some(registry_error_code(&error).to_owned()),
+                data_directory_state: filesystem.state,
+                owner_matches: filesystem.owner_matches,
+                permissions_secure: filesystem.permissions_secure,
+                interrupted_transactions: 0,
             },
+        }
+    }
+}
+
+struct FilesystemDiagnostic {
+    state: &'static str,
+    owner_matches: Option<bool>,
+    permissions_secure: Option<bool>,
+    interrupted_transactions: usize,
+}
+
+fn inspect_data_root(path: &Path) -> Result<FilesystemDiagnostic, &'static str> {
+    let metadata = match fs::symlink_metadata(path) {
+        Ok(metadata) => metadata,
+        Err(error) if error.kind() == io::ErrorKind::NotFound => {
+            return Ok(FilesystemDiagnostic {
+                state: "absent",
+                owner_matches: None,
+                permissions_secure: None,
+                interrupted_transactions: 0,
+            });
+        }
+        Err(_) => return Err("registry_data_dir_io"),
+    };
+    if metadata.file_type().is_symlink() || !metadata.is_dir() {
+        return Err("registry_data_dir_unsafe_type");
+    }
+    let (owner_matches, permissions_secure) = unix_directory_security(&metadata)?;
+    let interrupted_transactions = inspect_transactions(path)?;
+    Ok(FilesystemDiagnostic {
+        state: "secure",
+        owner_matches,
+        permissions_secure,
+        interrupted_transactions,
+    })
+}
+
+#[cfg(unix)]
+fn unix_directory_security(
+    metadata: &fs::Metadata,
+) -> Result<(Option<bool>, Option<bool>), &'static str> {
+    use std::os::unix::fs::{MetadataExt, PermissionsExt};
+
+    let permissions_secure = metadata.permissions().mode().trailing_zeros() >= 6;
+    if !permissions_secure {
+        return Err("registry_data_dir_permissions");
+    }
+    #[cfg(target_os = "linux")]
+    {
+        let process = fs::metadata("/proc/self").map_err(|_| "registry_owner_check_failed")?;
+        let owner_matches = metadata.uid() == process.uid();
+        if !owner_matches {
+            return Err("registry_data_dir_owner");
+        }
+        Ok((Some(true), Some(true)))
+    }
+    #[cfg(not(target_os = "linux"))]
+    {
+        Ok((None, Some(true)))
+    }
+}
+
+#[cfg(not(unix))]
+fn unix_directory_security(
+    _metadata: &fs::Metadata,
+) -> Result<(Option<bool>, Option<bool>), &'static str> {
+    Ok((None, None))
+}
+
+fn inspect_transactions(data_root: &Path) -> Result<usize, &'static str> {
+    let path = data_root.join("transactions");
+    match fs::symlink_metadata(&path) {
+        Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(0),
+        Err(_) => Err("transaction_directory_io"),
+        Ok(metadata) if metadata.file_type().is_symlink() || !metadata.is_dir() => {
+            Err("transaction_directory_unsafe_type")
+        }
+        Ok(_) => {
+            let mut count = 0_usize;
+            for entry in fs::read_dir(path).map_err(|_| "transaction_directory_io")? {
+                entry.map_err(|_| "transaction_directory_io")?;
+                count = count.saturating_add(1);
+                if count > 1_000 {
+                    return Err("transaction_directory_oversized");
+                }
+            }
+            Ok(count)
         }
     }
 }
@@ -415,7 +544,8 @@ pub enum RegistryStoreError {
 
 #[cfg(test)]
 mod tests {
-    use super::{RegistryFile, RegistryStoreError};
+    use super::{RegistryDoctorProbe, RegistryFile, RegistryStoreError};
+    use agy_auth_app::DoctorRegistryProbe;
     use agy_auth_domain::{
         Profile, ProfileId, ProfileName, ProfileStatus, ProviderKind, Registry, StorageLocator,
     };
@@ -575,5 +705,87 @@ mod tests {
             Err(RegistryStoreError::UnsafeFileType)
         ));
         fs::remove_dir_all(directory).expect("remove test directory");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn doctor_accepts_secure_data_directory() {
+        use std::os::unix::fs::PermissionsExt;
+        let directory = temporary_directory();
+        fs::set_permissions(&directory, fs::Permissions::from_mode(0o700))
+            .expect("secure directory");
+        let probe = RegistryDoctorProbe::new(directory.join("registry.json")).expect("valid probe");
+
+        let result = probe.probe();
+
+        assert!(result.healthy);
+        assert_eq!(result.data_directory_state, "secure");
+        assert_eq!(result.owner_matches, Some(true));
+        assert_eq!(result.permissions_secure, Some(true));
+        fs::remove_dir_all(directory).expect("remove test directory");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn doctor_rejects_group_accessible_data_directory() {
+        use std::os::unix::fs::PermissionsExt;
+        let directory = temporary_directory();
+        fs::set_permissions(&directory, fs::Permissions::from_mode(0o750))
+            .expect("set unsafe permissions");
+        let probe = RegistryDoctorProbe::new(directory.join("registry.json")).expect("valid probe");
+
+        let result = probe.probe();
+
+        assert!(!result.healthy);
+        assert_eq!(
+            result.error_code.as_deref(),
+            Some("registry_data_dir_permissions")
+        );
+        fs::remove_dir_all(directory).expect("remove test directory");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn doctor_reports_interrupted_transactions_without_names() {
+        use std::os::unix::fs::PermissionsExt;
+        let directory = temporary_directory();
+        fs::set_permissions(&directory, fs::Permissions::from_mode(0o700))
+            .expect("secure directory");
+        let transactions = directory.join("transactions");
+        fs::create_dir(&transactions).expect("create transaction directory");
+        fs::write(transactions.join("synthetic-marker.json"), b"TEST").expect("write marker");
+        let probe = RegistryDoctorProbe::new(directory.join("registry.json")).expect("valid probe");
+
+        let result = probe.probe();
+
+        assert!(!result.healthy);
+        assert_eq!(result.interrupted_transactions, 1);
+        assert_eq!(
+            result.error_code.as_deref(),
+            Some("transaction_recovery_required")
+        );
+        fs::remove_dir_all(directory).expect("remove test directory");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn doctor_rejects_symlinked_data_directory() {
+        use std::os::unix::fs::{PermissionsExt, symlink};
+        let parent = temporary_directory();
+        let target = parent.join("target");
+        let linked = parent.join("linked");
+        fs::create_dir(&target).expect("create target");
+        fs::set_permissions(&target, fs::Permissions::from_mode(0o700)).expect("secure target");
+        symlink(&target, &linked).expect("create data-root symlink");
+        let probe = RegistryDoctorProbe::new(linked.join("registry.json")).expect("valid probe");
+
+        let result = probe.probe();
+
+        assert!(!result.healthy);
+        assert_eq!(
+            result.error_code.as_deref(),
+            Some("registry_data_dir_unsafe_type")
+        );
+        fs::remove_dir_all(parent).expect("remove test directory");
     }
 }

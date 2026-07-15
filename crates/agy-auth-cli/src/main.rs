@@ -66,6 +66,10 @@ impl DoctorRegistryProbe for RegistryProbe {
                 healthy: false,
                 profile_count: None,
                 error_code: Some("registry_data_dir_unavailable".to_owned()),
+                data_directory_state: "unsafe",
+                owner_matches: None,
+                permissions_secure: None,
+                interrupted_transactions: 0,
             },
         }
     }
@@ -130,6 +134,11 @@ fn render_human(report: &DoctorReport, repair: bool) {
             report.registry.error_code.as_deref().unwrap_or("unknown")
         );
     }
+    println!("data directory: {}", report.registry.data_directory_state);
+    println!(
+        "interrupted transactions: {}",
+        report.registry.interrupted_transactions
+    );
     println!("profile switching: unsupported");
     println!("authentication mutation: disabled");
     println!("reason: no supported Antigravity profile contract is available");
