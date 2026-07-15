@@ -216,7 +216,7 @@
     {
       "id": "phase-2a-doctor-diagnostics",
       "title": "Implement the diagnostics-only agy-auth doctor vertical slice",
-      "status": "active",
+      "status": "passing",
       "source": "docs/adr/0006-diagnostics-only-until-supported-profile-contract.md",
       "plan": "docs/plans/phase-2a-doctor-diagnostics.md",
       "acceptance": [
@@ -249,6 +249,27 @@
           "outcome": "passing; 0 errors and 0 warnings"
         }
       ],
+      "completion": {
+        "commit": "be45bb15242556a327b6b8f83c26a7ef0b937185",
+        "review": "https://github.com/ensp1re/agy-auth/pull/11",
+        "completedAt": "2026-07-15T21:22:28Z"
+      }
+    },
+    {
+      "id": "phase-2b-doctor-filesystem-diagnostics",
+      "title": "Harden doctor with project-owned filesystem diagnostics",
+      "status": "active",
+      "source": "docs/07-cli-specification.md",
+      "plan": "docs/plans/phase-2b-doctor-filesystem-diagnostics.md",
+      "acceptance": [
+        "Absent data roots are reported without creation or mutation.",
+        "Unsafe data-root type, Unix permissions, and Linux ownership fail closed.",
+        "Interrupted project-owned transaction entries are counted without names or contents.",
+        "Human and JSON output use stable categories and exit codes 8 and 10.",
+        "All local repository and harness checks pass without hosted CI."
+      ],
+      "blocker": null,
+      "verification": [],
       "completion": null
     }
   ]

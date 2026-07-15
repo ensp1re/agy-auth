@@ -29,6 +29,14 @@ pub struct RegistryDiagnostic {
     pub profile_count: Option<usize>,
     /// Stable non-secret failure category.
     pub error_code: Option<String>,
+    /// Data-root state: `absent`, `secure`, or `unsafe`.
+    pub data_directory_state: &'static str,
+    /// Whether owner checks passed, or `None` when absent/unavailable.
+    pub owner_matches: Option<bool>,
+    /// Whether permission checks passed, or `None` when absent/unavailable.
+    pub permissions_secure: Option<bool>,
+    /// Count of project-owned interrupted transaction markers.
+    pub interrupted_transactions: usize,
 }
 
 /// Explicit capability-gate result.
@@ -62,9 +70,11 @@ pub struct DoctorReport {
 impl DoctorReport {
     /// Process exit code matching the CLI contract.
     #[must_use]
-    pub const fn exit_code(&self) -> u8 {
+    pub fn exit_code(&self) -> u8 {
         if !self.client.found {
             4
+        } else if self.registry.error_code.as_deref() == Some("transaction_recovery_required") {
+            10
         } else if !self.registry.healthy {
             8
         } else {
@@ -130,6 +140,10 @@ mod tests {
                 healthy: true,
                 profile_count: Some(0),
                 error_code: None,
+                data_directory_state: "absent",
+                owner_matches: None,
+                permissions_secure: None,
+                interrupted_transactions: 0,
             }
         }
     }
@@ -141,5 +155,26 @@ mod tests {
         assert!(!report.capabilities.profile_switching);
         assert!(!report.capabilities.auth_state_mutation);
         assert_eq!(report.client.version.as_deref(), Some("1.1.2"));
+    }
+
+    #[test]
+    fn interrupted_transaction_uses_recovery_exit_code() {
+        struct Interrupted;
+
+        impl DoctorRegistryProbe for Interrupted {
+            fn probe(&self) -> RegistryDiagnostic {
+                RegistryDiagnostic {
+                    healthy: false,
+                    profile_count: None,
+                    error_code: Some("transaction_recovery_required".to_owned()),
+                    data_directory_state: "secure",
+                    owner_matches: Some(true),
+                    permissions_secure: Some(true),
+                    interrupted_transactions: 1,
+                }
+            }
+        }
+
+        assert_eq!(doctor(&Client, &Interrupted).exit_code(), 10);
     }
 }
