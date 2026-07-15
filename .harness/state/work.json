@@ -85,7 +85,7 @@
     {
       "id": "phase-1-client-discovery",
       "title": "Implement safe official-client discovery and process execution",
-      "status": "active",
+      "status": "passing",
       "source": "docs/10-delivery-roadmap.md",
       "plan": "docs/plans/phase-1-client-discovery.md",
       "acceptance": [
@@ -108,11 +108,32 @@
           "outcome": "advisories, bans, licenses, and sources passing"
         },
         {
-          "command": "GEMINI_AUTH_TEST_AGY=/root/.local/bin/agy GEMINI_AUTH_TEST_AGY_VERSION=1.1.2 cargo test -p gemini-auth-process --test installed_client -- --ignored --exact discovers_and_probes_installed_agy_without_authentication",
+          "command": "GEMINI_AUTH_TEST_AGY=/root/.local/bin/agy GEMINI_AUTH_TEST_AGY_VERSION=1.1.2 cargo test -p antigravity-auth-process --test installed_client -- --ignored --exact discovers_and_probes_installed_agy_without_authentication",
           "revision": "c506fcc8f17ceee7df1cb593f7d3cc719e32a08c",
           "outcome": "passing; agy 1.1.2 discovered and probed without authentication access"
         }
       ],
+      "completion": {
+        "commit": "c6be00c4225b66900a2d0b725260c87b046b1da4",
+        "review": "https://github.com/ensp1re/gemini-auth/pull/3",
+        "completedAt": "2026-07-15T20:15:03Z"
+      }
+    },
+    {
+      "id": "phase-1-antigravity-transition",
+      "title": "Pivot the product and repository sources to Antigravity CLI",
+      "status": "active",
+      "source": "docs/adr/0005-antigravity-cli-primary.md",
+      "plan": null,
+      "acceptance": [
+        "The product, binary, workspace crates, manifest, and current documentation use the antigravity-auth name.",
+        "Antigravity CLI is the sole MVP provider and Gemini CLI is documented only as deferred legacy/enterprise compatibility.",
+        "The roadmap requires capability research before any real authentication-state mutation.",
+        "The unmerged Gemini isolated-home pull request is closed with its rationale preserved.",
+        "All local build, test, dependency, secret, link, and harness checks pass after the migration."
+      ],
+      "blocker": null,
+      "verification": [],
       "completion": null
     }
   ]

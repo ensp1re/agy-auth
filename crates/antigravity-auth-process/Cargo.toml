@@ -1,5 +1,5 @@
 [package]
-name = "gemini-auth-process"
+name = "antigravity-auth-process"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true

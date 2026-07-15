@@ -108,11 +108,11 @@ Keyring tests use a unique service namespace and delete it in teardown. They mus
 
 Run manually or in a protected, non-fork CI environment with dedicated test accounts:
 
-1. Gemini CLI profile A login and repeat launch.
-2. Gemini CLI profile B login; verify isolated histories/settings.
-3. Alternating `exec` commands uses the intended account hint where the official client exposes it.
-4. Antigravity SSH file capture, activate, launch, refresh, stop, switch back.
-5. Upgrade official client and repeat schema/capability probes.
+1. Antigravity CLI profile A login and repeat launch through a verified strategy.
+2. Antigravity CLI profile B login; verify the selected identity without backend or token inspection.
+3. Alternate manual selection and confirm isolated or transaction-safe behavior.
+4. Interrupt activation at each supported transition and recover safely.
+5. Upgrade `agy` and repeat schema/capability probes before re-enabling mutation.
 
 No quota exhaustion tests and no multi-account retry tests.
 

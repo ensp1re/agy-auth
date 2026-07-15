@@ -3,7 +3,7 @@
 ## Proposed workspace
 
 ```text
-gemini-auth/
+antigravity-auth/
 ├── Cargo.toml                    # workspace members, shared lint/profile config
 ├── Cargo.lock                    # committed for executable reproducibility
 ├── README.md
@@ -13,14 +13,14 @@ gemini-auth/
 ├── deny.toml                     # cargo-deny policy
 ├── rust-toolchain.toml           # pinned stable toolchain
 ├── crates/
-│   ├── gemini-auth-cli/
+│   ├── antigravity-auth-cli/
 │   │   └── src/
 │   │       ├── main.rs
 │   │       ├── args.rs
 │   │       ├── output.rs
 │   │       ├── prompts.rs
 │   │       └── exit_codes.rs
-│   ├── gemini-auth-app/
+│   ├── antigravity-auth-app/
 │   │   └── src/
 │   │       ├── lib.rs
 │   │       ├── add_profile.rs
@@ -30,7 +30,7 @@ gemini-auth/
 │   │       ├── remove_profile.rs
 │   │       ├── import_export.rs
 │   │       └── doctor.rs
-│   ├── gemini-auth-domain/
+│   ├── antigravity-auth-domain/
 │   │   └── src/
 │   │       ├── lib.rs
 │   │       ├── profile.rs
@@ -38,7 +38,7 @@ gemini-auth/
 │   │       ├── capability.rs
 │   │       ├── transaction.rs
 │   │       └── error.rs
-│   ├── gemini-auth-storage/
+│   ├── antigravity-auth-storage/
 │   │   └── src/
 │   │       ├── lib.rs
 │   │       ├── registry.rs
@@ -49,13 +49,9 @@ gemini-auth/
 │   │       ├── lock.rs
 │   │       ├── journal.rs
 │   │       └── permissions.rs
-│   ├── provider-gemini-cli/
+│   ├── antigravity-auth-process/
 │   │   └── src/
-│   │       ├── lib.rs
-│   │       ├── discovery.rs
-│   │       ├── isolated_home.rs
-│   │       ├── login.rs
-│   │       └── validation.rs
+│   │       └── lib.rs
 │   ├── provider-antigravity-cli/
 │   │   └── src/
 │   │       ├── lib.rs
@@ -63,7 +59,7 @@ gemini-auth/
 │   │       ├── file_mode.rs
 │   │       ├── schema.rs
 │   │       └── process_guard.rs
-│   └── gemini-auth-test-support/
+│   └── antigravity-auth-test-support/
 │       └── src/
 │           ├── lib.rs
 │           ├── fake_keyring.rs
@@ -75,7 +71,6 @@ gemini-auth/
 │   ├── transactions/
 │   ├── migrations/
 │   └── fixtures/
-│       ├── synthetic-gemini/
 │       └── synthetic-antigravity/
 ├── docs/
 │   ├── adr/
@@ -106,14 +101,14 @@ Use platform data/config conventions through the `directories` crate.
 Unix-style illustration:
 
 ```text
-~/.config/gemini-auth/
+~/.config/antigravity-auth/
 ├── config.json                   # non-secret user preferences
 └── policy.json                   # optional admin/local restrictions
 
-~/.local/share/gemini-auth/
+~/.local/share/antigravity-auth/
 ├── registry.json                 # non-secret profile metadata
 ├── active.json                   # selected profiles by provider
-├── homes/                        # isolated Gemini CLI homes, mode 0700
+├── profiles/                     # only after a verified Antigravity isolation contract
 │   └── <profile-uuid>/
 ├── vault/                        # encrypted/file fallback only
 │   └── <profile-uuid>.secret
@@ -121,7 +116,7 @@ Unix-style illustration:
 └── transactions/
     └── <transaction-uuid>.json
 
-~/.cache/gemini-auth/
+~/.cache/antigravity-auth/
 └── diagnostics/                  # opt-in and redacted
 ```
 
@@ -136,7 +131,7 @@ On macOS use Application Support/Preferences/Caches conventions; on Windows use 
     {
       "id": "uuid",
       "name": "personal",
-      "provider": "gemini-cli",
+      "provider": "antigravity-cli",
       "storage": { "kind": "isolated-home", "locator": "uuid" },
       "accountHint": "a***@example.com",
       "createdAt": "RFC3339",

@@ -361,13 +361,21 @@ mod tests {
     use std::fs;
     use std::os::unix::fs::PermissionsExt;
     use std::path::{Path, PathBuf};
-    use std::time::Duration;
+    use std::sync::atomic::{AtomicU64, Ordering};
+    use std::time::{Duration, SystemTime, UNIX_EPOCH};
+
+    static FIXTURE_SEQUENCE: AtomicU64 = AtomicU64::new(0);
 
     fn fixture(name: &str, body: &str) -> (PathBuf, PathBuf) {
         let directory = std::env::temp_dir().join(format!(
-            "gemini-auth-process-{}-{}",
+            "antigravity-auth-process-{}-{}-{}-{}",
             std::process::id(),
-            name
+            name,
+            FIXTURE_SEQUENCE.fetch_add(1, Ordering::Relaxed),
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .expect("system clock after Unix epoch")
+                .as_nanos()
         ));
         let _ = fs::remove_dir_all(&directory);
         fs::create_dir(&directory).expect("create fixture directory");

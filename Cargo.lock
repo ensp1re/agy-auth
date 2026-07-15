@@ -53,6 +53,54 @@ dependencies = [
 ]
 
 [[package]]
+name = "antigravity-auth-app"
+version = "0.1.0"
+dependencies = [
+ "antigravity-auth-domain",
+]
+
+[[package]]
+name = "antigravity-auth-cli"
+version = "0.1.0"
+dependencies = [
+ "antigravity-auth-app",
+ "clap",
+]
+
+[[package]]
+name = "antigravity-auth-domain"
+version = "0.1.0"
+dependencies = [
+ "time",
+ "unicode-normalization",
+ "uuid",
+]
+
+[[package]]
+name = "antigravity-auth-process"
+version = "0.1.0"
+
+[[package]]
+name = "antigravity-auth-storage"
+version = "0.1.0"
+dependencies = [
+ "antigravity-auth-domain",
+ "fs2",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "time",
+ "uuid",
+]
+
+[[package]]
+name = "antigravity-auth-test-support"
+version = "0.1.0"
+dependencies = [
+ "antigravity-auth-domain",
+]
+
+[[package]]
 name = "bumpalo"
 version = "3.20.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -154,54 +202,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "gemini-auth-app"
-version = "0.1.0"
-dependencies = [
- "gemini-auth-domain",
-]
-
-[[package]]
-name = "gemini-auth-cli"
-version = "0.1.0"
-dependencies = [
- "clap",
- "gemini-auth-app",
-]
-
-[[package]]
-name = "gemini-auth-domain"
-version = "0.1.0"
-dependencies = [
- "time",
- "unicode-normalization",
- "uuid",
-]
-
-[[package]]
-name = "gemini-auth-process"
-version = "0.1.0"
-
-[[package]]
-name = "gemini-auth-storage"
-version = "0.1.0"
-dependencies = [
- "fs2",
- "gemini-auth-domain",
- "serde",
- "serde_json",
- "thiserror",
- "time",
- "uuid",
-]
-
-[[package]]
-name = "gemini-auth-test-support"
-version = "0.1.0"
-dependencies = [
- "gemini-auth-domain",
-]
-
-[[package]]
 name = "getrandom"
 version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -296,14 +296,7 @@ dependencies = [
 name = "provider-antigravity-cli"
 version = "0.1.0"
 dependencies = [
- "gemini-auth-domain",
-]
-
-[[package]]
-name = "provider-gemini-cli"
-version = "0.1.0"
-dependencies = [
- "gemini-auth-domain",
+ "antigravity-auth-domain",
 ]
 
 [[package]]

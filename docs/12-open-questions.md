@@ -1,56 +1,25 @@
 # Open Questions and Research Backlog
 
-## Must resolve before MVP
+## Must resolve before real profile mutation
 
-1. Does current Gemini CLI scope every credential/keyring lookup to `GEMINI_CLI_HOME` on Linux, macOS, and Windows?
-2. What is the least invasive official command sequence that establishes login success without making a model request?
-3. Which authentication-overriding environment variables should `exec` warn about, and which may it safely unset only for the child process?
-4. Does whole-home isolation unintentionally duplicate trusted-folder decisions or organization policy that should remain global?
-5. How should a managed enterprise environment prohibit personal profiles through local policy?
+1. Does `agy` expose an official account, profile, or home-isolation command?
+2. Which paths and keyring entries contain authentication state on Linux, macOS, Windows, and SSH?
+3. Does an override isolate credentials, settings, workspace trust, conversations, and policy together?
+4. How does `agy` behave if authentication state is switched while it or a child process is running?
+5. Does refresh preserve unknown fields and remain associated with the selected account?
+6. Which non-authenticated command can verify login success without making a model request?
+7. What changes across `agy` versions, starting with the observed `1.1.2`?
 
-## Must resolve before Antigravity support
+## Product decisions
 
-1. Confirm file path and envelope across at least two Antigravity CLI versions and all three platforms in SSH/file mode.
-2. Determine reliable running-process detection names and child relationships.
-3. Confirm atomic replacement behavior when `agy` is stopped and when launched afterward.
-4. Determine whether refreshed credentials preserve unknown JSON fields.
-5. Decide whether storing the complete token envelope in an OS keyring exceeds platform item-size limits.
-6. Establish a safe response when the active file is absent but a keyring token exists.
+- Final product/repository name: proposed `antigravity-auth`; repository rename waits for review.
+- Whether an “auth” name is too easily confused with an OAuth library.
+- Whether diagnostics-only is valuable if no supported switching contract exists.
+- Whether legacy Gemini CLI enterprise compatibility warrants a separate optional provider.
+- License choice before distribution.
 
-## Security research
+## Evidence format
 
-- Windows DACL creation and verification without shelling out.
-- macOS Keychain binary-signing ACL behavior across upgrades.
-- Linux Secret Service availability under SSH and desktop sessions.
-- Hardlink detection and replacement semantics.
-- Swap/core-dump exposure and whether process-level mitigations are appropriate.
-- Safe encrypted export format and password UX.
-
-## Product questions
-
-- Should `use` exist for Gemini CLI or should `exec` be the only supported mechanism?
-- Should profile homes isolate all history/settings or share non-secret configuration through an explicit template?
-- Should account hints be collected at all? Omitting them is more private; masked hints improve usability.
-- Is `gemini-auth` too easily confused with an OAuth library? Alternative names could emphasize profiles, such as `gemini-profile`.
-- What license best matches contributor expectations and patent concerns?
-
-## Evidence that would change the design
-
-- An official Google multi-account/profile command would make most switching logic unnecessary; integrate or defer to it.
-- An official Antigravity home/profile override would replace token-file activation.
-- Evidence that `GEMINI_CLI_HOME` does not isolate credentials would require a different supported strategy or narrower platform scope.
-- Provider terms explicitly prohibiting local auth-state selection would require reevaluating or discontinuing affected support.
-
-## Research discipline
-
-Record each resolved item as an ADR or compatibility note with:
-
-- date and client version;
-- operating system;
-- exact non-secret observation;
-- reproduction procedure;
-- confidence level;
-- design consequence;
-- expiration/reverification trigger.
-
-Never attach real credential files, OAuth URLs, tokens, full emails, or private logs to issues.
+Every resolved compatibility item records date, exact `agy` version, platform, storage mode,
+non-secret reproduction steps, confidence, design consequence, and reverification trigger. Never
+attach credentials, OAuth URLs, full emails, private logs, or environment dumps.

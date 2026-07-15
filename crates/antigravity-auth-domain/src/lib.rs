@@ -1,4 +1,4 @@
-//! Domain types and invariants for `gemini-auth`.
+//! Domain types and invariants for `antigravity-auth`.
 
 use std::fmt;
 use time::OffsetDateTime;

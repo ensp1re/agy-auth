@@ -36,7 +36,7 @@ Nightly/scheduled:
 
 - fuzzing budget;
 - minimum supported Rust version if one is declared;
-- official Gemini CLI compatibility probe using no account for discovery/help only;
+- official Antigravity CLI compatibility probe using `--version`/documented diagnostics only;
 - dependency updates in isolated PRs.
 
 ## Release pipeline
@@ -53,10 +53,9 @@ Nightly/scheduled:
 Provider compatibility is reported separately from tool version:
 
 ```text
-gemini-auth doctor
-gemini-auth 0.1.0
-Gemini CLI 0.x: supported (isolated-home)
-Antigravity CLI 1.x: unsupported mode (system keyring detected)
+antigravity-auth doctor
+antigravity-auth 0.1.0
+Antigravity CLI 1.1.2: discovered (auth storage capability unverified)
 Registry schema: 1
 Pending recovery: none
 ```
@@ -77,6 +76,6 @@ No telemetry in v1. If crash/usage telemetry is ever proposed, it must be opt-in
 Document two independent operations:
 
 - Remove executable/package: leaves profiles intact.
-- `gemini-auth purge`: removes registry, managed isolated homes, and known keyring entries after a typed confirmation; it does not touch the official default client home unless a transaction created a clearly identified rollback artifact.
+- `antigravity-auth purge`: removes registry, managed isolated homes, and known keyring entries after a typed confirmation; it does not touch the official default client home unless a transaction created a clearly identified rollback artifact.
 
 Uninstall scripts must never recursively delete a path derived only from an environment variable or unvalidated config.

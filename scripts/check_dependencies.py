@@ -8,14 +8,13 @@ import subprocess
 import sys
 
 ALLOWED = {
-    "gemini-auth-domain": set(),
-    "gemini-auth-process": set(),
-    "gemini-auth-app": {"gemini-auth-domain"},
-    "gemini-auth-storage": {"gemini-auth-domain"},
-    "provider-gemini-cli": {"gemini-auth-domain"},
-    "provider-antigravity-cli": {"gemini-auth-domain"},
-    "gemini-auth-cli": {"gemini-auth-app"},
-    "gemini-auth-test-support": {"gemini-auth-domain"},
+    "antigravity-auth-domain": set(),
+    "antigravity-auth-process": set(),
+    "antigravity-auth-app": {"antigravity-auth-domain"},
+    "antigravity-auth-storage": {"antigravity-auth-domain"},
+    "provider-antigravity-cli": {"antigravity-auth-domain"},
+    "antigravity-auth-cli": {"antigravity-auth-app"},
+    "antigravity-auth-test-support": {"antigravity-auth-domain"},
 }
 
 

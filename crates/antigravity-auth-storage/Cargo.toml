@@ -1,5 +1,5 @@
 [package]
-name = "gemini-auth-domain"
+name = "antigravity-auth-storage"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -7,8 +7,12 @@ publish.workspace = true
 repository.workspace = true
 
 [dependencies]
+fs2.workspace = true
+antigravity-auth-domain.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
 time.workspace = true
-unicode-normalization.workspace = true
 uuid.workspace = true
 
 [lints]
