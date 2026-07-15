@@ -190,6 +190,11 @@
           "command": "Review docs/plans/linux-dedicated-account-observation.md against docs/08-security-policy.md and docs/09-testing-strategy.md",
           "revision": "833f3216838c73db811f08f7a192105dcb817ad5",
           "outcome": "protocol designed with separate approval, disposable OS user/keyring, metadata allowlist, stop conditions, and cleanup; not executed"
+        },
+        {
+          "command": "Execute Linux observation through unauthenticated-launch phase under the approved protocol",
+          "revision": "4394b9f2e14fe74dc513733f60fea0ae803f51cd",
+          "outcome": "failed safely; existing account was silently recognized, process was stopped without logout, and disposable state was removed"
         }
       ],
       "completion": null

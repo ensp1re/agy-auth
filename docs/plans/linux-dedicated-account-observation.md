@@ -13,6 +13,9 @@ Execution requires a separate explicit approval after all prerequisites are conf
 - a Google account created solely for this test and permitted by its owner and applicable policies;
 - a disposable, non-privileged Linux OS user with a fresh home directory;
 - a dedicated user session and Secret Service/keyring instance not shared with the operator;
+- a dedicated working directory owned by the test user, never the operator's current directory;
+- a process environment created with `env -i` and an explicit allowlist; overriding selected
+  variables in an inherited environment is forbidden;
 - no existing `agy`, Gemini CLI, Antigravity desktop, browser, cloud CLI, or agent state in that user;
 - `agy` version and binary digest recorded before the session;
 - screen recording, shell history capture, tracing, core dumps, and verbose client logging disabled;
@@ -42,8 +45,10 @@ file bytes, hashes of secret material, network captures, logs, conversations, or
 
 Each phase requires a clean checkpoint and can be stopped independently.
 
-1. **Baseline:** verify the isolated OS user and keyring session; record only the allowed metadata
-   inventory before `agy` starts.
+1. **Baseline:** verify the isolated OS user, working directory, clean allowlisted environment, and
+   keyring session; record only the allowed metadata inventory before `agy` starts. A reviewer must
+   verify that no cloud, Google, OAuth, credential-helper, or operator session variable was inherited
+   without printing the environment values.
 2. **Unauthenticated launch:** start the official client interactively with network access only long
    enough to confirm that the documented login chooser appears; do not retain its output.
 3. **Dedicated login:** the account owner completes the official Google flow directly. The observer
@@ -66,6 +71,7 @@ requiring the baseline results and another approval.
 Stop immediately, preserve no additional output, and clean up when:
 
 - the process connects to the operator's existing keyring or home;
+- the official client silently identifies an account before the dedicated login completes;
 - any secret, OAuth URL/code, full identity, or credential-bearing log becomes visible to capture;
 - the dedicated keyring boundary cannot be proven;
 - `agy` starts a model request or unrelated tool action;
@@ -86,3 +92,12 @@ Stop immediately, preserve no additional output, and clean up when:
 The research record must state which phases ran, which were skipped, all stop conditions, cleanup
 status, and only the allowed evidence above. It must undergo a secret scan and human review before
 being committed. Raw terminal output and temporary observation artifacts must never enter Git.
+
+## Failed attempt supersession
+
+The July 15, 2026 attempt used `runuser` with selected environment overrides but did not clear the
+inherited root environment or change away from the operator's working directory. `agy 1.1.2`
+silently identified an existing account, proving that isolation was not established. The process was
+terminated without `/logout`, and the disposable user, home, runtime directory, and processes were
+removed. Do not repeat that launch form. See
+[`docs/research/linux-observation-2026-07-15.md`](../research/linux-observation-2026-07-15.md).
