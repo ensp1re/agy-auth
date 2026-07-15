@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-15T20:22:00Z",
+  "updatedAt": "2026-07-15T20:24:00Z",
   "goal": "Implement a capability-gated Gemini CLI isolated-home adapter without claiming unverified credential isolation.",
   "scope": [
     "phase-1-gemini-isolated-home"
@@ -8,7 +8,7 @@
   "status": "ready_for_review",
   "git": {
     "branch": "feat/gemini-isolated-home",
-    "head": "d08065fe43993bcffb3e4f6c200f915a4392107b",
+    "head": "c069f8fed276594139410ba8237e3230cc2d1d6c",
     "worktree": "dirty"
   },
   "completed": [
@@ -18,10 +18,11 @@
     "Pull request 1 was merged at commit 1f9a36d39818c347f0a04714f91df8a9a1140580.",
     "Profile registry pull request 2 was merged at commit 73f24b65889f78b6e44bf77c53424ca896db55ee.",
     "The VPS agy binary was observed at /root/.local/bin/agy and reports version 1.1.2 from --version; no authentication state was accessed.",
-    "Client discovery pull request 3 was merged at commit c6be00c4225b66900a2d0b725260c87b046b1da4."
+    "Client discovery pull request 3 was merged at commit c6be00c4225b66900a2d0b725260c87b046b1da4.",
+    "Capability-gated Gemini adapter pull request 4 was opened at https://github.com/ensp1re/gemini-auth/pull/4."
   ],
   "nextActions": [
-    "Push the gated Gemini adapter branch and open its pull request; keep real isolation verification explicitly not run."
+    "Review and merge pull request 4; do not enable production Gemini execution until real isolation evidence exists."
   ],
   "decisions": [
     "Use the Core harness profile only; no hooks, daemon, event journal, database, or client adapter.",
