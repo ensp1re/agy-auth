@@ -41,7 +41,8 @@
       "blocker": null,
       "verification": [
         {"command": "bounded disposable non-root pseudo-terminal observation", "revision": "3dffadce450b7f025549ddc09c355a5d29c9d9c3", "outcome": "inconclusive but materially different; no existing identity and no login screen observed before timeout; no input sent"},
-        {"command": "post-observation cleanup audit", "revision": "3dffadce450b7f025549ddc09c355a5d29c9d9c3", "outcome": "passing; user, home, runtime, copied binary, transcript, and client processes absent"}
+        {"command": "post-observation cleanup audit", "revision": "3dffadce450b7f025549ddc09c355a5d29c9d9c3", "outcome": "passing; user, home, runtime, copied binary, transcript, and client processes absent"},
+        {"command": "30-second SSH/no-D-Bus and 20-second actual-SSH_TTY follow-ups", "revision": "fb27929fecda11ec3c953abb2a83c4b01a1cbb8b", "outcome": "inconclusive; no identity reuse and no login chooser in either run; timeout 124, 37 bounded entries, cleanup complete"}
       ],
       "completion": null
     }
