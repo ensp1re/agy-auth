@@ -7,6 +7,7 @@ name = "agy-auth-app"
 version = "0.1.0"
 dependencies = [
  "agy-auth-domain",
+ "serde",
 ]
 
 [[package]]
@@ -14,7 +15,10 @@ name = "agy-auth-cli"
 version = "0.1.0"
 dependencies = [
  "agy-auth-app",
+ "agy-auth-storage",
  "clap",
+ "provider-antigravity-cli",
+ "serde_json",
 ]
 
 [[package]]
@@ -34,6 +38,7 @@ version = "0.1.0"
 name = "agy-auth-storage"
 version = "0.1.0"
 dependencies = [
+ "agy-auth-app",
  "agy-auth-domain",
  "fs2",
  "serde",
@@ -296,7 +301,9 @@ dependencies = [
 name = "provider-antigravity-cli"
 version = "0.1.0"
 dependencies = [
+ "agy-auth-app",
  "agy-auth-domain",
+ "agy-auth-process",
 ]
 
 [[package]]

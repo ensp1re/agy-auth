@@ -8,6 +8,7 @@ repository.workspace = true
 
 [dependencies]
 agy-auth-domain.workspace = true
+serde.workspace = true
 
 [lints]
 workspace = true

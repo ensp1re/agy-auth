@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-15T21:13:11Z",
-  "goal": "Research the supported Antigravity CLI authentication and profile contract without mutating real authentication state.",
+  "updatedAt": "2026-07-15T21:19:55Z",
+  "goal": "Implement a secret-safe diagnostics-only agy-auth doctor vertical slice.",
   "scope": [
-    "phase-2-antigravity-capability-research"
+    "phase-2a-doctor-diagnostics"
   ],
-  "status": "ready_for_review",
+  "status": "active",
   "git": {
-    "branch": "research/diagnostics-only-decision",
-    "head": "b3f97af74fdf1b94f50117abe90e945e63fcdeff",
+    "branch": "feature/doctor-diagnostics",
+    "head": "c54ecb7ddeaa20bd1e72b8423bec4a2c6555705b",
     "worktree": "dirty"
   },
   "completed": [
@@ -28,10 +28,11 @@
     "The first Linux observation attempt stopped because agy silently reused an existing identity; no logout occurred and all disposable state was removed.",
     "Failed-attempt pull request 9 was merged at commit b3f97af74fdf1b94f50117abe90e945e63fcdeff.",
     "A corrected clean-environment retry produced the same identity reuse and was stopped and cleaned up without logout or a model prompt.",
-    "ADR 0006 selects diagnostics-only behavior until a supported Antigravity profile contract exists."
+    "ADR 0006 selects diagnostics-only behavior until a supported Antigravity profile contract exists.",
+    "Diagnostics-only decision pull request 10 was merged at commit c54ecb7ddeaa20bd1e72b8423bec4a2c6555705b."
   ],
   "nextActions": [
-    "Review and merge the diagnostics-only decision, then start the agy-auth doctor vertical slice."
+    "Complete doctor edge-case tests, run all local gates, and publish the diagnostics vertical slice for review."
   ],
   "decisions": [
     "Use the Core harness profile only; no hooks, daemon, event journal, database, or client adapter.",

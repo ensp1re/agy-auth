@@ -2,4 +2,4 @@
 
 mod registry;
 
-pub use registry::{RegistryFile, RegistryStoreError};
+pub use registry::{RegistryDoctorProbe, RegistryFile, RegistryStoreError};
