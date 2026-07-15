@@ -1,19 +1,23 @@
 # ADR 0004: Transactional Antigravity File-Mode Support
 
-- Status: Proposed, pending renewed `agy` 1.1.2 compatibility research
+- Status: Withdrawn; no supported file-backed authentication contract
 - Date: 2026-07-15
 
 ## Context
 
-Observed Antigravity CLI SSH sessions persist OAuth state in a fixed mode-0600 JSON file. Desktop sessions may use an undocumented keyring.
+An earlier observation suggested that an Antigravity CLI SSH session persisted OAuth state in a
+mode-0600 JSON file. That observation has no independently reproducible, versioned provenance and
+cannot establish a supported storage contract. Current official documentation describes native OS
+secure-keyring token profiles for local sessions and does not document file-backed authentication
+state or a credential-home override.
 
 ## Decision
 
-Support only verified file-backed mode through an opaque-secret vault and journaled atomic replacement. Refuse keyring-backed desktop switching until its contract is verified. Require Antigravity to be stopped during activation.
+Do not implement this strategy. Keep real authentication-state mutation disabled until capability
+research identifies a supported, deterministic, reversible contract and a new ADR approves it.
 
 ## Consequences
 
-- Useful SSH support without backend protocol or refresh implementation.
-- More complex transaction/recovery engine.
-- Desktop support is intentionally incomplete.
-- Unknown schemas and storage modes fail closed.
+- No implementation may depend on the earlier file-mode assumption.
+- Keyring contents and credential files remain out of scope for the initial command-surface inventory.
+- A future strategy requires new evidence and a superseding ADR.
