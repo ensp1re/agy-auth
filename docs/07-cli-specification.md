@@ -105,3 +105,10 @@ For `exec`, child exit codes take precedence; launcher failures use 125–127 wh
 ## Permanently excluded commands
 
 `quota`, `rotate`, `proxy`, `serve`, automatic fallback, and backend protocol commands.
+
+## Compile-time fake-client gate
+
+The non-default Cargo feature `experimental-fake-client` exposes hidden `experimental-add` and
+`experimental-exec` commands for end-to-end orchestration tests. They use an in-process fake only;
+they cannot accept an executable path or launch real `agy`. Release builds omit this feature and
+remain diagnostics-only.

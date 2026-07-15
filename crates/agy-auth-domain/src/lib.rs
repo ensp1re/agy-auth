@@ -255,6 +255,46 @@ impl Registry {
         Ok(())
     }
 
+    /// Find a profile by its normalized user-facing name.
+    #[must_use]
+    pub fn find_by_name(&self, name: &ProfileName) -> Option<&Profile> {
+        self.profiles.iter().find(|profile| &profile.name == name)
+    }
+
+    /// Promote a pending profile to ready with a validated client version and timestamp.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the profile is absent, not pending, or the version/timestamp is invalid.
+    pub fn mark_ready(
+        &mut self,
+        profile_id: ProfileId,
+        client_version: &str,
+        updated_at: OffsetDateTime,
+    ) -> Result<(), DomainError> {
+        if client_version.is_empty()
+            || client_version.len() > 256
+            || client_version.chars().any(char::is_control)
+        {
+            return Err(DomainError::InvalidClientVersion);
+        }
+        let profile = self
+            .profiles
+            .iter_mut()
+            .find(|profile| profile.id == profile_id)
+            .ok_or(DomainError::ProfileNotFound)?;
+        if profile.status != ProfileStatus::Pending {
+            return Err(DomainError::InvalidStatusTransition);
+        }
+        if updated_at < profile.created_at {
+            return Err(DomainError::InvalidTimestampOrder);
+        }
+        profile.status = ProfileStatus::Ready;
+        profile.client_version_at_capture = Some(client_version.to_owned());
+        profile.updated_at = updated_at;
+        Ok(())
+    }
+
     /// Recheck every registry invariant.
     ///
     /// # Errors
@@ -293,6 +333,12 @@ pub enum DomainError {
     DuplicateProfileId,
     /// Two profile names compare equal after normalization.
     DuplicateProfileName,
+    /// Requested profile does not exist.
+    ProfileNotFound,
+    /// Profile lifecycle transition is not permitted.
+    InvalidStatusTransition,
+    /// Observed official-client version is invalid.
+    InvalidClientVersion,
 }
 
 impl fmt::Display for DomainError {
@@ -305,6 +351,9 @@ impl fmt::Display for DomainError {
             Self::InvalidTimestampOrder => "profile timestamps are inconsistent",
             Self::DuplicateProfileId => "duplicate profile identifier",
             Self::DuplicateProfileName => "duplicate normalized profile name",
+            Self::ProfileNotFound => "profile not found",
+            Self::InvalidStatusTransition => "invalid profile status transition",
+            Self::InvalidClientVersion => "invalid client version",
         };
         formatter.write_str(message)
     }

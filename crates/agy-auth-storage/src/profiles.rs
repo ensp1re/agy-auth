@@ -29,6 +29,21 @@ impl ManagedProfileHomes {
         Ok(Self { data_root })
     }
 
+    /// Create or validate the owner-only data root and profiles container.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when either directory cannot be established safely.
+    pub fn initialize(&self) -> Result<(), ManagedProfileHomeError> {
+        let parent = self
+            .data_root
+            .parent()
+            .ok_or(ManagedProfileHomeError::InvalidRoot)?;
+        validate_existing_directory(parent, false)?;
+        ensure_secure_directory(&self.data_root)?;
+        ensure_secure_directory(&self.data_root.join("profiles"))
+    }
+
     /// Create or validate the profile's home and runtime directories.
     ///
     /// # Errors
@@ -39,14 +54,8 @@ impl ManagedProfileHomes {
         &self,
         profile_id: ProfileId,
     ) -> Result<ManagedProfileEnvironment, ManagedProfileHomeError> {
-        let parent = self
-            .data_root
-            .parent()
-            .ok_or(ManagedProfileHomeError::InvalidRoot)?;
-        validate_existing_directory(parent, false)?;
-        ensure_secure_directory(&self.data_root)?;
+        self.initialize()?;
         let profiles = self.data_root.join("profiles");
-        ensure_secure_directory(&profiles)?;
         let profile_root = profiles.join(profile_id.to_string());
         ensure_secure_directory(&profile_root)?;
         let home = profile_root.join("home");

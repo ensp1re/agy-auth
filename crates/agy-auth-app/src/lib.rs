@@ -1,6 +1,9 @@
 //! Application-service boundary for use-case orchestration.
 
-use agy_auth_domain::{Profile, ProfileId, ProfileStatus};
+use agy_auth_domain::{
+    Profile, ProfileId, ProfileName, ProfileStatus, ProviderKind as DomainProviderKind,
+    StorageLocator,
+};
 use serde::Serialize;
 use std::ffi::OsString;
 use std::path::PathBuf;
@@ -24,6 +27,8 @@ pub struct ManagedProfileEnvironment {
 pub enum ProfileWorkflowError {
     /// A new profile must begin in the pending state.
     InvalidInitialState,
+    /// User-provided profile metadata violates a domain invariant.
+    InvalidProfile,
     /// A profile must be ready before execution.
     ProfileNotReady,
     /// Non-secret profile metadata could not be reserved.
@@ -42,6 +47,7 @@ impl std::fmt::Display for ProfileWorkflowError {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let message = match self {
             Self::InvalidInitialState => "profile must begin pending",
+            Self::InvalidProfile => "profile metadata is invalid",
             Self::ProfileNotReady => "profile is not ready",
             Self::CatalogReserveFailed => "profile metadata reservation failed",
             Self::CatalogCommitFailed => "profile metadata commit failed",
@@ -54,6 +60,29 @@ impl std::fmt::Display for ProfileWorkflowError {
 }
 
 impl std::error::Error for ProfileWorkflowError {}
+
+/// Build pending non-secret metadata for a new isolated Antigravity profile.
+///
+/// # Errors
+///
+/// Returns [`ProfileWorkflowError::InvalidProfile`] when the name is invalid.
+pub fn new_pending_profile(name: &str) -> Result<Profile, ProfileWorkflowError> {
+    let id = ProfileId::new();
+    let now = time::OffsetDateTime::now_utc();
+    Ok(Profile {
+        id,
+        name: ProfileName::parse(name).map_err(|_| ProfileWorkflowError::InvalidProfile)?,
+        provider: DomainProviderKind::AntigravityCli,
+        storage: StorageLocator::isolated_home(&id.to_string())
+            .map_err(|_| ProfileWorkflowError::InvalidProfile)?,
+        account_hint: None,
+        created_at: now,
+        updated_at: now,
+        client_version_at_capture: None,
+        schema_fingerprint: None,
+        status: ProfileStatus::Pending,
+    })
+}
 
 /// Port for project-owned profile directory preparation.
 pub trait ProfileHomePort {
