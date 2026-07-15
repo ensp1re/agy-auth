@@ -342,7 +342,7 @@
     {
       "id": "phase-4-linux-release-candidate",
       "title": "Build a reproducible local Linux release candidate",
-      "status": "active",
+      "status": "passing",
       "source": "docs/11-operations-release.md",
       "plan": "docs/plans/phase-4-linux-release-candidate.md",
       "acceptance": [
@@ -375,6 +375,27 @@
           "outcome": "passing; dirty tree exits 2 and harness reports 0 errors/warnings"
         }
       ],
+      "completion": {
+        "commit": "2f8fe0622bf13d5414701c12e25975b05ffffabe",
+        "review": "https://github.com/ensp1re/agy-auth/pull/14",
+        "completedAt": "2026-07-15T21:59:54Z"
+      }
+    },
+    {
+      "id": "phase-4-mit-installable-release-candidate",
+      "title": "Build the MIT-licensed installable Linux release candidate",
+      "status": "active",
+      "source": "docs/11-operations-release.md",
+      "plan": "docs/plans/phase-4-mit-installable-release-candidate.md",
+      "acceptance": [
+        "Repository, Cargo metadata, README, SBOM, and archive consistently declare MIT.",
+        "The deterministic archive includes LICENSE and is labeled rc.1.",
+        "Two clean builds produce identical archive and SBOM checksums.",
+        "The extracted binary passes installed agy 1.1.2 diagnostics.",
+        "No external release or artifact upload occurs."
+      ],
+      "blocker": null,
+      "verification": [],
       "completion": null
     }
   ]

@@ -50,4 +50,4 @@ See [product scope](docs/01-product-scope.md), [architecture](docs/04-architectu
 
 ## License
 
-Choose a license before publication or package distribution.
+Licensed under the [MIT License](LICENSE). Copyright (c) 2026 Enspire.

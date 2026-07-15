@@ -16,7 +16,7 @@
 - Whether an “auth” name is too easily confused with an OAuth library.
 - Whether diagnostics-only is valuable if no supported switching contract exists.
 - Whether legacy Gemini CLI enterprise compatibility warrants a separate optional provider.
-- License choice before distribution.
+- MIT license approved for distribution on July 16, 2026.
 
 ## Evidence format
 

@@ -16,8 +16,8 @@ if [[ "$target" != "$host" ]]; then
   echo "local RC packaging requires the host target ($host), got $target" >&2
   exit 2
 fi
-if [[ -e LICENSE || -e LICENSE-MIT || -e LICENSE-APACHE ]]; then
-  echo "license detected; review this local-only script before using it for distribution" >&2
+if [[ ! -f LICENSE ]] || ! grep -qx 'MIT License' LICENSE; then
+  echo "packaging requires the approved MIT LICENSE file" >&2
   exit 2
 fi
 
@@ -25,7 +25,7 @@ version=$(cargo metadata --locked --format-version 1 --no-deps | python3 -c \
   'import json,sys; d=json.load(sys.stdin); print(next(p["version"] for p in d["packages"] if p["name"] == "agy-auth-cli"))')
 revision=${AGY_AUTH_GIT_REVISION:-$(git rev-parse --verify HEAD)}
 epoch=${SOURCE_DATE_EPOCH:-$(git show -s --format=%ct HEAD)}
-name="agy-auth-${version}-${target}-local-rc"
+name="agy-auth-${version}-${target}-rc.1"
 output_dir=${1:-dist}
 mkdir -p "$output_dir"
 output_dir=$(cd "$output_dir" && pwd)
@@ -38,16 +38,13 @@ AGY_AUTH_GIT_REVISION="$revision" SOURCE_DATE_EPOCH="$epoch" \
   cargo build --release --locked --target "$target" --bin agy-auth
 install -m 0755 "target/$target/release/agy-auth" "$stage/agy-auth"
 install -m 0644 README.md "$stage/README.md"
+install -m 0644 LICENSE "$stage/LICENSE"
 python3 scripts/generate_sbom.py \
   --output "$stage/SBOM.spdx.json" \
   --revision "$revision" \
   --target "$target" \
   --source-date-epoch "$epoch"
 cp "$stage/SBOM.spdx.json" "$output_dir/$name.spdx.json"
-printf '%s\n' \
-  'LOCAL RELEASE CANDIDATE — NOT FOR DISTRIBUTION' \
-  'A project license has not been approved. Do not publish or redistribute this archive.' \
-  > "$stage/NOT-FOR-DISTRIBUTION.txt"
 printf 'version=%s\nrevision=%s\ntarget=%s\nsource_date_epoch=%s\n' \
   "$version" "$revision" "$target" "$epoch" > "$stage/RELEASE-METADATA.txt"
 
@@ -58,4 +55,4 @@ tar --sort=name --mtime="@$epoch" --owner=0 --group=0 --numeric-owner \
   sha256sum "$name.tar.gz" "$name.spdx.json" > "$name.sha256"
   sha256sum -c "$name.sha256"
 )
-printf 'Local release candidate: %s/%s.tar.gz\n' "$output_dir" "$name"
+printf 'Installable release candidate: %s/%s.tar.gz\n' "$output_dir" "$name"

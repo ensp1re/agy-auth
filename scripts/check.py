@@ -11,6 +11,7 @@ COMMANDS = (
     ("tests", ["cargo", "test", "--workspace", "--all-features"]),
     ("dependencies", ["python3", "scripts/check_dependencies.py"]),
     ("compatibility", ["python3", "scripts/check_compatibility.py"]),
+    ("release metadata", ["python3", "scripts/check_release_metadata.py"]),
     ("secrets", ["python3", "scripts/check_no_secrets.py"]),
     ("harness", ["python3", "scripts/harness/validate.py"]),
 )

@@ -98,6 +98,7 @@ mod tests {
     use super::AntigravityDoctorProbe;
     use agy_auth_app::DoctorClientProbe;
     use std::fs;
+    use std::io::Write;
     use std::os::unix::fs::PermissionsExt;
     use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -113,7 +114,11 @@ mod tests {
         ));
         fs::create_dir(&directory).expect("create fixture directory");
         let executable = directory.join("agy");
-        fs::write(&executable, "#!/bin/sh\nprintf '1.1.2\\n'\n").expect("write fixture");
+        let mut file = fs::File::create(&executable).expect("create fixture");
+        file.write_all(b"#!/bin/sh\nprintf '1.1.2\\n'\n")
+            .expect("write fixture");
+        file.sync_all().expect("sync fixture");
+        drop(file);
         let mut permissions = fs::metadata(&executable).expect("metadata").permissions();
         permissions.set_mode(0o700);
         fs::set_permissions(&executable, permissions).expect("set executable");

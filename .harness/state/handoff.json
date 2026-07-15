@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-15T21:58:24Z",
-  "goal": "Build a reproducible, local-only Linux release candidate with checksum and SPDX SBOM.",
+  "updatedAt": "2026-07-15T22:01:34Z",
+  "goal": "Build the MIT-licensed installable Linux release candidate without external publication.",
   "scope": [
-    "phase-4-linux-release-candidate"
+    "phase-4-mit-installable-release-candidate"
   ],
-  "status": "ready_for_review",
+  "status": "active",
   "git": {
-    "branch": "feature/linux-release-candidate",
-    "head": "7ebddeee3adc1d11d3dfc7785fbaad08e33ad145",
+    "branch": "feature/mit-installable-rc",
+    "head": "2f8fe0622bf13d5414701c12e25975b05ffffabe",
     "worktree": "dirty"
   },
   "completed": [
@@ -36,10 +36,12 @@
     "Doctor filesystem diagnostics pull request 12 was merged at commit 26579ef78439b2138cafa3ef293f12eae5f0f8fa.",
     "Release-readiness foundation at 86139d9 adds compiled-binary contracts, build identity, and a validated agy 1.1.2 compatibility ledger.",
     "Release-readiness pull request 13 was merged at commit d7ac4f2b7c9bc0b4a0f60b4c8105674f8d75f297.",
-    "Linux local RC tooling at 7ebddee produces reproducible archives, verified checksums, and a 68-package SPDX SBOM."
+    "Linux local RC tooling at 7ebddee produces reproducible archives, verified checksums, and a 68-package SPDX SBOM.",
+    "Linux local RC tooling pull request 14 was merged at commit 2f8fe0622bf13d5414701c12e25975b05ffffabe.",
+    "The user approved the MIT license; copyright identity is Enspire."
   ],
   "nextActions": [
-    "Review and merge the Linux local release-candidate tooling pull request."
+    "Verify MIT metadata and reproducible rc.1 artifacts, run all local gates, and publish the installable RC changes for review."
   ],
   "decisions": [
     "Use the Core harness profile only; no hooks, daemon, event journal, database, or client adapter.",

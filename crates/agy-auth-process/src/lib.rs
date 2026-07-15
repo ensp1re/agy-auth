@@ -1,10 +1,10 @@
 //! Safe official-client discovery and bounded argv-based process execution.
 
-use std::ffi::OsStr;
+use std::ffi::{OsStr, OsString};
 use std::fs;
 use std::io::{self, Read};
 use std::path::{Path, PathBuf};
-use std::process::{Command, ExitStatus, Stdio};
+use std::process::{Child, Command, ExitStatus, Stdio};
 use std::thread;
 use std::time::{Duration, Instant};
 
@@ -197,12 +197,11 @@ where
     if timeout.is_zero() || max_stream_bytes == 0 {
         return Err(ProcessError::InvalidLimit);
     }
-    let mut child = Command::new(executable)
-        .args(arguments)
-        .stdin(Stdio::null())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()?;
+    let arguments = arguments
+        .into_iter()
+        .map(|argument| argument.as_ref().to_owned())
+        .collect::<Vec<OsString>>();
+    let mut child = spawn_bounded(executable, &arguments)?;
     let stdout = child.stdout.take().ok_or(ProcessError::MissingPipe)?;
     let stderr = child.stderr.take().ok_or(ProcessError::MissingPipe)?;
     let stdout_reader = thread::spawn(move || drain_bounded(stdout, max_stream_bytes));
@@ -230,6 +229,26 @@ where
         stdout_truncated,
         stderr_truncated,
     })
+}
+
+fn spawn_bounded(executable: &Path, arguments: &[OsString]) -> io::Result<Child> {
+    const ATTEMPTS: usize = 4;
+    for attempt in 0..ATTEMPTS {
+        match Command::new(executable)
+            .args(arguments)
+            .stdin(Stdio::null())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+        {
+            Ok(child) => return Ok(child),
+            Err(error) if error.raw_os_error() == Some(26) && attempt + 1 < ATTEMPTS => {
+                thread::sleep(Duration::from_millis(10));
+            }
+            Err(error) => return Err(error),
+        }
+    }
+    unreachable!("spawn loop returns on every final attempt")
 }
 
 fn drain_bounded(mut reader: impl Read, limit: usize) -> io::Result<(Vec<u8>, bool)> {
@@ -359,6 +378,7 @@ mod tests {
     use super::{DiscoveryError, OfficialClient, ProcessError, discover_client, run_bounded};
     use std::ffi::{OsStr, OsString};
     use std::fs;
+    use std::io::Write;
     use std::os::unix::fs::PermissionsExt;
     use std::path::{Path, PathBuf};
     use std::sync::atomic::{AtomicU64, Ordering};
@@ -380,7 +400,11 @@ mod tests {
         let _ = fs::remove_dir_all(&directory);
         fs::create_dir(&directory).expect("create fixture directory");
         let executable = directory.join(name);
-        fs::write(&executable, format!("#!/bin/sh\n{body}\n")).expect("write fixture");
+        let mut file = fs::File::create(&executable).expect("create fixture");
+        file.write_all(format!("#!/bin/sh\n{body}\n").as_bytes())
+            .expect("write fixture");
+        file.sync_all().expect("sync fixture");
+        drop(file);
         let mut permissions = fs::metadata(&executable).expect("metadata").permissions();
         permissions.set_mode(0o700);
         fs::set_permissions(&executable, permissions).expect("make executable");
