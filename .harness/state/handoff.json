@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-15T21:27:31Z",
+  "updatedAt": "2026-07-15T21:28:39Z",
   "goal": "Harden agy-auth doctor with read-only project filesystem diagnostics.",
   "scope": [
     "phase-2b-doctor-filesystem-diagnostics"
   ],
-  "status": "active",
+  "status": "ready_for_review",
   "git": {
     "branch": "feature/doctor-filesystem-diagnostics",
-    "head": "be45bb15242556a327b6b8f83c26a7ef0b937185",
+    "head": "46609266737bc3771f0ff6dcc7313fc9b7d22361",
     "worktree": "dirty"
   },
   "completed": [
@@ -31,10 +31,11 @@
     "ADR 0006 selects diagnostics-only behavior until a supported Antigravity profile contract exists.",
     "Diagnostics-only decision pull request 10 was merged at commit c54ecb7ddeaa20bd1e72b8423bec4a2c6555705b.",
     "The agy-auth doctor vertical slice was implemented at 8d4ac78 with human/JSON output, stable exit codes, and no authentication access.",
-    "Doctor diagnostics pull request 11 was merged at commit be45bb15242556a327b6b8f83c26a7ef0b937185."
+    "Doctor diagnostics pull request 11 was merged at commit be45bb15242556a327b6b8f83c26a7ef0b937185.",
+    "Doctor filesystem hardening at 4660926 detects unsafe data roots and interrupted project transactions without paths, names, or contents."
   ],
   "nextActions": [
-    "Complete filesystem edge-case tests, run all local gates, and publish doctor hardening for review."
+    "Review and merge the doctor filesystem diagnostics pull request."
   ],
   "decisions": [
     "Use the Core harness profile only; no hooks, daemon, event journal, database, or client adapter.",
