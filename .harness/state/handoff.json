@@ -1,20 +1,22 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-15T23:09:00Z",
+  "updatedAt": "2026-07-15T23:12:00Z",
   "goal": "Implement secure managed profile directories and fake add/exec application contracts.",
   "scope": ["phase-3-managed-profile-contracts"],
-  "status": "active",
+  "status": "ready_for_review",
   "git": {
     "branch": "feature/managed-profile-contracts",
-    "head": "8b578a8b185f7d36d0565be34bb03c772961fb03",
-    "worktree": "dirty"
+    "head": "7c98a2069a7cd5c0bdc9cf575a52ec1f52f0008c",
+    "worktree": "clean"
   },
   "completed": [
     "PR 19 merged the TTY-preserving isolated launcher at 8b578a8b185f7d36d0565be34bb03c772961fb03.",
-    "The next slice is restricted to managed project directories and fake catalog/client adapters."
+    "The next slice is restricted to managed project directories and fake catalog/client adapters.",
+    "Managed UUID-derived homes/runtime directories are idempotent and owner-only; unsafe links, modes, types, and Linux owners fail closed.",
+    "Fake add reserves pending metadata before login, commits ready after success, and retains pending state after failure; fake exec requires ready status."
   ],
   "nextActions": [
-    "Verify managed directory security and fake add/exec ordering, then deliver the slice for review."
+    "Review and merge the managed profile contracts, then implement the atomic registry catalog adapter behind an experimental fake-client CLI gate."
   ],
   "decisions": [
     "Profile UUIDs are the only values used to derive managed filesystem paths.",
@@ -24,7 +26,13 @@
     "How should the next atomic registry adapter expose pending-profile recovery to the CLI?"
   ],
   "verification": {
-    "passed": [],
+    "passed": [
+      "python3 scripts/check.py: passing; 42 tests and all project-local gates",
+      "cargo deny check: advisories, bans, licenses, and sources passing",
+      "managed directory tests: UUID paths, 0700 modes, idempotency, symlink and unsafe-mode refusal",
+      "application contracts: pending/ready ordering, failed-login recovery, ready-only exec, literal argv and exit 23",
+      "context budgets: root instructions 2213/8000 and live startup state 5658/16000 bytes"
+    ],
     "failed": [],
     "notRun": [
       "No real Antigravity login, identity observation, credential access, or model prompt is included.",

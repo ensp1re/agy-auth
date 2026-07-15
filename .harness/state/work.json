@@ -65,7 +65,23 @@
         "No CLI command, real login, credential access, or production capability is enabled."
       ],
       "blocker": null,
-      "verification": [],
+      "verification": [
+        {
+          "command": "python3 scripts/check.py && cargo deny check",
+          "revision": "7c98a2069a7cd5c0bdc9cf575a52ec1f52f0008c",
+          "outcome": "passing; 42 tests, dependency policy, compatibility, release identity, secrets, and project harness checks"
+        },
+        {
+          "command": "cargo test -p agy-auth-app -p agy-auth-storage",
+          "revision": "7c98a2069a7cd5c0bdc9cf575a52ec1f52f0008c",
+          "outcome": "passing; pending-before-login, ready-after-success, failed-login recovery, ready-only exec, literal argv/exit, secure directory creation and refusal"
+        },
+        {
+          "command": "build-agent-harness structural validation and context budget evaluation",
+          "revision": "7c98a2069a7cd5c0bdc9cf575a52ec1f52f0008c",
+          "outcome": "structural rules pass; only expected closeout head/worktree warnings before evidence commit; budgets 2213/8000 and 5658/16000 bytes passing"
+        }
+      ],
       "completion": null
     }
   ]
