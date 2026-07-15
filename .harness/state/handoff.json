@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-15T21:37:44Z",
+  "updatedAt": "2026-07-15T21:39:15Z",
   "goal": "Add release-readiness contracts and compatibility metadata for diagnostics-only agy-auth.",
   "scope": [
     "phase-4-release-readiness-foundation"
   ],
-  "status": "active",
+  "status": "ready_for_review",
   "git": {
     "branch": "feature/release-readiness-foundation",
-    "head": "26579ef78439b2138cafa3ef293f12eae5f0f8fa",
+    "head": "86139d982d5b04c9ccdde698140fcfaaa4eabfd3",
     "worktree": "dirty"
   },
   "completed": [
@@ -33,10 +33,11 @@
     "The agy-auth doctor vertical slice was implemented at 8d4ac78 with human/JSON output, stable exit codes, and no authentication access.",
     "Doctor diagnostics pull request 11 was merged at commit be45bb15242556a327b6b8f83c26a7ef0b937185.",
     "Doctor filesystem hardening at 4660926 detects unsafe data roots and interrupted project transactions without paths, names, or contents.",
-    "Doctor filesystem diagnostics pull request 12 was merged at commit 26579ef78439b2138cafa3ef293f12eae5f0f8fa."
+    "Doctor filesystem diagnostics pull request 12 was merged at commit 26579ef78439b2138cafa3ef293f12eae5f0f8fa.",
+    "Release-readiness foundation at 86139d9 adds compiled-binary contracts, build identity, and a validated agy 1.1.2 compatibility ledger."
   ],
   "nextActions": [
-    "Complete end-to-end and build-metadata validation, then publish the release-readiness foundation for review."
+    "Review and merge the release-readiness foundation pull request."
   ],
   "decisions": [
     "Use the Core harness profile only; no hooks, daemon, event journal, database, or client adapter.",
