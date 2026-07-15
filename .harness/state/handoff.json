@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-15T20:13:00Z",
+  "updatedAt": "2026-07-15T20:15:00Z",
   "goal": "Implement safe official-client discovery and bounded process execution.",
   "scope": [
     "phase-1-client-discovery"
@@ -8,7 +8,7 @@
   "status": "ready_for_review",
   "git": {
     "branch": "feat/client-discovery",
-    "head": "c506fcc8f17ceee7df1cb593f7d3cc719e32a08c",
+    "head": "764691d9ed1bcf4ea73bf5c4ae315e7f523c3524",
     "worktree": "dirty"
   },
   "completed": [
@@ -17,10 +17,11 @@
     "The Phase 0 Rust workspace, crate boundaries, CLI shell, policies, and CI definition were implemented.",
     "Pull request 1 was merged at commit 1f9a36d39818c347f0a04714f91df8a9a1140580.",
     "Profile registry pull request 2 was merged at commit 73f24b65889f78b6e44bf77c53424ca896db55ee.",
-    "The VPS agy binary was observed at /root/.local/bin/agy and reports version 1.1.2 from --version; no authentication state was accessed."
+    "The VPS agy binary was observed at /root/.local/bin/agy and reports version 1.1.2 from --version; no authentication state was accessed.",
+    "Client discovery pull request 3 was opened at https://github.com/ensp1re/gemini-auth/pull/3."
   ],
   "nextActions": [
-    "Push the client discovery branch and open its pull request using the recorded local and agy 1.1.2 evidence."
+    "Review and merge pull request 3 using the recorded local and agy 1.1.2 evidence; hosted CI remains deferred."
   ],
   "decisions": [
     "Use the Core harness profile only; no hooks, daemon, event journal, database, or client adapter.",
