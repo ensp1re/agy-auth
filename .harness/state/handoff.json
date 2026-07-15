@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-15T22:04:20Z",
-  "goal": "Build the MIT-licensed installable Linux release candidate without external publication.",
+  "updatedAt": "2026-07-15T22:13:51Z",
+  "goal": "Prepare the diagnostics-only rc.1 publication preflight without external publication.",
   "scope": [
-    "phase-4-mit-installable-release-candidate"
+    "phase-4-release-publication-preflight"
   ],
-  "status": "ready_for_review",
+  "status": "active",
   "git": {
-    "branch": "feature/mit-installable-rc",
-    "head": "e32c15d262e3b0a666e91586133bfc392ed34a42",
+    "branch": "chore/record-production-diagnostics-smoke",
+    "head": "13efd35877ab719985649d2093ce253a55be147c",
     "worktree": "dirty"
   },
   "completed": [
@@ -39,10 +39,12 @@
     "Linux local RC tooling at 7ebddee produces reproducible archives, verified checksums, and a 68-package SPDX SBOM.",
     "Linux local RC tooling pull request 14 was merged at commit 2f8fe0622bf13d5414701c12e25975b05ffffabe.",
     "The user approved the MIT license; copyright identity is Enspire.",
-    "The MIT installable rc.1 at e32c15d is reproducible, checksum-verified, SPDX-labeled, and passes extracted-binary diagnostics."
+    "The MIT installable rc.1 at e32c15d is reproducible, checksum-verified, SPDX-labeled, and passes extracted-binary diagnostics.",
+    "MIT installable rc.1 pull request 15 was merged at commit 13efd35877ab719985649d2093ce253a55be147c.",
+    "The merged rc.1 was installed at /root/.local/bin/agy-auth and passed production human/JSON diagnostics against agy 1.1.2."
   ],
   "nextActions": [
-    "Review and merge the MIT installable release-candidate pull request."
+    "Prepare diagnostics-only release notes and publication preflight; request explicit approval before tagging or uploading artifacts."
   ],
   "decisions": [
     "Use the Core harness profile only; no hooks, daemon, event journal, database, or client adapter.",

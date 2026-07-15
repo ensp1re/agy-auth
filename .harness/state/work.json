@@ -384,7 +384,7 @@
     {
       "id": "phase-4-mit-installable-release-candidate",
       "title": "Build the MIT-licensed installable Linux release candidate",
-      "status": "active",
+      "status": "passing",
       "source": "docs/11-operations-release.md",
       "plan": "docs/plans/phase-4-mit-installable-release-candidate.md",
       "acceptance": [
@@ -415,8 +415,34 @@
           "command": "agy-auth-process tests repeated five times and strict harness validation",
           "revision": "e32c15d262e3b0a666e91586133bfc392ed34a42",
           "outcome": "passing; ETXTBSY retry stable and harness has 0 errors/warnings"
+        },
+        {
+          "command": "install merged rc.1 to /root/.local/bin/agy-auth and run human/JSON doctor against installed agy 1.1.2",
+          "revision": "13efd35877ab719985649d2093ce253a55be147c",
+          "outcome": "passing; installed hash matched archive, registry healthy, no recovery, switching unsupported, mutation disabled"
         }
       ],
+      "completion": {
+        "commit": "13efd35877ab719985649d2093ce253a55be147c",
+        "review": "https://github.com/ensp1re/agy-auth/pull/15",
+        "completedAt": "2026-07-15T22:11:59Z"
+      }
+    },
+    {
+      "id": "phase-4-release-publication-preflight",
+      "title": "Prepare the diagnostics-only rc.1 publication preflight",
+      "status": "active",
+      "source": "docs/11-operations-release.md",
+      "plan": null,
+      "acceptance": [
+        "Release notes clearly state diagnostics-only scope and unsupported profile switching.",
+        "Tag and artifact versioning are consistent with rc.1.",
+        "Archive, checksum, SPDX SBOM, and installation instructions are ready from the merged revision.",
+        "Deferred hosted CI and untested non-Linux targets are disclosed.",
+        "No tag, GitHub release, or artifact upload occurs without explicit user approval."
+      ],
+      "blocker": null,
+      "verification": [],
       "completion": null
     }
   ]
