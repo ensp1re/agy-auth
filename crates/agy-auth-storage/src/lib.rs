@@ -4,4 +4,4 @@ mod profiles;
 mod registry;
 
 pub use profiles::{ManagedProfileHomeError, ManagedProfileHomes};
-pub use registry::{RegistryDoctorProbe, RegistryFile, RegistryStoreError};
+pub use registry::{RegistryCatalog, RegistryDoctorProbe, RegistryFile, RegistryStoreError};

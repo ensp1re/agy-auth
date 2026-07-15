@@ -1,4 +1,6 @@
-use agy_auth_app::{DoctorRegistryProbe, RegistryDiagnostic};
+use agy_auth_app::{
+    DoctorRegistryProbe, ProfileCatalogPort, ProfileWorkflowError, RegistryDiagnostic,
+};
 use agy_auth_domain::{
     DomainError, Profile, ProfileId, ProfileName, ProfileStatus, ProviderKind, Registry,
     StorageLocator,
@@ -26,6 +28,57 @@ pub struct RegistryFile {
 pub struct RegistryDoctorProbe {
     data_root: PathBuf,
     registry: RegistryFile,
+}
+
+/// Atomic adapter for non-secret profile catalog workflow transitions.
+#[derive(Debug)]
+pub struct RegistryCatalog {
+    registry: RegistryFile,
+}
+
+impl RegistryCatalog {
+    /// Configure the catalog registry path.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the path has no parent or filename.
+    pub fn new(path: impl Into<PathBuf>) -> Result<Self, RegistryStoreError> {
+        RegistryFile::new(path).map(|registry| Self { registry })
+    }
+
+    /// Load one profile by normalized name.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the registry cannot be safely loaded.
+    pub fn profile(&self, name: &str) -> Result<Option<Profile>, RegistryStoreError> {
+        let name = ProfileName::parse(name)?;
+        self.registry
+            .load()
+            .map(|registry| registry.find_by_name(&name).cloned())
+    }
+}
+
+impl ProfileCatalogPort for RegistryCatalog {
+    fn reserve(&self, profile: &Profile) -> Result<(), ProfileWorkflowError> {
+        let profile = profile.clone();
+        self.registry
+            .update(move |registry| registry.add(profile))
+            .map_err(|_| ProfileWorkflowError::CatalogReserveFailed)
+    }
+
+    fn mark_ready(
+        &self,
+        profile_id: ProfileId,
+        client_version: &str,
+    ) -> Result<(), ProfileWorkflowError> {
+        let client_version = client_version.to_owned();
+        self.registry
+            .update(move |registry| {
+                registry.mark_ready(profile_id, &client_version, OffsetDateTime::now_utc())
+            })
+            .map_err(|_| ProfileWorkflowError::CatalogCommitFailed)
+    }
 }
 
 impl RegistryDoctorProbe {
@@ -253,6 +306,39 @@ impl RegistryFile {
         lock.try_lock_exclusive()
             .map_err(|_| RegistryStoreError::Locked)?;
         let result = self.write_locked(registry);
+        let _ = FileExt::unlock(&lock);
+        result
+    }
+
+    /// Atomically load, mutate, validate, and replace the registry under one exclusive lock.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for lock contention, unsafe state, invalid mutation, or durable-write failure.
+    pub fn update(
+        &self,
+        operation: impl FnOnce(&mut Registry) -> Result<(), DomainError>,
+    ) -> Result<(), RegistryStoreError> {
+        let parent = self
+            .path
+            .parent()
+            .ok_or(RegistryStoreError::MissingParent)?;
+        fs::create_dir_all(parent)?;
+        reject_unsafe_existing(&self.lock_path)?;
+        let lock = OpenOptions::new()
+            .create(true)
+            .truncate(false)
+            .read(true)
+            .write(true)
+            .open(&self.lock_path)?;
+        lock.try_lock_exclusive()
+            .map_err(|_| RegistryStoreError::Locked)?;
+        let result = (|| {
+            let mut registry = load_path(&self.path)?;
+            operation(&mut registry)?;
+            registry.validate()?;
+            self.write_locked(&registry)
+        })();
         let _ = FileExt::unlock(&lock);
         result
     }

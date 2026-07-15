@@ -7,6 +7,9 @@ publish.workspace = true
 repository.workspace = true
 license.workspace = true
 
+[features]
+experimental-fake-client = []
+
 [[bin]]
 name = "agy-auth"
 path = "src/main.rs"

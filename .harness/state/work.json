@@ -5,82 +5,45 @@
   "retention": "Keep the active item and at most two recently passing items; durable outcomes belong in specifications, ADRs, commits, and reviews.",
   "items": [
     {
-      "id": "phase-3-linux-isolated-home-contract",
-      "title": "Establish the Linux unofficial isolated-home contract",
-      "status": "passing",
-      "source": "docs/adr/0007-versioned-unofficial-isolated-homes.md",
-      "plan": "docs/plans/phase-3-linux-isolated-home-contract.md",
-      "acceptance": [
-        "ADR 0007 authorizes version-scoped black-box isolation while production capabilities remain gated."
-      ],
-      "blocker": null,
-      "verification": [
-        {
-          "command": "synthetic isolation tests and local gates",
-          "revision": "9edeb984bf6a503dbf54418627514052bcb739ce",
-          "outcome": "passing; distinct cleared environments and unsafe-root refusal"
-        }
-      ],
-      "completion": {
-        "commit": "d443d626674bbeaaf5d6867c6269463a1f21375e",
-        "review": "https://github.com/ensp1re/agy-auth/pull/18",
-        "completedAt": "2026-07-15T22:56:33Z"
-      }
-    },
-    {
       "id": "phase-3-tty-isolated-launcher",
       "title": "Implement the TTY-preserving isolated launcher",
       "status": "passing",
       "source": "docs/07-cli-specification.md",
       "plan": "docs/plans/phase-3-tty-isolated-launcher.md",
-      "acceptance": [
-        "Interactive children inherit standard streams, direct argv, validated TERM, and a cleared environment.",
-        "Two empty homes safely probe installed agy 1.1.2 with --version only."
-      ],
+      "acceptance": ["Interactive isolated process and installed --version probes pass."],
       "blocker": null,
-      "verification": [
-        {
-          "command": "python3 scripts/check.py; fake launcher tests; two installed-client --version probes",
-          "revision": "c71f0d583568591ee89b86ae1f5bd07182898794",
-          "outcome": "passing; 37 tests, exact child status/argv, empty disposable homes, and local policy gates"
-        }
-      ],
-      "completion": {
-        "commit": "8b578a8b185f7d36d0565be34bb03c772961fb03",
-        "review": "https://github.com/ensp1re/agy-auth/pull/19",
-        "completedAt": "2026-07-15T23:06:25Z"
-      }
+      "verification": [{"command": "local gates and installed probes", "revision": "c71f0d583568591ee89b86ae1f5bd07182898794", "outcome": "passing"}],
+      "completion": {"commit": "8b578a8b185f7d36d0565be34bb03c772961fb03", "review": "https://github.com/ensp1re/agy-auth/pull/19", "completedAt": "2026-07-15T23:06:25Z"}
     },
     {
       "id": "phase-3-managed-profile-contracts",
       "title": "Implement managed profile directories and fake add/exec contracts",
-      "status": "active",
+      "status": "passing",
       "source": "docs/04-architecture.md",
       "plan": "docs/plans/phase-3-managed-profile-contracts.md",
+      "acceptance": ["Owner-only UUID homes and fake add/exec application contracts pass."],
+      "blocker": null,
+      "verification": [{"command": "python3 scripts/check.py and focused contracts", "revision": "7c98a2069a7cd5c0bdc9cf575a52ec1f52f0008c", "outcome": "passing; 42 tests"}],
+      "completion": {"commit": "9ae9f67b02a9b6b7dfa4eb088ec8d8c943fddc33", "review": "https://github.com/ensp1re/agy-auth/pull/20", "completedAt": "2026-07-15T23:13:24Z"}
+    },
+    {
+      "id": "phase-3-experimental-profile-cli",
+      "title": "Implement atomic catalog and experimental fake-client CLI",
+      "status": "active",
+      "source": "docs/07-cli-specification.md",
+      "plan": "docs/plans/phase-3-experimental-profile-cli.md",
       "acceptance": [
-        "Managed profile directories derive only from UUIDs and are owner-only.",
-        "Relative roots, links, non-directories, unsafe permissions, and Linux ownership fail closed.",
-        "Fake add reserves pending metadata before delegated login and commits ready only after success.",
-        "Fake exec refuses non-ready profiles and preserves literal argv and exact child status.",
-        "No CLI command, real login, credential access, or production capability is enabled."
+        "Registry read-modify-write occurs under one exclusive lock.",
+        "Pending-to-ready transition validates profile state, client version, and timestamp.",
+        "Hidden fake add/exec commands exist only under a non-default compile-time feature.",
+        "The fake gate accepts no executable path and cannot launch real agy.",
+        "End-to-end tests cover duplicate refusal, ready metadata, literal argv, and exact exit status."
       ],
       "blocker": null,
       "verification": [
-        {
-          "command": "python3 scripts/check.py && cargo deny check",
-          "revision": "7c98a2069a7cd5c0bdc9cf575a52ec1f52f0008c",
-          "outcome": "passing; 42 tests, dependency policy, compatibility, release identity, secrets, and project harness checks"
-        },
-        {
-          "command": "cargo test -p agy-auth-app -p agy-auth-storage",
-          "revision": "7c98a2069a7cd5c0bdc9cf575a52ec1f52f0008c",
-          "outcome": "passing; pending-before-login, ready-after-success, failed-login recovery, ready-only exec, literal argv/exit, secure directory creation and refusal"
-        },
-        {
-          "command": "build-agent-harness structural validation and context budget evaluation",
-          "revision": "7c98a2069a7cd5c0bdc9cf575a52ec1f52f0008c",
-          "outcome": "structural rules pass; only expected closeout head/worktree warnings before evidence commit; budgets 2213/8000 and 5658/16000 bytes passing"
-        }
+        {"command": "python3 scripts/check.py && cargo deny check", "revision": "37ae856392cf7823a62bc5dc7a34b15c2fd85725", "outcome": "passing; 43 tests, policy, compatibility, release identity, secrets, and harness checks"},
+        {"command": "cargo test --workspace --all-features", "revision": "37ae856392cf7823a62bc5dc7a34b15c2fd85725", "outcome": "passing; atomic fake add/exec E2E, duplicate exit 3, ready metadata, 0700 root, and fake exit 23"},
+        {"command": "strict harness validation and context budgets", "revision": "37ae856392cf7823a62bc5dc7a34b15c2fd85725", "outcome": "passing; 0 errors/warnings and budgets 2213/8000 plus 4503/16000 bytes"}
       ],
       "completion": null
     }
