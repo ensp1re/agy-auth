@@ -75,7 +75,23 @@
         "No real profile command or authentication mutation is enabled before dedicated-account validation."
       ],
       "blocker": null,
-      "verification": [],
+      "verification": [
+        {
+          "command": "python3 scripts/check.py && cargo deny check",
+          "revision": "9edeb984bf6a503dbf54418627514052bcb739ce",
+          "outcome": "passing; 35 tests, dependency policy, compatibility, release identity, secrets, and harness checks"
+        },
+        {
+          "command": "cargo test -p agy-auth-process --lib",
+          "revision": "9edeb984bf6a503dbf54418627514052bcb739ce",
+          "outcome": "passing; distinct synthetic homes/XDG/runtime, cleared inherited environment, direct argv, and unsafe/shared/linked root refusal"
+        },
+        {
+          "command": "strict harness validation and context budget evaluation",
+          "revision": "9edeb984bf6a503dbf54418627514052bcb739ce",
+          "outcome": "passing; 0 errors/warnings, root instructions 2213/8000 bytes, live startup state 6713/16000 bytes"
+        }
+      ],
       "completion": null
     }
   ]
