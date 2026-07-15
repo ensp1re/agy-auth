@@ -176,6 +176,84 @@ pub struct ProcessOutput {
     pub stderr_truncated: bool,
 }
 
+/// Explicit, minimal environment for launching a client inside a managed profile home.
+///
+/// Every path must name an existing absolute directory. On Unix, group or other permission bits
+/// are rejected. The child receives no inherited environment variables.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct IsolatedClientEnvironment {
+    home: PathBuf,
+    runtime_directory: PathBuf,
+    search_path: OsString,
+}
+
+impl IsolatedClientEnvironment {
+    /// Validate the two isolation roots and construct a deterministic child environment.
+    ///
+    /// # Errors
+    ///
+    /// Returns a process error when either directory is relative, missing, linked, not a
+    /// directory, or accessible by group/other users on Unix, or when `PATH` is empty.
+    pub fn new(
+        home: PathBuf,
+        runtime_directory: PathBuf,
+        search_path: OsString,
+    ) -> Result<Self, ProcessError> {
+        validate_isolation_directory(&home)?;
+        validate_isolation_directory(&runtime_directory)?;
+        if home == runtime_directory {
+            return Err(ProcessError::UnsafeIsolation(
+                "home and runtime directory must differ",
+            ));
+        }
+        if search_path.is_empty() {
+            return Err(ProcessError::UnsafeIsolation("PATH must not be empty"));
+        }
+        Ok(Self {
+            home,
+            runtime_directory,
+            search_path,
+        })
+    }
+
+    fn apply(&self, command: &mut Command) {
+        command
+            .env_clear()
+            .env("HOME", &self.home)
+            .env("XDG_CONFIG_HOME", self.home.join(".config"))
+            .env("XDG_DATA_HOME", self.home.join(".local/share"))
+            .env("XDG_STATE_HOME", self.home.join(".local/state"))
+            .env("XDG_CACHE_HOME", self.home.join(".cache"))
+            .env("XDG_RUNTIME_DIR", &self.runtime_directory)
+            .env("PATH", &self.search_path)
+            .env("LANG", "C.UTF-8");
+    }
+}
+
+fn validate_isolation_directory(path: &Path) -> Result<(), ProcessError> {
+    if !path.is_absolute() {
+        return Err(ProcessError::UnsafeIsolation(
+            "isolation directory must be absolute",
+        ));
+    }
+    let metadata = fs::symlink_metadata(path)?;
+    if metadata.file_type().is_symlink() || !metadata.is_dir() {
+        return Err(ProcessError::UnsafeIsolation(
+            "isolation directory must be a real directory",
+        ));
+    }
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        if metadata.permissions().mode() & 0o077 != 0 {
+            return Err(ProcessError::UnsafeIsolation(
+                "isolation directory permissions must be owner-only",
+            ));
+        }
+    }
+    Ok(())
+}
+
 /// Run an executable directly with argv values, bounded output, and a wall-clock timeout.
 ///
 /// The child inherits no stdin. Output readers continue draining after their capture budget is
@@ -202,6 +280,76 @@ where
         .map(|argument| argument.as_ref().to_owned())
         .collect::<Vec<OsString>>();
     let mut child = spawn_bounded(executable, &arguments)?;
+    collect_bounded(&mut child, timeout, max_stream_bytes)
+}
+
+/// Run a client with a cleared environment and profile-specific home/runtime roots.
+///
+/// This primitive is intentionally non-interactive and suitable only for synthetic probes. A
+/// future interactive launcher must preserve terminal behavior without broadening the environment
+/// allowlist.
+///
+/// # Errors
+///
+/// Returns an error when limits are invalid or process execution fails.
+pub fn run_bounded_isolated<I, S>(
+    executable: &Path,
+    arguments: I,
+    environment: &IsolatedClientEnvironment,
+    timeout: Duration,
+    max_stream_bytes: usize,
+) -> Result<ProcessOutput, ProcessError>
+where
+    I: IntoIterator<Item = S>,
+    S: AsRef<OsStr>,
+{
+    if timeout.is_zero() || max_stream_bytes == 0 {
+        return Err(ProcessError::InvalidLimit);
+    }
+    let arguments = arguments
+        .into_iter()
+        .map(|argument| argument.as_ref().to_owned())
+        .collect::<Vec<OsString>>();
+    let mut child = spawn_with_retry(executable, &arguments, |command| {
+        environment.apply(command);
+    })?;
+    collect_bounded(&mut child, timeout, max_stream_bytes)
+}
+
+fn spawn_bounded(executable: &Path, arguments: &[OsString]) -> io::Result<Child> {
+    spawn_with_retry(executable, arguments, |_| {})
+}
+
+fn spawn_with_retry(
+    executable: &Path,
+    arguments: &[OsString],
+    configure: impl Fn(&mut Command),
+) -> io::Result<Child> {
+    const ATTEMPTS: usize = 4;
+    for attempt in 0..ATTEMPTS {
+        let mut command = Command::new(executable);
+        command
+            .args(arguments)
+            .stdin(Stdio::null())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped());
+        configure(&mut command);
+        match command.spawn() {
+            Ok(child) => return Ok(child),
+            Err(error) if error.raw_os_error() == Some(26) && attempt + 1 < ATTEMPTS => {
+                thread::sleep(Duration::from_millis(10));
+            }
+            Err(error) => return Err(error),
+        }
+    }
+    unreachable!("spawn loop returns on every final attempt")
+}
+
+fn collect_bounded(
+    child: &mut Child,
+    timeout: Duration,
+    max_stream_bytes: usize,
+) -> Result<ProcessOutput, ProcessError> {
     let stdout = child.stdout.take().ok_or(ProcessError::MissingPipe)?;
     let stderr = child.stderr.take().ok_or(ProcessError::MissingPipe)?;
     let stdout_reader = thread::spawn(move || drain_bounded(stdout, max_stream_bytes));
@@ -229,26 +377,6 @@ where
         stdout_truncated,
         stderr_truncated,
     })
-}
-
-fn spawn_bounded(executable: &Path, arguments: &[OsString]) -> io::Result<Child> {
-    const ATTEMPTS: usize = 4;
-    for attempt in 0..ATTEMPTS {
-        match Command::new(executable)
-            .args(arguments)
-            .stdin(Stdio::null())
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .spawn()
-        {
-            Ok(child) => return Ok(child),
-            Err(error) if error.raw_os_error() == Some(26) && attempt + 1 < ATTEMPTS => {
-                thread::sleep(Duration::from_millis(10));
-            }
-            Err(error) => return Err(error),
-        }
-    }
-    unreachable!("spawn loop returns on every final attempt")
 }
 
 fn drain_bounded(mut reader: impl Read, limit: usize) -> io::Result<(Vec<u8>, bool)> {
@@ -337,6 +465,8 @@ pub enum ProcessError {
     EmptyVersion,
     /// Version line was oversized or contained control characters.
     InvalidVersion,
+    /// A requested isolated process environment does not meet safety invariants.
+    UnsafeIsolation(&'static str),
     /// Process or pipe I/O failed.
     Io(io::Error),
 }
@@ -359,6 +489,7 @@ impl std::fmt::Display for ProcessError {
             Self::InvalidVersion => {
                 formatter.write_str("official client returned an invalid version")
             }
+            Self::UnsafeIsolation(reason) => write!(formatter, "unsafe isolation: {reason}"),
             Self::Io(_) => formatter.write_str("official client process I/O failed"),
         }
     }
@@ -375,11 +506,15 @@ impl std::error::Error for ProcessError {
 
 #[cfg(all(test, unix))]
 mod tests {
-    use super::{DiscoveryError, OfficialClient, ProcessError, discover_client, run_bounded};
+    use super::{
+        DiscoveryError, IsolatedClientEnvironment, OfficialClient, ProcessError, discover_client,
+        run_bounded, run_bounded_isolated,
+    };
     use std::ffi::{OsStr, OsString};
     use std::fs;
     use std::io::Write;
     use std::os::unix::fs::PermissionsExt;
+    use std::os::unix::fs::symlink;
     use std::path::{Path, PathBuf};
     use std::sync::atomic::{AtomicU64, Ordering};
     use std::time::{Duration, SystemTime, UNIX_EPOCH};
@@ -489,5 +624,101 @@ mod tests {
             discover_client(OfficialClient::GeminiCli, Some(&directory), None),
             Err(DiscoveryError::UnsafeFileType)
         ));
+    }
+
+    #[test]
+    fn isolated_profiles_receive_distinct_allowlisted_environments() {
+        let (directory, executable) = fixture(
+            "environment",
+            "printf '%s|%s|%s|%s' \"$HOME\" \"$XDG_DATA_HOME\" \"$XDG_RUNTIME_DIR\" \"${USER-unset}\"",
+        );
+        let work_home = directory.join("work-home");
+        let work_runtime = directory.join("work-runtime");
+        let personal_home = directory.join("personal-home");
+        let personal_runtime = directory.join("personal-runtime");
+        for path in [&work_home, &work_runtime, &personal_home, &personal_runtime] {
+            fs::create_dir(path).expect("create isolation directory");
+            fs::set_permissions(path, fs::Permissions::from_mode(0o700))
+                .expect("secure isolation directory");
+        }
+        let path = OsString::from("/usr/bin:/bin");
+        let work =
+            IsolatedClientEnvironment::new(work_home.clone(), work_runtime.clone(), path.clone())
+                .expect("work environment");
+        let personal =
+            IsolatedClientEnvironment::new(personal_home.clone(), personal_runtime.clone(), path)
+                .expect("personal environment");
+        let work_output = run_bounded_isolated(
+            &executable,
+            std::iter::empty::<&OsStr>(),
+            &work,
+            Duration::from_secs(1),
+            4096,
+        )
+        .expect("run work profile");
+        let personal_output = run_bounded_isolated(
+            &executable,
+            std::iter::empty::<&OsStr>(),
+            &personal,
+            Duration::from_secs(1),
+            4096,
+        )
+        .expect("run personal profile");
+        let expected_work = format!(
+            "{}|{}|{}|unset",
+            work_home.display(),
+            work_home.join(".local/share").display(),
+            work_runtime.display()
+        );
+        let expected_personal = format!(
+            "{}|{}|{}|unset",
+            personal_home.display(),
+            personal_home.join(".local/share").display(),
+            personal_runtime.display()
+        );
+        assert_eq!(work_output.stdout, expected_work.as_bytes());
+        assert_eq!(personal_output.stdout, expected_personal.as_bytes());
+        assert_ne!(work_output.stdout, personal_output.stdout);
+        remove(&directory);
+    }
+
+    #[test]
+    fn isolated_environment_rejects_shared_or_linked_directories() {
+        let (directory, _) = fixture("unused", "exit 0");
+        let shared = directory.join("shared");
+        let runtime = directory.join("runtime");
+        fs::create_dir(&shared).expect("create shared directory");
+        fs::create_dir(&runtime).expect("create runtime directory");
+        fs::set_permissions(&shared, fs::Permissions::from_mode(0o755))
+            .expect("set shared permissions");
+        fs::set_permissions(&runtime, fs::Permissions::from_mode(0o700))
+            .expect("set runtime permissions");
+        let linked = directory.join("linked");
+        symlink(&runtime, &linked).expect("create linked directory");
+        assert!(matches!(
+            IsolatedClientEnvironment::new(
+                linked,
+                runtime.clone(),
+                OsString::from("/usr/bin:/bin")
+            ),
+            Err(ProcessError::UnsafeIsolation(_))
+        ));
+        assert!(matches!(
+            IsolatedClientEnvironment::new(
+                shared,
+                runtime.clone(),
+                OsString::from("/usr/bin:/bin")
+            ),
+            Err(ProcessError::UnsafeIsolation(_))
+        ));
+        assert!(matches!(
+            IsolatedClientEnvironment::new(
+                runtime.clone(),
+                runtime,
+                OsString::from("/usr/bin:/bin")
+            ),
+            Err(ProcessError::UnsafeIsolation(_))
+        ));
+        remove(&directory);
     }
 }

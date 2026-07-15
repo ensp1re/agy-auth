@@ -9,7 +9,7 @@ Phases are evidence gates, not calendar promises.
 - Non-secret registry and safe process discovery.
 - Contribution, security, and harness workflow.
 
-## Phase 1 — Antigravity product transition (active)
+## Phase 1 — Antigravity product transition (complete)
 
 - Rename product and binary to `agy-auth`.
 - Make `provider-antigravity-cli` the sole MVP provider.
@@ -46,6 +46,7 @@ authentication access, model requests, or misleading support claims.
 
 ## Phase 3 — First vertical profile slice
 
+- establish the version-scoped Linux isolated-home contract from ADR 0007;
 - `add` through the official login flow;
 - `list` and `current` using non-secret metadata;
 - `exec <profile> -- agy` where an official isolated mechanism exists, otherwise transactional `use`;

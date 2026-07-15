@@ -1,120 +1,70 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-15T22:24:43Z",
-  "goal": "Prepare the diagnostics-only rc.1 publication preflight without external publication.",
+  "updatedAt": "2026-07-15T22:50:45Z",
+  "goal": "Establish a version-scoped Linux isolated-home contract without reading or copying Antigravity credentials.",
   "scope": [
-    "phase-4-release-publication-preflight"
+    "phase-3-linux-isolated-home-contract"
   ],
-  "status": "ready_for_review",
+  "status": "active",
   "git": {
-    "branch": "release/v0.1.0-rc.1-preflight",
-    "head": "7a0d2ba0746ab407e806e18408d0f05241d10a1f",
-    "worktree": "clean"
+    "branch": "feature/linux-isolated-home-contract",
+    "head": "4aa3b93acfc9d7fd7111d50688b8db51be7d6768",
+    "worktree": "dirty"
   },
   "completed": [
-    "Approved product, stack, architecture, security boundaries, and roadmap are documented.",
-    "The Core project harness was designed around the existing authoritative documents.",
-    "The Phase 0 Rust workspace, crate boundaries, CLI shell, policies, and CI definition were implemented.",
-    "Pull request 1 was merged at commit 1f9a36d39818c347f0a04714f91df8a9a1140580.",
-    "Profile registry pull request 2 was merged at commit 73f24b65889f78b6e44bf77c53424ca896db55ee.",
-    "The VPS agy binary was observed at /root/.local/bin/agy and reports version 1.1.2 from --version; no authentication state was accessed.",
-    "Client discovery pull request 3 was merged at commit c6be00c4225b66900a2d0b725260c87b046b1da4.",
-    "Gemini isolated-home pull request 4 was closed because consumer Gemini CLI transitioned to Antigravity CLI.",
-    "Antigravity transition pull request 5 was merged at commit 8846b9846e9b92c0b0f7a7e1b61c1384a9e872d0.",
-    "The GitHub repository was renamed to https://github.com/ensp1re/agy-auth.",
-    "The agy 1.1.2 public command surface and official authentication documentation were inventoried without accessing authentication state.",
-    "Capability inventory pull request 7 was merged at commit 833f3216838c73db811f08f7a192105dcb817ad5.",
-    "A dedicated-account Linux observation protocol was designed in pull request 8 and merged at commit 4394b9f2e14fe74dc513733f60fea0ae803f51cd.",
-    "The first Linux observation attempt stopped because agy silently reused an existing identity; no logout occurred and all disposable state was removed.",
-    "Failed-attempt pull request 9 was merged at commit b3f97af74fdf1b94f50117abe90e945e63fcdeff.",
-    "A corrected clean-environment retry produced the same identity reuse and was stopped and cleaned up without logout or a model prompt.",
-    "ADR 0006 selects diagnostics-only behavior until a supported Antigravity profile contract exists.",
-    "Diagnostics-only decision pull request 10 was merged at commit c54ecb7ddeaa20bd1e72b8423bec4a2c6555705b.",
-    "The agy-auth doctor vertical slice was implemented at 8d4ac78 with human/JSON output, stable exit codes, and no authentication access.",
-    "Doctor diagnostics pull request 11 was merged at commit be45bb15242556a327b6b8f83c26a7ef0b937185.",
-    "Doctor filesystem hardening at 4660926 detects unsafe data roots and interrupted project transactions without paths, names, or contents.",
-    "Doctor filesystem diagnostics pull request 12 was merged at commit 26579ef78439b2138cafa3ef293f12eae5f0f8fa.",
-    "Release-readiness foundation at 86139d9 adds compiled-binary contracts, build identity, and a validated agy 1.1.2 compatibility ledger.",
-    "Release-readiness pull request 13 was merged at commit d7ac4f2b7c9bc0b4a0f60b4c8105674f8d75f297.",
-    "Linux local RC tooling at 7ebddee produces reproducible archives, verified checksums, and a 68-package SPDX SBOM.",
-    "Linux local RC tooling pull request 14 was merged at commit 2f8fe0622bf13d5414701c12e25975b05ffffabe.",
-    "The user approved the MIT license; copyright identity is Enspire.",
-    "The MIT installable rc.1 at e32c15d is reproducible, checksum-verified, SPDX-labeled, and passes extracted-binary diagnostics.",
-    "MIT installable rc.1 pull request 15 was merged at commit 13efd35877ab719985649d2093ce253a55be147c.",
-    "The merged rc.1 was installed at /root/.local/bin/agy-auth and passed production human/JSON diagnostics against agy 1.1.2.",
-    "Production diagnostics smoke pull request 16 was merged at commit dbb996be48909c297785e556a06cf9f7e1118835.",
-    "The v0.1.0-rc.1 publication preflight at 7a0d2ba is reproducible and locally verified; no tag, GitHub release, or artifact upload was created."
+    "The diagnostics-only v0.1.0-rc.1 prerelease was published from merged commit 4aa3b93 with reproducible Linux artifacts.",
+    "The product owner approved a clearly labeled, version-scoped reverse-engineered isolated-home strategy for legitimate work/personal account separation.",
+    "Private APIs, OAuth implementation, token parsing/copying, keyring enumeration, and quota-driven switching remain excluded."
   ],
   "nextActions": [
-    "Review and merge the v0.1.0-rc.1 publication preflight pull request, then request explicit approval before tagging or uploading artifacts."
+    "Verify the synthetic isolated-process primitive and deliver ADR 0007 plus its bounded implementation for review."
   ],
   "decisions": [
-    "Use the Core harness profile only; no hooks, daemon, event journal, database, or client adapter.",
-    "Treat the numbered documentation and ADRs as authoritative rather than duplicating them in agent instructions."
+    "Supersede ADR 0006 with ADR 0007 while leaving production profile switching disabled until the black-box evidence gate passes.",
+    "Delegate login, refresh, and model requests exclusively to the official agy process in separate project-managed homes."
   ],
   "openQuestions": [
-    "The MVP research questions in docs/12-open-questions.md must be resolved before claiming Antigravity profile isolation works."
+    "Which minimal TTY and D-Bus environment is required for two dedicated agy 1.1.2 accounts without cross-home identity reuse?",
+    "Which secret-safe observation can confirm the expected dedicated account without retaining a full email?"
   ],
   "verification": {
-    "passed": [
-      "python3 scripts/harness/validate.py: passing",
-      "python3 scripts/harness/context.py: state consistent",
-      "build-agent-harness validate_harness.py --strict: 0 errors and 0 warnings",
-      "build-agent-harness evaluate_context_budget.py: both budgets passing",
-      "python3 -m py_compile scripts/harness/context.py scripts/harness/validate.py: passing",
-      "cargo clippy --workspace --all-targets --all-features -- -D warnings: passing",
-      "cargo test --workspace --all-features: 3 tests passing",
-      "cargo deny check: advisories, bans, licenses, and sources passing",
-      "profile registry at 05dbd82: 14 tests passing, including lock contention, symlink refusal, 0600 permissions, schema rejection, and repeated round trips",
-      "client discovery at c506fcc: 20 tests passing plus installed agy 1.1.2 smoke test passing",
-      "Antigravity transition at bfe91d7: renamed workspace, 20 tests, agy 1.1.2 smoke test, dependency policy, and strict harness validation passing",
-      "Short naming at f02d8fb: agy-auth binary and agy-auth-* crates compile and pass all local gates",
-      "python3 scripts/check_dependencies.py: passing",
-      "python3 scripts/check_no_secrets.py: passing",
-      "release preflight at 7a0d2ba: 33 tests and dependency policy passing",
-      "two v0.1.0-rc.1 builds: archive and SPDX SBOM byte-identical",
-      "extracted v0.1.0-rc.1 binary: embedded revision/target and agy 1.1.2 diagnostics passing",
-      "proposed tag v0.1.0-rc.1 and GitHub release: absent"
-    ],
+    "passed": [],
     "failed": [],
     "notRun": [
-      "Cross-client portability is untested; only the canonical AGENTS.md surface is configured.",
-      "GitHub-hosted Linux, macOS, Windows, and dependency-policy jobs did not start because of the account usage limit; the user explicitly deferred hosted CI for this task."
+      "No real account login or authentication-state experiment is authorized in this task.",
+      "macOS, Windows, desktop keyrings, and hosted CI are not tested."
     ]
   },
   "risks": [
-    "Antigravity CLI authentication storage and profile isolation remain unverified and must not be represented as supported.",
-    "Cross-platform CI remains unverified while GitHub Actions usage is unavailable.",
-    "The accumulated live startup state is 31583 bytes against the harness evaluator's 16000-byte advisory budget; structural validation remains clean."
+    "Antigravity may discover identity outside HOME/XDG roots; any reuse across clean homes must stop enablement.",
+    "The strategy is unofficial and must be reverified for every agy version change."
   ],
   "touchedPaths": [
     "AGENTS.md",
-    ".harness/manifest.json",
+    "crates/agy-auth-process/src/lib.rs",
+    "docs/01-product-scope.md",
+    "docs/04-architecture.md",
+    "docs/07-cli-specification.md",
+    "docs/08-security-policy.md",
+    "docs/10-delivery-roadmap.md",
+    "docs/12-open-questions.md",
+    "docs/releases/v0.1.0-rc.1.md",
+    "docs/adr/0006-diagnostics-only-until-supported-profile-contract.md",
+    "docs/adr/0007-versioned-unofficial-isolated-homes.md",
+    "docs/plans/phase-3-linux-isolated-home-contract.md",
+    "scripts/check_release_preflight.py",
     ".harness/state/work.json",
-    ".harness/state/handoff.json",
-    "scripts/harness/context.py",
-    "scripts/harness/validate.py",
-    "Cargo.toml",
-    "Cargo.lock",
-    "rust-toolchain.toml",
-    "deny.toml",
-    "crates/",
-    "scripts/check.py",
-    "scripts/check_dependencies.py",
-    "scripts/check_no_secrets.py",
-    ".github/workflows/ci.yml",
-    "CONTRIBUTING.md",
-    "SECURITY.md"
+    ".harness/state/handoff.json"
   ],
   "doNotRepeat": [
-    "Do not launch the test user with inherited root environment values or from the operator's working directory; the July 15 attempt silently reused an existing identity.",
-    "Do not repeat Linux authentication experiments without new official documentation or a materially new reviewed isolation hypothesis; the corrected clean-environment attempt also reused an existing identity."
+    "Do not inspect, hash, copy, diff, print, or retain credential contents or private Antigravity logs.",
+    "Do not enable real profile commands based only on discovered filenames or a single-account launch."
   ],
   "contextSources": [
     "docs/01-product-scope.md",
     "docs/04-architecture.md",
     "docs/08-security-policy.md",
-    "docs/10-delivery-roadmap.md",
-    "docs/12-open-questions.md"
+    "docs/adr/0007-versioned-unofficial-isolated-homes.md",
+    "docs/plans/phase-3-linux-isolated-home-contract.md"
   ]
 }

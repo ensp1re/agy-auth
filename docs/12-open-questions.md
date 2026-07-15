@@ -2,12 +2,13 @@
 
 ## Must resolve before real profile mutation
 
-1. Does `agy` expose an official account, profile, or home-isolation command?
+1. Which minimal cleared environment makes Linux SSH homes independent for `agy 1.1.2`?
 2. Which paths and keyring entries contain authentication state on Linux, macOS, Windows, and SSH?
 3. Does an override isolate credentials, settings, workspace trust, conversations, and policy together?
 4. How does `agy` behave if authentication state is switched while it or a child process is running?
 5. Does refresh preserve unknown fields and remain associated with the selected account?
-6. Which non-authenticated command can verify login success without making a model request?
+6. Which secret-safe observation can verify the expected dedicated account without retaining a full
+   email or making an automated model request?
 7. What changes across `agy` versions, starting with the observed `1.1.2`?
 
 ## Product decisions

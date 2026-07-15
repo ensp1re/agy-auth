@@ -86,6 +86,7 @@ fn process_code(error: &ProcessError) -> &'static str {
         ProcessError::ProbeFailed(_) => "client_version_failed",
         ProcessError::EmptyVersion => "client_version_empty",
         ProcessError::InvalidVersion => "client_version_invalid",
+        ProcessError::UnsafeIsolation(_) => "client_isolation_unsafe",
         ProcessError::InvalidLimit
         | ProcessError::MissingPipe
         | ProcessError::ReaderPanicked

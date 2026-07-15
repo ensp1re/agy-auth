@@ -74,8 +74,9 @@ warning after confirmation but must never bypass unsafe paths, permissions, sche
 agy-auth exec <name> -- agy [args...]
 ```
 
-Enabled only if an official profile/home mechanism isolates all auth state. Arguments are direct argv
-values, child exit status is propagated, and only reviewed child environment changes are permitted.
+Enabled only if an official or version-scoped project-verified isolated-home mechanism separates all
+relevant client state. Arguments are direct argv values, child exit status is propagated, and only
+reviewed child environment changes are permitted.
 
 ### `rename` and `remove`
 
