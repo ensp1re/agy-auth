@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-15T21:57:01Z",
+  "updatedAt": "2026-07-15T21:58:24Z",
   "goal": "Build a reproducible, local-only Linux release candidate with checksum and SPDX SBOM.",
   "scope": [
     "phase-4-linux-release-candidate"
   ],
-  "status": "active",
+  "status": "ready_for_review",
   "git": {
     "branch": "feature/linux-release-candidate",
-    "head": "d7ac4f2b7c9bc0b4a0f60b4c8105674f8d75f297",
+    "head": "7ebddeee3adc1d11d3dfc7785fbaad08e33ad145",
     "worktree": "dirty"
   },
   "completed": [
@@ -35,10 +35,11 @@
     "Doctor filesystem hardening at 4660926 detects unsafe data roots and interrupted project transactions without paths, names, or contents.",
     "Doctor filesystem diagnostics pull request 12 was merged at commit 26579ef78439b2138cafa3ef293f12eae5f0f8fa.",
     "Release-readiness foundation at 86139d9 adds compiled-binary contracts, build identity, and a validated agy 1.1.2 compatibility ledger.",
-    "Release-readiness pull request 13 was merged at commit d7ac4f2b7c9bc0b4a0f60b4c8105674f8d75f297."
+    "Release-readiness pull request 13 was merged at commit d7ac4f2b7c9bc0b4a0f60b4c8105674f8d75f297.",
+    "Linux local RC tooling at 7ebddee produces reproducible archives, verified checksums, and a 68-package SPDX SBOM."
   ],
   "nextActions": [
-    "Verify clean-tree reproducibility, extracted-binary diagnostics, all local gates, and publish the local RC tooling for review."
+    "Review and merge the Linux local release-candidate tooling pull request."
   ],
   "decisions": [
     "Use the Core harness profile only; no hooks, daemon, event journal, database, or client adapter.",

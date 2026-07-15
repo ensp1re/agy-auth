@@ -353,7 +353,28 @@
         "Artifacts are clearly local-only and no external release is published."
       ],
       "blocker": null,
-      "verification": [],
+      "verification": [
+        {
+          "command": "python3 scripts/check.py && cargo deny check",
+          "revision": "7ebddeee3adc1d11d3dfc7785fbaad08e33ad145",
+          "outcome": "passing; 33 tests plus one expected ignored installed-client smoke and all local policy gates"
+        },
+        {
+          "command": "scripts/package_linux_rc.sh dist/run-one and dist/run-two",
+          "revision": "7ebddeee3adc1d11d3dfc7785fbaad08e33ad145",
+          "outcome": "passing; byte-identical archive and SPDX SBOM hashes across two clean-tree builds"
+        },
+        {
+          "command": "sha256sum -c local RC manifests and extracted-binary doctor smoke",
+          "revision": "7ebddeee3adc1d11d3dfc7785fbaad08e33ad145",
+          "outcome": "passing; embedded revision/target, agy 1.1.2 probe, and mutation-disabled gate verified"
+        },
+        {
+          "command": "dirty-worktree packaging refusal and strict harness validation",
+          "revision": "7ebddeee3adc1d11d3dfc7785fbaad08e33ad145",
+          "outcome": "passing; dirty tree exits 2 and harness reports 0 errors/warnings"
+        }
+      ],
       "completion": null
     }
   ]
