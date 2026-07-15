@@ -5,45 +5,43 @@
   "retention": "Keep the active item and at most two recently passing items; durable outcomes belong in specifications, ADRs, commits, and reviews.",
   "items": [
     {
-      "id": "phase-3-tty-isolated-launcher",
-      "title": "Implement the TTY-preserving isolated launcher",
-      "status": "passing",
-      "source": "docs/07-cli-specification.md",
-      "plan": "docs/plans/phase-3-tty-isolated-launcher.md",
-      "acceptance": ["Interactive isolated process and installed --version probes pass."],
-      "blocker": null,
-      "verification": [{"command": "local gates and installed probes", "revision": "c71f0d583568591ee89b86ae1f5bd07182898794", "outcome": "passing"}],
-      "completion": {"commit": "8b578a8b185f7d36d0565be34bb03c772961fb03", "review": "https://github.com/ensp1re/agy-auth/pull/19", "completedAt": "2026-07-15T23:06:25Z"}
-    },
-    {
       "id": "phase-3-managed-profile-contracts",
       "title": "Implement managed profile directories and fake add/exec contracts",
       "status": "passing",
       "source": "docs/04-architecture.md",
       "plan": "docs/plans/phase-3-managed-profile-contracts.md",
-      "acceptance": ["Owner-only UUID homes and fake add/exec application contracts pass."],
+      "acceptance": ["Owner-only UUID homes and fake application contracts pass."],
       "blocker": null,
-      "verification": [{"command": "python3 scripts/check.py and focused contracts", "revision": "7c98a2069a7cd5c0bdc9cf575a52ec1f52f0008c", "outcome": "passing; 42 tests"}],
+      "verification": [{"command": "local gates", "revision": "7c98a2069a7cd5c0bdc9cf575a52ec1f52f0008c", "outcome": "passing; 42 tests"}],
       "completion": {"commit": "9ae9f67b02a9b6b7dfa4eb088ec8d8c943fddc33", "review": "https://github.com/ensp1re/agy-auth/pull/20", "completedAt": "2026-07-15T23:13:24Z"}
     },
     {
       "id": "phase-3-experimental-profile-cli",
       "title": "Implement atomic catalog and experimental fake-client CLI",
-      "status": "active",
+      "status": "passing",
       "source": "docs/07-cli-specification.md",
       "plan": "docs/plans/phase-3-experimental-profile-cli.md",
+      "acceptance": ["Atomic fake add/exec journey is compile-time gated and cannot launch real agy."],
+      "blocker": null,
+      "verification": [{"command": "python3 scripts/check.py and fake E2E", "revision": "37ae856392cf7823a62bc5dc7a34b15c2fd85725", "outcome": "passing; 43 tests"}],
+      "completion": {"commit": "3dffadce450b7f025549ddc09c355a5d29c9d9c3", "review": "https://github.com/ensp1re/agy-auth/pull/21", "completedAt": "2026-07-15T23:20:46Z"}
+    },
+    {
+      "id": "phase-3-ssh-file-fallback-observation",
+      "title": "Observe disposable SSH file-fallback identity behavior",
+      "status": "active",
+      "source": "docs/adr/0007-versioned-unofficial-isolated-homes.md",
+      "plan": "docs/research/linux-ssh-file-fallback-observation-2026-07-16.md",
       "acceptance": [
-        "Registry read-modify-write occurs under one exclusive lock.",
-        "Pending-to-ready transition validates profile state, client version, and timestamp.",
-        "Hidden fake add/exec commands exist only under a non-default compile-time feature.",
-        "The fake gate accepts no executable path and cannot launch real agy.",
-        "End-to-end tests cover duplicate refusal, ready metadata, literal argv, and exact exit status."
+        "A fresh non-root home uses env -i, a dedicated work/runtime boundary, synthetic SSH marker, and no D-Bus variables.",
+        "No terminal input, login/logout command, model prompt, credential access, or raw output retention occurs.",
+        "Only identity/login booleans, bounded entry counts, exit status, and cleanup evidence are recorded.",
+        "Any result remains capability-gated until dedicated-account login, restart, refresh, concurrency, and teardown pass."
       ],
       "blocker": null,
       "verification": [
-        {"command": "python3 scripts/check.py && cargo deny check", "revision": "37ae856392cf7823a62bc5dc7a34b15c2fd85725", "outcome": "passing; 43 tests, policy, compatibility, release identity, secrets, and harness checks"},
-        {"command": "cargo test --workspace --all-features", "revision": "37ae856392cf7823a62bc5dc7a34b15c2fd85725", "outcome": "passing; atomic fake add/exec E2E, duplicate exit 3, ready metadata, 0700 root, and fake exit 23"},
-        {"command": "strict harness validation and context budgets", "revision": "37ae856392cf7823a62bc5dc7a34b15c2fd85725", "outcome": "passing; 0 errors/warnings and budgets 2213/8000 plus 4503/16000 bytes"}
+        {"command": "bounded disposable non-root pseudo-terminal observation", "revision": "3dffadce450b7f025549ddc09c355a5d29c9d9c3", "outcome": "inconclusive but materially different; no existing identity and no login screen observed before timeout; no input sent"},
+        {"command": "post-observation cleanup audit", "revision": "3dffadce450b7f025549ddc09c355a5d29c9d9c3", "outcome": "passing; user, home, runtime, copied binary, transcript, and client processes absent"}
       ],
       "completion": null
     }

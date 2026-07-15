@@ -1,21 +1,17 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-15T23:22:00Z",
-  "goal": "Implement atomic catalog transitions and a compile-time-gated in-process fake profile CLI.",
-  "scope": ["phase-3-experimental-profile-cli"],
+  "updatedAt": "2026-07-15T23:25:00Z",
+  "goal": "Record the controlled SSH/no-D-Bus real-client identity-reuse observation without retaining identity or secret data.",
+  "scope": ["phase-3-ssh-file-fallback-observation"],
   "status": "ready_for_review",
-  "git": {"branch": "feature/experimental-profile-cli", "head": "37ae856392cf7823a62bc5dc7a34b15c2fd85725", "worktree": "clean"},
-  "completed": [
-    "PR 20 merged managed profile directories and fake application contracts at 9ae9f67b02a9b6b7dfa4eb088ec8d8c943fddc33.",
-    "The experimental CLI is compile-time gated and uses an in-process fake with no executable path.",
-    "Atomic registry mutation and the fake add/exec end-to-end journey pass without launching real agy."
-  ],
-  "nextActions": ["Review and merge the experimental fake CLI, then design the controlled disposable real-client identity-reuse observation."],
-  "decisions": ["Release binaries omit the experimental-fake-client feature and remain diagnostics-only."],
-  "openQuestions": ["After review, approve the first disposable real-client identity-reuse observation."],
-  "verification": {"passed": ["python3 scripts/check.py: 43 tests and all local gates", "cargo deny check: passing", "experimental fake add/exec E2E: duplicate refusal, ready metadata, owner-only root, exit 23", "strict harness validation: 0 errors and warnings", "context budgets: passing"], "failed": [], "notRun": ["No real agy process, login, identity observation, credential access, or model prompt is included.", "Hosted CI and non-Linux platforms remain untested."]},
-  "risks": ["The next real-client experiment may still reuse the existing identity across an empty home."],
-  "touchedPaths": ["crates/agy-auth-domain/src/lib.rs", "crates/agy-auth-app/src/lib.rs", "crates/agy-auth-storage/src/registry.rs", "crates/agy-auth-cli/Cargo.toml", "crates/agy-auth-cli/src/main.rs", "crates/agy-auth-cli/tests/experimental_profiles_e2e.rs", "docs/07-cli-specification.md", "docs/plans/phase-3-experimental-profile-cli.md", ".harness/state/work.json", ".harness/state/handoff.json"],
-  "doNotRepeat": ["Do not add an executable path to the fake gate or enable it in release packaging."],
-  "contextSources": ["docs/07-cli-specification.md", "docs/08-security-policy.md", "docs/adr/0007-versioned-unofficial-isolated-homes.md", "docs/plans/phase-3-experimental-profile-cli.md"]
+  "git": {"branch": "research/linux-ssh-file-fallback-observation", "head": "3dffadce450b7f025549ddc09c355a5d29c9d9c3", "worktree": "dirty"},
+  "completed": ["PR 21 merged at 3dffadce450b7f025549ddc09c355a5d29c9d9c3.", "A bounded fresh-user SSH/no-D-Bus launch showed no existing identity and no recognizable login screen before forced timeout.", "All disposable state and raw output were removed."],
+  "nextActions": ["Review this inconclusive observation, then separately approve a human-attended dedicated-account login-chooser experiment."],
+  "decisions": ["Absence of identity reuse is promising but insufficient to enable real profile commands."],
+  "openQuestions": ["Will the same boundary present the official login chooser with a longer human-attended session?"],
+  "verification": {"passed": ["no identity visible", "no input or model prompt", "cleanup complete"], "failed": [], "notRun": ["Dedicated login, restart, refresh, concurrency, and profile switching were not run."]},
+  "risks": ["The process required forced termination and did not reach a recognizable login state."],
+  "touchedPaths": ["docs/research/linux-ssh-file-fallback-observation-2026-07-16.md", ".harness/state/work.json", ".harness/state/handoff.json"],
+  "doNotRepeat": ["Do not interpret this observation as profile isolation support or enable real commands."],
+  "contextSources": ["docs/adr/0007-versioned-unofficial-isolated-homes.md", "docs/research/linux-ssh-file-fallback-observation-2026-07-16.md"]
 }
