@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Print bounded, deterministic startup context for antigravity-auth."""
+"""Print bounded, deterministic startup context for agy-auth."""
 
 from __future__ import annotations
 

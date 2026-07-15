@@ -5,7 +5,7 @@
 Use ports and adapters with strict dependency direction:
 
 ```text
-antigravity-auth-cli -> application -> domain/ports
+agy-auth-cli -> application -> domain/ports
 process, storage, and provider-antigravity-cli implement infrastructure boundaries
 ```
 

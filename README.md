@@ -1,6 +1,6 @@
-# antigravity-auth
+# agy-auth
 
-`antigravity-auth` is a planned local profile manager for Google Antigravity CLI (`agy`). It aims to
+`agy-auth` is a planned local profile manager for Google Antigravity CLI (`agy`). It aims to
 let one person select among their own legitimate Google account contexts without implementing OAuth,
 calling Google model backends, pooling quota, or sharing credentials.
 
@@ -19,12 +19,12 @@ for real Antigravity authentication state.
 The target interface, subject to capability verification, is:
 
 ```text
-antigravity-auth add personal
-antigravity-auth add work
-antigravity-auth list
-antigravity-auth use personal
-antigravity-auth current
-antigravity-auth exec work -- agy
+agy-auth add personal
+agy-auth add work
+agy-auth list
+agy-auth use personal
+agy-auth current
+agy-auth exec work -- agy
 ```
 
 Commands that require an unverified storage capability must fail closed with a clear diagnostic.

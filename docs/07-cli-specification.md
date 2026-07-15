@@ -1,6 +1,6 @@
 # CLI Specification
 
-Binary name: `antigravity-auth`. The official client executable is `agy`.
+Binary name: `agy-auth`. The official client executable is `agy`.
 
 ## Global flags
 
@@ -22,7 +22,7 @@ Diagnostics never include credential values, authorization URLs, full emails, or
 ### `doctor`
 
 ```text
-antigravity-auth doctor [--repair]
+agy-auth doctor [--repair]
 ```
 
 MVP-safe diagnostics include executable discovery/version, registry validity, local directory
@@ -32,8 +32,8 @@ must not alter Antigravity authentication state until a mutation contract is ver
 ### `list` and `current`
 
 ```text
-antigravity-auth list
-antigravity-auth current
+agy-auth list
+agy-auth current
 ```
 
 These commands report project-owned non-secret registry metadata. They must distinguish registered,
@@ -42,7 +42,7 @@ selected, verified-active, unknown, stale, and unsupported states without guessi
 ### `add`
 
 ```text
-antigravity-auth add <name> [--client <path>]
+agy-auth add <name> [--client <path>]
 ```
 
 Enabled only after a verified strategy delegates login to official `agy` under an isolated or
@@ -51,7 +51,7 @@ transaction-safe profile context. Otherwise return `unsupported_provider_mode` w
 ### `use`
 
 ```text
-antigravity-auth use <name> [--force]
+agy-auth use <name> [--force]
 ```
 
 Enabled only for a verified reversible selection strategy. `--force` may bypass a running-process
@@ -60,7 +60,7 @@ warning after confirmation but must never bypass unsafe paths, permissions, sche
 ### `exec`
 
 ```text
-antigravity-auth exec <name> -- agy [args...]
+agy-auth exec <name> -- agy [args...]
 ```
 
 Enabled only if an official profile/home mechanism isolates all auth state. Arguments are direct argv

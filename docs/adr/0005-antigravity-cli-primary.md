@@ -12,7 +12,7 @@ through the installed Antigravity CLI (`agy 1.1.2`) but not Gemini CLI.
 
 ## Decision
 
-Rename the product and binary to `antigravity-auth`, make Antigravity CLI the sole MVP provider, and
+Rename the product and binary to `agy-auth`, make Antigravity CLI the sole MVP provider, and
 move Gemini CLI to deferred legacy/enterprise compatibility. Close the unmerged Gemini isolated-home
 implementation. Do not enable Antigravity auth-state mutation until a supported or independently
 verified, reversible storage/profile contract exists.
@@ -23,7 +23,7 @@ verified, reversible storage/profile contract exists.
 - Existing registry and process infrastructure remain reusable.
 - Prior Gemini isolated-home assumptions no longer drive the MVP.
 - The next milestone is capability research, not credential implementation.
-- Repository URL remains `ensp1re/antigravity-auth` until the migration PR is reviewed and merged.
+- Repository URL remains `ensp1re/agy-auth` until the migration PR is reviewed and merged.
 
 ## Sources
 

@@ -368,7 +368,7 @@ mod tests {
 
     fn fixture(name: &str, body: &str) -> (PathBuf, PathBuf) {
         let directory = std::env::temp_dir().join(format!(
-            "antigravity-auth-process-{}-{}-{}-{}",
+            "agy-auth-process-{}-{}-{}-{}",
             std::process::id(),
             name,
             FIXTURE_SEQUENCE.fetch_add(1, Ordering::Relaxed),

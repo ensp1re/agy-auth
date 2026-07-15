@@ -53,8 +53,8 @@ Nightly/scheduled:
 Provider compatibility is reported separately from tool version:
 
 ```text
-antigravity-auth doctor
-antigravity-auth 0.1.0
+agy-auth doctor
+agy-auth 0.1.0
 Antigravity CLI 1.1.2: discovered (auth storage capability unverified)
 Registry schema: 1
 Pending recovery: none
@@ -76,6 +76,6 @@ No telemetry in v1. If crash/usage telemetry is ever proposed, it must be opt-in
 Document two independent operations:
 
 - Remove executable/package: leaves profiles intact.
-- `antigravity-auth purge`: removes registry, managed isolated homes, and known keyring entries after a typed confirmation; it does not touch the official default client home unless a transaction created a clearly identified rollback artifact.
+- `agy-auth purge`: removes registry, managed isolated homes, and known keyring entries after a typed confirmation; it does not touch the official default client home unless a transaction created a clearly identified rollback artifact.
 
 Uninstall scripts must never recursively delete a path derived only from an environment variable or unvalidated config.

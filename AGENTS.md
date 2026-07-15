@@ -1,6 +1,6 @@
 # Agent instructions
 
-`antigravity-auth` is a capability-gated local profile manager for Google Antigravity CLI (`agy`).
+`agy-auth` is a capability-gated local profile manager for Google Antigravity CLI (`agy`).
 Preserve the hard boundary: never implement OAuth, backend API calls, quota-aware selection,
 credential sharing, or automatic account rotation. Never print, log, commit, or retain real secrets.
 

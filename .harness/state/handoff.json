@@ -8,7 +8,7 @@
   "status": "ready_for_review",
   "git": {
     "branch": "pivot/antigravity-auth",
-    "head": "e0c99e5765f191320814a9cdc9aaf05dfaef9a23",
+    "head": "f77012c45230a9991537bc40b3c53613a4db24b9",
     "worktree": "dirty"
   },
   "completed": [
@@ -23,7 +23,7 @@
     "Antigravity transition pull request 5 was opened at https://github.com/ensp1re/gemini-auth/pull/5."
   ],
   "nextActions": [
-    "Review and merge pull request 5, then rename the GitHub repository to antigravity-auth and reconcile links."
+    "Review and merge pull request 5, then rename the GitHub repository to agy-auth and reconcile links."
   ],
   "decisions": [
     "Use the Core harness profile only; no hooks, daemon, event journal, database, or client adapter.",

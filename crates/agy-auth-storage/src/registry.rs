@@ -1,4 +1,4 @@
-use antigravity_auth_domain::{
+use agy_auth_domain::{
     DomainError, Profile, ProfileId, ProfileName, ProfileStatus, ProviderKind, Registry,
     StorageLocator,
 };
@@ -364,7 +364,7 @@ pub enum RegistryStoreError {
 #[cfg(test)]
 mod tests {
     use super::{RegistryFile, RegistryStoreError};
-    use antigravity_auth_domain::{
+    use agy_auth_domain::{
         Profile, ProfileId, ProfileName, ProfileStatus, ProviderKind, Registry, StorageLocator,
     };
     use fs2::FileExt;
@@ -389,8 +389,7 @@ mod tests {
     }
 
     fn temporary_directory() -> std::path::PathBuf {
-        let path =
-            std::env::temp_dir().join(format!("antigravity-auth-test-{}", uuid::Uuid::new_v4()));
+        let path = std::env::temp_dir().join(format!("agy-auth-test-{}", uuid::Uuid::new_v4()));
         fs::create_dir(&path).expect("create test directory");
         path
     }

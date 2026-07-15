@@ -1,11 +1,11 @@
-#![doc = "Command-line entry point for antigravity-auth."]
+#![doc = "Command-line entry point for agy-auth."]
 
 use clap::Parser;
 use std::path::PathBuf;
 
 /// Capability-gated local profile management for Google Antigravity CLI.
 #[derive(Debug, Parser)]
-#[command(name = "antigravity-auth", version, about)]
+#[command(name = "agy-auth", version, about)]
 struct Cli {
     /// Emit stable machine-readable output.
     #[arg(long, global = true)]
@@ -51,7 +51,7 @@ mod tests {
 
     #[test]
     fn global_flags_parse() {
-        let cli = Cli::try_parse_from(["antigravity-auth", "--json", "--non-interactive"])
+        let cli = Cli::try_parse_from(["agy-auth", "--json", "--non-interactive"])
             .expect("documented global flags should parse");
         assert!(cli.json);
         assert!(cli.non_interactive);

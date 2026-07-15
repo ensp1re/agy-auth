@@ -8,13 +8,13 @@ import subprocess
 import sys
 
 ALLOWED = {
-    "antigravity-auth-domain": set(),
-    "antigravity-auth-process": set(),
-    "antigravity-auth-app": {"antigravity-auth-domain"},
-    "antigravity-auth-storage": {"antigravity-auth-domain"},
-    "provider-antigravity-cli": {"antigravity-auth-domain"},
-    "antigravity-auth-cli": {"antigravity-auth-app"},
-    "antigravity-auth-test-support": {"antigravity-auth-domain"},
+    "agy-auth-domain": set(),
+    "agy-auth-process": set(),
+    "agy-auth-app": {"agy-auth-domain"},
+    "agy-auth-storage": {"agy-auth-domain"},
+    "provider-antigravity-cli": {"agy-auth-domain"},
+    "agy-auth-cli": {"agy-auth-app"},
+    "agy-auth-test-support": {"agy-auth-domain"},
 }
 
 

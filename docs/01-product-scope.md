@@ -2,7 +2,7 @@
 
 ## Product definition
 
-`antigravity-auth` is a local profile-state orchestrator for Google Antigravity CLI (`agy`). It
+`agy-auth` is a local profile-state orchestrator for Google Antigravity CLI (`agy`). It
 manages non-secret profile metadata and, only where an official or independently verified local
 contract permits, selects the local authentication context used by the official client.
 

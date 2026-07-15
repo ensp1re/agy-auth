@@ -11,7 +11,7 @@ Phases are evidence gates, not calendar promises.
 
 ## Phase 1 — Antigravity product transition (active)
 
-- Rename product and binary to `antigravity-auth`.
+- Rename product and binary to `agy-auth`.
 - Make `provider-antigravity-cli` the sole MVP provider.
 - Record the May/June 2026 Gemini CLI transition in product truth and ADRs.
 - Remove the unverified Gemini isolated-home path from the MVP.

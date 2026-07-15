@@ -3,7 +3,7 @@
 ## Proposed workspace
 
 ```text
-antigravity-auth/
+agy-auth/
 ├── Cargo.toml                    # workspace members, shared lint/profile config
 ├── Cargo.lock                    # committed for executable reproducibility
 ├── README.md
@@ -13,14 +13,14 @@ antigravity-auth/
 ├── deny.toml                     # cargo-deny policy
 ├── rust-toolchain.toml           # pinned stable toolchain
 ├── crates/
-│   ├── antigravity-auth-cli/
+│   ├── agy-auth-cli/
 │   │   └── src/
 │   │       ├── main.rs
 │   │       ├── args.rs
 │   │       ├── output.rs
 │   │       ├── prompts.rs
 │   │       └── exit_codes.rs
-│   ├── antigravity-auth-app/
+│   ├── agy-auth-app/
 │   │   └── src/
 │   │       ├── lib.rs
 │   │       ├── add_profile.rs
@@ -30,7 +30,7 @@ antigravity-auth/
 │   │       ├── remove_profile.rs
 │   │       ├── import_export.rs
 │   │       └── doctor.rs
-│   ├── antigravity-auth-domain/
+│   ├── agy-auth-domain/
 │   │   └── src/
 │   │       ├── lib.rs
 │   │       ├── profile.rs
@@ -38,7 +38,7 @@ antigravity-auth/
 │   │       ├── capability.rs
 │   │       ├── transaction.rs
 │   │       └── error.rs
-│   ├── antigravity-auth-storage/
+│   ├── agy-auth-storage/
 │   │   └── src/
 │   │       ├── lib.rs
 │   │       ├── registry.rs
@@ -49,7 +49,7 @@ antigravity-auth/
 │   │       ├── lock.rs
 │   │       ├── journal.rs
 │   │       └── permissions.rs
-│   ├── antigravity-auth-process/
+│   ├── agy-auth-process/
 │   │   └── src/
 │   │       └── lib.rs
 │   ├── provider-antigravity-cli/
@@ -59,7 +59,7 @@ antigravity-auth/
 │   │       ├── file_mode.rs
 │   │       ├── schema.rs
 │   │       └── process_guard.rs
-│   └── antigravity-auth-test-support/
+│   └── agy-auth-test-support/
 │       └── src/
 │           ├── lib.rs
 │           ├── fake_keyring.rs
@@ -101,11 +101,11 @@ Use platform data/config conventions through the `directories` crate.
 Unix-style illustration:
 
 ```text
-~/.config/antigravity-auth/
+~/.config/agy-auth/
 ├── config.json                   # non-secret user preferences
 └── policy.json                   # optional admin/local restrictions
 
-~/.local/share/antigravity-auth/
+~/.local/share/agy-auth/
 ├── registry.json                 # non-secret profile metadata
 ├── active.json                   # selected profiles by provider
 ├── profiles/                     # only after a verified Antigravity isolation contract
@@ -116,7 +116,7 @@ Unix-style illustration:
 └── transactions/
     └── <transaction-uuid>.json
 
-~/.cache/antigravity-auth/
+~/.cache/agy-auth/
 └── diagnostics/                  # opt-in and redacted
 ```
 

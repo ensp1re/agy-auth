@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "status": "operational",
   "project": {
-    "name": "antigravity-auth",
+    "name": "agy-auth",
     "root": "."
   },
   "sources": {

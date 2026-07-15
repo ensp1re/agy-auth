@@ -3,6 +3,54 @@
 version = 4
 
 [[package]]
+name = "agy-auth-app"
+version = "0.1.0"
+dependencies = [
+ "agy-auth-domain",
+]
+
+[[package]]
+name = "agy-auth-cli"
+version = "0.1.0"
+dependencies = [
+ "agy-auth-app",
+ "clap",
+]
+
+[[package]]
+name = "agy-auth-domain"
+version = "0.1.0"
+dependencies = [
+ "time",
+ "unicode-normalization",
+ "uuid",
+]
+
+[[package]]
+name = "agy-auth-process"
+version = "0.1.0"
+
+[[package]]
+name = "agy-auth-storage"
+version = "0.1.0"
+dependencies = [
+ "agy-auth-domain",
+ "fs2",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "time",
+ "uuid",
+]
+
+[[package]]
+name = "agy-auth-test-support"
+version = "0.1.0"
+dependencies = [
+ "agy-auth-domain",
+]
+
+[[package]]
 name = "anstream"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -50,54 +98,6 @@ dependencies = [
  "anstyle",
  "once_cell_polyfill",
  "windows-sys",
-]
-
-[[package]]
-name = "antigravity-auth-app"
-version = "0.1.0"
-dependencies = [
- "antigravity-auth-domain",
-]
-
-[[package]]
-name = "antigravity-auth-cli"
-version = "0.1.0"
-dependencies = [
- "antigravity-auth-app",
- "clap",
-]
-
-[[package]]
-name = "antigravity-auth-domain"
-version = "0.1.0"
-dependencies = [
- "time",
- "unicode-normalization",
- "uuid",
-]
-
-[[package]]
-name = "antigravity-auth-process"
-version = "0.1.0"
-
-[[package]]
-name = "antigravity-auth-storage"
-version = "0.1.0"
-dependencies = [
- "antigravity-auth-domain",
- "fs2",
- "serde",
- "serde_json",
- "thiserror",
- "time",
- "uuid",
-]
-
-[[package]]
-name = "antigravity-auth-test-support"
-version = "0.1.0"
-dependencies = [
- "antigravity-auth-domain",
 ]
 
 [[package]]
@@ -296,7 +296,7 @@ dependencies = [
 name = "provider-antigravity-cli"
 version = "0.1.0"
 dependencies = [
- "antigravity-auth-domain",
+ "agy-auth-domain",
 ]
 
 [[package]]

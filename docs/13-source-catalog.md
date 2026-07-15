@@ -19,7 +19,7 @@ This document separates stable public contracts from local observations and desi
 | Project | Relevant pattern | Caution |
 |---|---|---|
 | [`Loongphy/codex-auth`](https://github.com/Loongphy/codex-auth) | Named account registry, explicit switching, import/export UX | Provider-specific direct API/usage behavior should not be copied |
-| [`NoeFabris/opencode-antigravity-auth`](https://github.com/NoeFabris/opencode-antigravity-auth) | Multiple Google account storage and model configuration | Quota rotation/backend access are outside this project's boundary |
+| [`NoeFabris/opencode-agy-auth`](https://github.com/NoeFabris/opencode-agy-auth) | Multiple Google account storage and model configuration | Quota rotation/backend access are outside this project's boundary |
 | [`lbjlaq/Antigravity-Manager`](https://github.com/lbjlaq/Antigravity-Manager) | Demonstrates broad compatibility complexity | It is a proxy; not a template for a local selector |
 | [`badrisnarayanan/antigravity-claude-proxy`](https://github.com/badrisnarayanan/antigravity-claude-proxy) | Antigravity credential reuse ecosystem | Proxy behavior is intentionally excluded |
 

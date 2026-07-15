@@ -108,7 +108,7 @@
           "outcome": "advisories, bans, licenses, and sources passing"
         },
         {
-          "command": "GEMINI_AUTH_TEST_AGY=/root/.local/bin/agy GEMINI_AUTH_TEST_AGY_VERSION=1.1.2 cargo test -p antigravity-auth-process --test installed_client -- --ignored --exact discovers_and_probes_installed_agy_without_authentication",
+          "command": "GEMINI_AUTH_TEST_AGY=/root/.local/bin/agy GEMINI_AUTH_TEST_AGY_VERSION=1.1.2 cargo test -p agy-auth-process --test installed_client -- --ignored --exact discovers_and_probes_installed_agy_without_authentication",
           "revision": "c506fcc8f17ceee7df1cb593f7d3cc719e32a08c",
           "outcome": "passing; agy 1.1.2 discovered and probed without authentication access"
         }
@@ -126,7 +126,7 @@
       "source": "docs/adr/0005-antigravity-cli-primary.md",
       "plan": null,
       "acceptance": [
-        "The product, binary, workspace crates, manifest, and current documentation use the antigravity-auth name.",
+        "The product, binary, workspace crates, manifest, and current documentation use the agy-auth name.",
         "Antigravity CLI is the sole MVP provider and Gemini CLI is documented only as deferred legacy/enterprise compatibility.",
         "The roadmap requires capability research before any real authentication-state mutation.",
         "The unmerged Gemini isolated-home pull request is closed with its rationale preserved.",
@@ -145,7 +145,7 @@
           "outcome": "advisories, bans, licenses, and sources passing"
         },
         {
-          "command": "ANTIGRAVITY_AUTH_TEST_AGY=/root/.local/bin/agy ANTIGRAVITY_AUTH_TEST_AGY_VERSION=1.1.2 cargo test -p antigravity-auth-process --test installed_client -- --ignored --exact discovers_and_probes_installed_agy_without_authentication",
+          "command": "AGY_AUTH_TEST_AGY=/root/.local/bin/agy AGY_AUTH_TEST_AGY_VERSION=1.1.2 cargo test -p agy-auth-process --test installed_client -- --ignored --exact discovers_and_probes_installed_agy_without_authentication",
           "revision": "bfe91d72075b40231b18e015d8681e9794ee8991",
           "outcome": "passing; installed agy 1.1.2 discovered without authentication access"
         }
