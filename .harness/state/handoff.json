@@ -1,24 +1,24 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-15T19:52:00Z",
-  "goal": "Begin Phase 0 by creating the Rust workspace foundation and its delivery checks.",
+  "updatedAt": "2026-07-15T19:52:41Z",
+  "goal": "Implement the versioned, non-secret profile registry with atomic locked persistence.",
   "scope": [
-    "phase-0-repository-foundation"
+    "phase-1-profile-registry"
   ],
-  "status": "ready_for_review",
+  "status": "active",
   "git": {
-    "branch": "feat/phase-0-repository-foundation",
-    "head": "5a4aface6d585efcdc7c062d79bd059da10e189e",
+    "branch": "feat/profile-registry",
+    "head": "1f9a36d39818c347f0a04714f91df8a9a1140580",
     "worktree": "dirty"
   },
   "completed": [
     "Approved product, stack, architecture, security boundaries, and roadmap are documented.",
     "The Core project harness was designed around the existing authoritative documents.",
     "The Phase 0 Rust workspace, crate boundaries, CLI shell, policies, and CI definition were implemented.",
-    "Pull request 1 was opened at https://github.com/ensp1re/gemini-auth/pull/1."
+    "Pull request 1 was merged at commit 1f9a36d39818c347f0a04714f91df8a9a1140580."
   ],
   "nextActions": [
-    "Review and merge pull request 1 using the recorded local verification; hosted CI is deferred by user direction."
+    "Implement and test the profile registry domain model before adding CLI commands."
   ],
   "decisions": [
     "Use the Core harness profile only; no hooks, daemon, event journal, database, or client adapter.",
