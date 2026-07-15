@@ -40,7 +40,11 @@
         "End-to-end tests cover duplicate refusal, ready metadata, literal argv, and exact exit status."
       ],
       "blocker": null,
-      "verification": [],
+      "verification": [
+        {"command": "python3 scripts/check.py && cargo deny check", "revision": "37ae856392cf7823a62bc5dc7a34b15c2fd85725", "outcome": "passing; 43 tests, policy, compatibility, release identity, secrets, and harness checks"},
+        {"command": "cargo test --workspace --all-features", "revision": "37ae856392cf7823a62bc5dc7a34b15c2fd85725", "outcome": "passing; atomic fake add/exec E2E, duplicate exit 3, ready metadata, 0700 root, and fake exit 23"},
+        {"command": "strict harness validation and context budgets", "revision": "37ae856392cf7823a62bc5dc7a34b15c2fd85725", "outcome": "passing; 0 errors/warnings and budgets 2213/8000 plus 4503/16000 bytes"}
+      ],
       "completion": null
     }
   ]
