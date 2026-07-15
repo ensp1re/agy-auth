@@ -48,6 +48,41 @@ Nightly/scheduled:
 - Publish a human-reviewed changelog with credential schema/storage changes highlighted.
 - Never auto-update the binary in v1; package managers are the update channel.
 
+### Local Linux release candidate
+
+`scripts/package_linux_rc.sh` builds a clean-worktree, host-target release archive with deterministic
+tar ownership/order/time metadata, a SHA-256 checksum manifest, an SPDX 2.3 JSON SBOM, and embedded
+version/revision/target identity. The archive is explicitly marked `local-rc` and
+`NOT-FOR-DISTRIBUTION` while the project license remains unresolved.
+
+```bash
+PATH=/root/.cargo/bin:$PATH scripts/package_linux_rc.sh dist
+(cd dist && sha256sum -c agy-auth-*-local-rc.sha256)
+```
+
+This is a local validation artifact, not authorization to publish a GitHub release or package.
+
+### Manual local installation
+
+After verifying the checksum, extract the archive and install the binary into a user-owned executable
+directory:
+
+```bash
+install -d -m 0700 "$HOME/.local/bin"
+install -m 0755 agy-auth "$HOME/.local/bin/agy-auth"
+agy-auth doctor --client "$HOME/.local/bin/agy"
+```
+
+Uninstalling the executable is separate from removing project data:
+
+```bash
+rm "$HOME/.local/bin/agy-auth"
+```
+
+Manual uninstall must leave `$XDG_DATA_HOME/agy-auth` or `$HOME/.local/share/agy-auth` untouched.
+No `purge` command exists yet, and users must not delete Antigravity authentication state through
+`agy-auth`.
+
 ## Compatibility policy
 
 Provider compatibility is reported separately from tool version:
