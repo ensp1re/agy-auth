@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-15T18:51:00Z",
+  "updatedAt": "2026-07-15T19:52:00Z",
   "goal": "Begin Phase 0 by creating the Rust workspace foundation and its delivery checks.",
   "scope": [
     "phase-0-repository-foundation"
   ],
-  "status": "blocked",
+  "status": "ready_for_review",
   "git": {
     "branch": "feat/phase-0-repository-foundation",
-    "head": "775f3cb0f007781088778a9df014661e135114ab",
+    "head": "3ecb69a19b27fd5f41bc5053d771634ae666ab88",
     "worktree": "dirty"
   },
   "completed": [
@@ -18,7 +18,7 @@
     "Pull request 1 was opened at https://github.com/ensp1re/gemini-auth/pull/1."
   ],
   "nextActions": [
-    "Resolve the GitHub Actions billing or spending-limit issue, then rerun failed jobs for pull request 1."
+    "Review and merge pull request 1 using the recorded local verification; hosted CI is deferred by user direction."
   ],
   "decisions": [
     "Use the Core harness profile only; no hooks, daemon, event journal, database, or client adapter.",
@@ -40,16 +40,15 @@
       "python3 scripts/check_dependencies.py: passing",
       "python3 scripts/check_no_secrets.py: passing"
     ],
-    "failed": [
-      "GitHub Actions run 29445729618: all jobs blocked before execution because account payments failed or the spending limit must be increased."
-    ],
+    "failed": [],
     "notRun": [
-      "Cross-client portability is untested; only the canonical AGENTS.md surface is configured."
+      "Cross-client portability is untested; only the canonical AGENTS.md surface is configured.",
+      "GitHub-hosted Linux, macOS, Windows, and dependency-policy jobs did not start because of the account usage limit; the user explicitly deferred hosted CI for this task."
     ]
   },
   "risks": [
     "GEMINI_CLI_HOME credential isolation is an unverified product assumption and must not be represented as proven behavior.",
-    "Cross-platform CI evidence is unavailable until GitHub Actions billing or spending limits are repaired."
+    "Cross-platform CI remains unverified while GitHub Actions usage is unavailable."
   ],
   "touchedPaths": [
     "AGENTS.md",

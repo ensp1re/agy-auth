@@ -12,7 +12,7 @@
     {
       "id": "phase-0-repository-foundation",
       "title": "Create the Rust workspace foundation and delivery checks",
-      "status": "blocked",
+      "status": "active",
       "source": "docs/10-delivery-roadmap.md",
       "plan": null,
       "acceptance": [
@@ -21,10 +21,7 @@
         "Formatting, Clippy, tests, dependency policy, and secret scanning have executable checks.",
         "SECURITY.md and CONTRIBUTING.md encode the approved security and fixture boundaries."
       ],
-      "blocker": {
-        "evidence": "GitHub Actions run 29445729618 did not start any job because account payments failed or the spending limit must be increased.",
-        "recovery": "Resolve GitHub Actions billing or spending limits, then rerun failed jobs for pull request 1."
-      },
+      "blocker": null,
       "verification": [
         {
           "command": "python3 scripts/check.py",
@@ -39,7 +36,7 @@
         {
           "command": "GitHub Actions run 29445729618",
           "revision": "775f3cb0f007781088778a9df014661e135114ab",
-          "outcome": "blocked before execution by account billing or spending limit"
+          "outcome": "not run due account usage limit; explicitly deferred and non-blocking by user direction"
         }
       ],
       "completion": null
