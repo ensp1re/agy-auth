@@ -12,7 +12,7 @@
     {
       "id": "phase-0-repository-foundation",
       "title": "Create the Rust workspace foundation and delivery checks",
-      "status": "active",
+      "status": "passing",
       "source": "docs/10-delivery-roadmap.md",
       "plan": null,
       "acceptance": [
@@ -37,6 +37,43 @@
           "command": "GitHub Actions run 29445729618",
           "revision": "416c3aa1218f3d70355ed895f00db92605ae9aff",
           "outcome": "not run due account usage limit; explicitly deferred and non-blocking by user direction"
+        }
+      ],
+      "completion": {
+        "commit": "1f9a36d39818c347f0a04714f91df8a9a1140580",
+        "review": "https://github.com/ensp1re/gemini-auth/pull/1",
+        "completedAt": "2026-07-15T19:51:04Z"
+      }
+    },
+    {
+      "id": "phase-1-profile-registry",
+      "title": "Implement the versioned non-secret profile registry",
+      "status": "active",
+      "source": "docs/05-repository-structure.md",
+      "plan": "docs/plans/phase-1-profile-registry.md",
+      "acceptance": [
+        "Profile IDs, validated names, providers, storage locators, and statuses are strongly typed.",
+        "Registry schema v1 round-trips without storing credential material or full account emails.",
+        "Writes use a same-directory temporary file, flush, atomic replacement, and a mutation lock.",
+        "Duplicate case-folded names, unsupported schema versions, corrupt JSON, and unsafe file types fail closed.",
+        "Migration scaffolding and synthetic unit, integration, and property-style invariant tests pass."
+      ],
+      "blocker": null,
+      "verification": [
+        {
+          "command": "python3 scripts/check.py",
+          "revision": "05dbd82cfc2c8b2154cc92dd92d3bf03d0976314",
+          "outcome": "passing; 14 tests"
+        },
+        {
+          "command": "cargo deny check",
+          "revision": "05dbd82cfc2c8b2154cc92dd92d3bf03d0976314",
+          "outcome": "advisories, bans, licenses, and sources passing"
+        },
+        {
+          "command": "build-agent-harness validate_harness.py --strict",
+          "revision": "05dbd82cfc2c8b2154cc92dd92d3bf03d0976314",
+          "outcome": "0 errors and 0 warnings"
         }
       ],
       "completion": null
