@@ -119,6 +119,10 @@ Linux authentication-state research must first follow the approval and isolation
 
 No quota exhaustion tests and no multi-account retry tests.
 
+Before real login tests, fake application adapters must prove that `add` reserves pending metadata
+before directory preparation/login and marks it ready only after success. Fake `exec` must reject
+non-ready profiles, preserve literal argv, and propagate the official client's exit code.
+
 ## Fuzzing
 
 Fuzz parsers for registry, journal, Antigravity envelope, imported bundle, and CLI JSON output inputs. Corpus must be synthetic. Fuzz targets run with low memory/file-size limits.

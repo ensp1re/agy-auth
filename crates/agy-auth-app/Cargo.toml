@@ -12,5 +12,8 @@ build = "build.rs"
 agy-auth-domain.workspace = true
 serde.workspace = true
 
+[dev-dependencies]
+time.workspace = true
+
 [lints]
 workspace = true

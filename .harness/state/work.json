@@ -5,44 +5,20 @@
   "retention": "Keep the active item and at most two recently passing items; durable outcomes belong in specifications, ADRs, commits, and reviews.",
   "items": [
     {
-      "id": "phase-4-release-publication-preflight",
-      "title": "Publish the diagnostics-only v0.1.0-rc.1 release candidate",
-      "status": "passing",
-      "source": "docs/releases/v0.1.0-rc.1.md",
-      "plan": "docs/plans/phase-4-release-publication-preflight.md",
-      "acceptance": [
-        "Release scope, artifacts, limitations, and authorization are recorded."
-      ],
-      "blocker": null,
-      "verification": [
-        {
-          "command": "reproducible merged-revision build and remote release verification",
-          "revision": "4aa3b93acfc9d7fd7111d50688b8db51be7d6768",
-          "outcome": "passing; v0.1.0-rc.1 published with three verified Linux assets after explicit approval"
-        }
-      ],
-      "completion": {
-        "commit": "4aa3b93acfc9d7fd7111d50688b8db51be7d6768",
-        "review": "https://github.com/ensp1re/agy-auth/releases/tag/v0.1.0-rc.1",
-        "completedAt": "2026-07-15T22:31:40Z"
-      }
-    },
-    {
       "id": "phase-3-linux-isolated-home-contract",
       "title": "Establish the Linux unofficial isolated-home contract",
       "status": "passing",
       "source": "docs/adr/0007-versioned-unofficial-isolated-homes.md",
       "plan": "docs/plans/phase-3-linux-isolated-home-contract.md",
       "acceptance": [
-        "ADR 0007 authorizes version-scoped black-box isolation while production capabilities remain gated.",
-        "Synthetic profiles receive distinct cleared environments and unsafe roots fail closed."
+        "ADR 0007 authorizes version-scoped black-box isolation while production capabilities remain gated."
       ],
       "blocker": null,
       "verification": [
         {
-          "command": "python3 scripts/check.py && cargo deny check; synthetic isolation tests; strict harness validation",
+          "command": "synthetic isolation tests and local gates",
           "revision": "9edeb984bf6a503dbf54418627514052bcb739ce",
-          "outcome": "passing; 35 tests, dependency policy, distinct environments, unsafe-root refusal, and context budgets"
+          "outcome": "passing; distinct cleared environments and unsafe-root refusal"
         }
       ],
       "completion": {
@@ -54,37 +30,56 @@
     {
       "id": "phase-3-tty-isolated-launcher",
       "title": "Implement the TTY-preserving isolated launcher",
-      "status": "active",
+      "status": "passing",
       "source": "docs/07-cli-specification.md",
       "plan": "docs/plans/phase-3-tty-isolated-launcher.md",
       "acceptance": [
-        "Interactive children inherit standard streams while ambient environment variables remain cleared.",
-        "Arguments bypass the shell and the exact child exit status is returned.",
-        "Only a conservatively validated TERM value extends the environment allowlist.",
-        "Fake-client tests cover environment, argv, terminal validation, and nonzero exit behavior.",
-        "Two disposable isolated homes safely probe installed agy 1.1.2 with --version only."
+        "Interactive children inherit standard streams, direct argv, validated TERM, and a cleared environment.",
+        "Two empty homes safely probe installed agy 1.1.2 with --version only."
+      ],
+      "blocker": null,
+      "verification": [
+        {
+          "command": "python3 scripts/check.py; fake launcher tests; two installed-client --version probes",
+          "revision": "c71f0d583568591ee89b86ae1f5bd07182898794",
+          "outcome": "passing; 37 tests, exact child status/argv, empty disposable homes, and local policy gates"
+        }
+      ],
+      "completion": {
+        "commit": "8b578a8b185f7d36d0565be34bb03c772961fb03",
+        "review": "https://github.com/ensp1re/agy-auth/pull/19",
+        "completedAt": "2026-07-15T23:06:25Z"
+      }
+    },
+    {
+      "id": "phase-3-managed-profile-contracts",
+      "title": "Implement managed profile directories and fake add/exec contracts",
+      "status": "active",
+      "source": "docs/04-architecture.md",
+      "plan": "docs/plans/phase-3-managed-profile-contracts.md",
+      "acceptance": [
+        "Managed profile directories derive only from UUIDs and are owner-only.",
+        "Relative roots, links, non-directories, unsafe permissions, and Linux ownership fail closed.",
+        "Fake add reserves pending metadata before delegated login and commits ready only after success.",
+        "Fake exec refuses non-ready profiles and preserves literal argv and exact child status.",
+        "No CLI command, real login, credential access, or production capability is enabled."
       ],
       "blocker": null,
       "verification": [
         {
           "command": "python3 scripts/check.py && cargo deny check",
-          "revision": "c71f0d583568591ee89b86ae1f5bd07182898794",
-          "outcome": "passing; 37 tests, dependency policy, compatibility, release identity, secrets, and harness checks"
+          "revision": "7c98a2069a7cd5c0bdc9cf575a52ec1f52f0008c",
+          "outcome": "passing; 42 tests, dependency policy, compatibility, release identity, secrets, and project harness checks"
         },
         {
-          "command": "cargo test -p agy-auth-process --lib",
-          "revision": "c71f0d583568591ee89b86ae1f5bd07182898794",
-          "outcome": "passing; inherited standard streams, exact exit 23, direct metacharacter argv, cleared USER, validated TERM, and existing isolation cases"
+          "command": "cargo test -p agy-auth-app -p agy-auth-storage",
+          "revision": "7c98a2069a7cd5c0bdc9cf575a52ec1f52f0008c",
+          "outcome": "passing; pending-before-login, ready-after-success, failed-login recovery, ready-only exec, literal argv/exit, secure directory creation and refusal"
         },
         {
-          "command": "AGY_AUTH_TEST_AGY=/root/.local/bin/agy AGY_AUTH_TEST_AGY_VERSION=1.1.2 cargo test -p agy-auth-process --test installed_client -- --ignored",
-          "revision": "c71f0d583568591ee89b86ae1f5bd07182898794",
-          "outcome": "passing; two disposable empty homes returned agy 1.1.2 from --version, remained empty, and were removed"
-        },
-        {
-          "command": "strict harness validation and context budget evaluation",
-          "revision": "c71f0d583568591ee89b86ae1f5bd07182898794",
-          "outcome": "passing; 0 errors/warnings, root instructions 2213/8000 bytes, live startup state 5531/16000 bytes"
+          "command": "build-agent-harness structural validation and context budget evaluation",
+          "revision": "7c98a2069a7cd5c0bdc9cf575a52ec1f52f0008c",
+          "outcome": "structural rules pass; only expected closeout head/worktree warnings before evidence commit; budgets 2213/8000 and 5658/16000 bytes passing"
         }
       ],
       "completion": null

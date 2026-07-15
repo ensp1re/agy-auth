@@ -110,6 +110,8 @@ Unix-style illustration:
 ├── active.json                   # selected profiles by provider
 ├── profiles/                     # only after a verified Antigravity isolation contract
 │   └── <profile-uuid>/
+│       ├── home/                 # effective HOME and XDG descendants owned by official agy
+│       └── runtime/              # isolated XDG_RUNTIME_DIR
 ├── vault/                        # encrypted/file fallback only
 │   └── <profile-uuid>.secret
 ├── rollback/                     # short-lived encrypted/0600 backups
@@ -145,6 +147,7 @@ On macOS use Application Support/Preferences/Caches conventions; on Windows use 
 ```
 
 No access token, refresh token, ID token, API key, OAuth code, full email, or command output belongs in this file.
+Profile UUIDs, never user-provided names, derive managed directory paths.
 
 ## Module ownership rules
 

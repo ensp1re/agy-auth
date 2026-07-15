@@ -1,11 +1,158 @@
 //! Application-service boundary for use-case orchestration.
 
+use agy_auth_domain::{Profile, ProfileId, ProfileStatus};
 use serde::Serialize;
+use std::ffi::OsString;
+use std::path::PathBuf;
 
 pub use agy_auth_domain::{ErrorCode, ProviderKind};
 
 /// Stable diagnostics schema version.
 pub const DOCTOR_SCHEMA_VERSION: u32 = 1;
+
+/// Project-owned filesystem roots used to launch one isolated official-client profile.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ManagedProfileEnvironment {
+    /// Isolated effective home directory.
+    pub home: PathBuf,
+    /// Isolated XDG runtime directory.
+    pub runtime_directory: PathBuf,
+}
+
+/// Stable failure categories for profile workflow adapters.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ProfileWorkflowError {
+    /// A new profile must begin in the pending state.
+    InvalidInitialState,
+    /// A profile must be ready before execution.
+    ProfileNotReady,
+    /// Non-secret profile metadata could not be reserved.
+    CatalogReserveFailed,
+    /// Profile metadata could not be promoted to ready.
+    CatalogCommitFailed,
+    /// Project-owned profile directories could not be prepared safely.
+    HomeUnavailable,
+    /// The official client's interactive login did not complete.
+    ClientLoginFailed,
+    /// The official client could not be launched for the profile.
+    ClientExecFailed,
+}
+
+impl std::fmt::Display for ProfileWorkflowError {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let message = match self {
+            Self::InvalidInitialState => "profile must begin pending",
+            Self::ProfileNotReady => "profile is not ready",
+            Self::CatalogReserveFailed => "profile metadata reservation failed",
+            Self::CatalogCommitFailed => "profile metadata commit failed",
+            Self::HomeUnavailable => "managed profile home is unavailable",
+            Self::ClientLoginFailed => "official client login failed",
+            Self::ClientExecFailed => "official client execution failed",
+        };
+        formatter.write_str(message)
+    }
+}
+
+impl std::error::Error for ProfileWorkflowError {}
+
+/// Port for project-owned profile directory preparation.
+pub trait ProfileHomePort {
+    /// Create or validate the owner-only directories for a profile.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ProfileWorkflowError::HomeUnavailable`] when isolation cannot be guaranteed.
+    fn prepare(
+        &self,
+        profile_id: ProfileId,
+    ) -> Result<ManagedProfileEnvironment, ProfileWorkflowError>;
+}
+
+/// Port for atomic non-secret profile catalog transitions.
+pub trait ProfileCatalogPort {
+    /// Reserve pending metadata before invoking an interactive login.
+    ///
+    /// # Errors
+    ///
+    /// Returns a catalog failure when pending metadata cannot be persisted atomically.
+    fn reserve(&self, profile: &Profile) -> Result<(), ProfileWorkflowError>;
+
+    /// Mark a reserved profile ready with its observed official-client version.
+    ///
+    /// # Errors
+    ///
+    /// Returns a catalog failure when the ready transition cannot be persisted atomically.
+    fn mark_ready(
+        &self,
+        profile_id: ProfileId,
+        client_version: &str,
+    ) -> Result<(), ProfileWorkflowError>;
+}
+
+/// Port that delegates authentication and execution to the official client.
+pub trait ProfileClientPort {
+    /// Run official interactive login and return the validated client version.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ProfileWorkflowError::ClientLoginFailed`] when login does not complete.
+    fn login(
+        &self,
+        environment: &ManagedProfileEnvironment,
+    ) -> Result<String, ProfileWorkflowError>;
+
+    /// Run the official client with direct argv and return its process exit code.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ProfileWorkflowError::ClientExecFailed`] when the client cannot be launched.
+    fn execute(
+        &self,
+        environment: &ManagedProfileEnvironment,
+        arguments: &[OsString],
+    ) -> Result<i32, ProfileWorkflowError>;
+}
+
+/// Reserve a pending profile, prepare its isolated home, delegate login, and commit readiness.
+///
+/// A failure after reservation deliberately leaves pending metadata for explicit recovery. The
+/// application never reads or copies authentication state.
+///
+/// # Errors
+///
+/// Returns a stable workflow failure from validation or one of the three ports.
+pub fn add_profile(
+    profile: &Profile,
+    catalog: &impl ProfileCatalogPort,
+    homes: &impl ProfileHomePort,
+    client: &impl ProfileClientPort,
+) -> Result<(), ProfileWorkflowError> {
+    if profile.status != ProfileStatus::Pending {
+        return Err(ProfileWorkflowError::InvalidInitialState);
+    }
+    catalog.reserve(profile)?;
+    let environment = homes.prepare(profile.id)?;
+    let client_version = client.login(&environment)?;
+    catalog.mark_ready(profile.id, &client_version)
+}
+
+/// Execute the official client inside a ready profile's isolated environment.
+///
+/// # Errors
+///
+/// Returns an error when the profile is not ready, its home is unsafe, or client launch fails.
+pub fn exec_profile(
+    profile: &Profile,
+    arguments: &[OsString],
+    homes: &impl ProfileHomePort,
+    client: &impl ProfileClientPort,
+) -> Result<i32, ProfileWorkflowError> {
+    if profile.status != ProfileStatus::Ready {
+        return Err(ProfileWorkflowError::ProfileNotReady);
+    }
+    let environment = homes.prepare(profile.id)?;
+    client.execute(&environment, arguments)
+}
 
 /// Reproducible build identity without builder paths or environment values.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
@@ -136,8 +283,17 @@ pub fn doctor(
 #[cfg(test)]
 mod tests {
     use super::{
-        ClientDiagnostic, DoctorClientProbe, DoctorRegistryProbe, RegistryDiagnostic, doctor,
+        ClientDiagnostic, DoctorClientProbe, DoctorRegistryProbe, ManagedProfileEnvironment,
+        ProfileCatalogPort, ProfileClientPort, ProfileHomePort, ProfileWorkflowError,
+        RegistryDiagnostic, add_profile, doctor, exec_profile,
     };
+    use agy_auth_domain::{
+        Profile, ProfileId, ProfileName, ProfileStatus, ProviderKind, StorageLocator,
+    };
+    use std::cell::RefCell;
+    use std::ffi::OsString;
+    use std::path::PathBuf;
+    use time::OffsetDateTime;
 
     struct Client;
 
@@ -195,5 +351,176 @@ mod tests {
         }
 
         assert_eq!(doctor(&Client, &Interrupted).exit_code(), 10);
+    }
+
+    fn profile(status: ProfileStatus) -> Profile {
+        let now = OffsetDateTime::UNIX_EPOCH;
+        Profile {
+            id: ProfileId::new(),
+            name: ProfileName::parse("Work").expect("valid name"),
+            provider: ProviderKind::AntigravityCli,
+            storage: StorageLocator::isolated_home("synthetic-work-home").expect("valid locator"),
+            account_hint: None,
+            created_at: now,
+            updated_at: now,
+            client_version_at_capture: None,
+            schema_fingerprint: None,
+            status,
+        }
+    }
+
+    #[derive(Default)]
+    struct FakeCatalog {
+        events: RefCell<Vec<String>>,
+    }
+
+    impl ProfileCatalogPort for FakeCatalog {
+        fn reserve(&self, profile: &Profile) -> Result<(), ProfileWorkflowError> {
+            self.events
+                .borrow_mut()
+                .push(format!("reserve:{}", profile.id));
+            Ok(())
+        }
+
+        fn mark_ready(
+            &self,
+            profile_id: ProfileId,
+            client_version: &str,
+        ) -> Result<(), ProfileWorkflowError> {
+            self.events
+                .borrow_mut()
+                .push(format!("ready:{profile_id}:{client_version}"));
+            Ok(())
+        }
+    }
+
+    struct FakeHomes {
+        events: RefCell<Vec<String>>,
+    }
+
+    impl ProfileHomePort for FakeHomes {
+        fn prepare(
+            &self,
+            profile_id: ProfileId,
+        ) -> Result<ManagedProfileEnvironment, ProfileWorkflowError> {
+            self.events
+                .borrow_mut()
+                .push(format!("prepare:{profile_id}"));
+            Ok(ManagedProfileEnvironment {
+                home: PathBuf::from("/synthetic/home"),
+                runtime_directory: PathBuf::from("/synthetic/runtime"),
+            })
+        }
+    }
+
+    #[derive(Default)]
+    struct FakeClient {
+        login_homes: RefCell<Vec<PathBuf>>,
+        exec_arguments: RefCell<Vec<Vec<OsString>>>,
+    }
+
+    impl ProfileClientPort for FakeClient {
+        fn login(
+            &self,
+            environment: &ManagedProfileEnvironment,
+        ) -> Result<String, ProfileWorkflowError> {
+            self.login_homes.borrow_mut().push(environment.home.clone());
+            Ok("1.1.2".to_owned())
+        }
+
+        fn execute(
+            &self,
+            _environment: &ManagedProfileEnvironment,
+            arguments: &[OsString],
+        ) -> Result<i32, ProfileWorkflowError> {
+            self.exec_arguments.borrow_mut().push(arguments.to_vec());
+            Ok(23)
+        }
+    }
+
+    struct FailingLoginClient;
+
+    impl ProfileClientPort for FailingLoginClient {
+        fn login(
+            &self,
+            _environment: &ManagedProfileEnvironment,
+        ) -> Result<String, ProfileWorkflowError> {
+            Err(ProfileWorkflowError::ClientLoginFailed)
+        }
+
+        fn execute(
+            &self,
+            _environment: &ManagedProfileEnvironment,
+            _arguments: &[OsString],
+        ) -> Result<i32, ProfileWorkflowError> {
+            unreachable!("execution is not part of this test")
+        }
+    }
+
+    #[test]
+    fn add_reserves_before_login_and_commits_observed_version() {
+        let profile = profile(ProfileStatus::Pending);
+        let catalog = FakeCatalog::default();
+        let homes = FakeHomes {
+            events: RefCell::new(Vec::new()),
+        };
+        let client = FakeClient::default();
+
+        add_profile(&profile, &catalog, &homes, &client).expect("add profile");
+
+        assert_eq!(catalog.events.borrow().len(), 2);
+        assert_eq!(homes.events.borrow().len(), 1);
+        assert_eq!(
+            client.login_homes.borrow().as_slice(),
+            [PathBuf::from("/synthetic/home")]
+        );
+        assert!(catalog.events.borrow()[0].starts_with("reserve:"));
+        assert!(catalog.events.borrow()[1].ends_with(":1.1.2"));
+    }
+
+    #[test]
+    fn exec_requires_ready_profile_and_preserves_literal_argv() {
+        let homes = FakeHomes {
+            events: RefCell::new(Vec::new()),
+        };
+        let client = FakeClient::default();
+        let arguments = [
+            OsString::from("literal; not shell"),
+            OsString::from("--flag"),
+        ];
+
+        let exit = exec_profile(&profile(ProfileStatus::Ready), &arguments, &homes, &client)
+            .expect("execute ready profile");
+        assert_eq!(exit, 23);
+        assert_eq!(
+            client.exec_arguments.borrow().as_slice(),
+            [arguments.to_vec()]
+        );
+
+        let error = exec_profile(
+            &profile(ProfileStatus::Pending),
+            &arguments,
+            &homes,
+            &client,
+        )
+        .expect_err("pending profile must not execute");
+        assert_eq!(error, ProfileWorkflowError::ProfileNotReady);
+    }
+
+    #[test]
+    fn failed_login_leaves_pending_reservation_without_ready_commit() {
+        let profile = profile(ProfileStatus::Pending);
+        let catalog = FakeCatalog::default();
+        let homes = FakeHomes {
+            events: RefCell::new(Vec::new()),
+        };
+
+        let error = add_profile(&profile, &catalog, &homes, &FailingLoginClient)
+            .expect_err("login must fail");
+
+        assert_eq!(error, ProfileWorkflowError::ClientLoginFailed);
+        assert_eq!(catalog.events.borrow().len(), 1);
+        assert!(catalog.events.borrow()[0].starts_with("reserve:"));
+        assert_eq!(homes.events.borrow().len(), 1);
     }
 }
