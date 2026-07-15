@@ -59,7 +59,23 @@
         "Migration scaffolding and synthetic unit, integration, and property-style invariant tests pass."
       ],
       "blocker": null,
-      "verification": [],
+      "verification": [
+        {
+          "command": "python3 scripts/check.py",
+          "revision": "05dbd82cfc2c8b2154cc92dd92d3bf03d0976314",
+          "outcome": "passing; 14 tests"
+        },
+        {
+          "command": "cargo deny check",
+          "revision": "05dbd82cfc2c8b2154cc92dd92d3bf03d0976314",
+          "outcome": "advisories, bans, licenses, and sources passing"
+        },
+        {
+          "command": "build-agent-harness validate_harness.py --strict",
+          "revision": "05dbd82cfc2c8b2154cc92dd92d3bf03d0976314",
+          "outcome": "0 errors and 0 warnings"
+        }
+      ],
       "completion": null
     }
   ]

@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-15T19:52:41Z",
+  "updatedAt": "2026-07-15T20:08:00Z",
   "goal": "Implement the versioned, non-secret profile registry with atomic locked persistence.",
   "scope": [
     "phase-1-profile-registry"
   ],
-  "status": "active",
+  "status": "ready_for_review",
   "git": {
     "branch": "feat/profile-registry",
-    "head": "1f9a36d39818c347f0a04714f91df8a9a1140580",
+    "head": "05dbd82cfc2c8b2154cc92dd92d3bf03d0976314",
     "worktree": "dirty"
   },
   "completed": [
@@ -18,7 +18,7 @@
     "Pull request 1 was merged at commit 1f9a36d39818c347f0a04714f91df8a9a1140580."
   ],
   "nextActions": [
-    "Implement and test the profile registry domain model before adding CLI commands."
+    "Push the profile registry branch, open its pull request, and review the local evidence."
   ],
   "decisions": [
     "Use the Core harness profile only; no hooks, daemon, event journal, database, or client adapter.",
@@ -37,6 +37,7 @@
       "cargo clippy --workspace --all-targets --all-features -- -D warnings: passing",
       "cargo test --workspace --all-features: 3 tests passing",
       "cargo deny check: advisories, bans, licenses, and sources passing",
+      "profile registry at 05dbd82: 14 tests passing, including lock contention, symlink refusal, 0600 permissions, schema rejection, and repeated round trips",
       "python3 scripts/check_dependencies.py: passing",
       "python3 scripts/check_no_secrets.py: passing"
     ],
