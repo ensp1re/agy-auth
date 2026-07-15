@@ -300,7 +300,7 @@
     {
       "id": "phase-4-release-readiness-foundation",
       "title": "Add end-to-end contracts and compatibility build metadata",
-      "status": "active",
+      "status": "passing",
       "source": "docs/11-operations-release.md",
       "plan": "docs/plans/phase-4-release-readiness-foundation.md",
       "acceptance": [
@@ -333,6 +333,27 @@
           "outcome": "passing; one agy 1.1.2 compatibility entry and 0 harness errors/warnings"
         }
       ],
+      "completion": {
+        "commit": "d7ac4f2b7c9bc0b4a0f60b4c8105674f8d75f297",
+        "review": "https://github.com/ensp1re/agy-auth/pull/13",
+        "completedAt": "2026-07-15T21:54:09Z"
+      }
+    },
+    {
+      "id": "phase-4-linux-release-candidate",
+      "title": "Build a reproducible local Linux release candidate",
+      "status": "active",
+      "source": "docs/11-operations-release.md",
+      "plan": "docs/plans/phase-4-linux-release-candidate.md",
+      "acceptance": [
+        "Packaging requires a clean worktree and the native Linux target.",
+        "Archive and SPDX SBOM outputs are reproducible from the same revision.",
+        "SHA-256 checksums are generated and verified during packaging.",
+        "Install and uninstall preserve project and Antigravity state.",
+        "Artifacts are clearly local-only and no external release is published."
+      ],
+      "blocker": null,
+      "verification": [],
       "completion": null
     }
   ]

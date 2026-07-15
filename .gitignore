@@ -1,5 +1,6 @@
 # Build output
 /target/
+/dist/
 
 # Local test and runtime data
 /.agy-auth/
