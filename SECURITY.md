@@ -4,8 +4,8 @@ This project is pre-release. No version currently receives security fixes as a s
 
 Do not report vulnerabilities through a public issue when they could expose credentials, bypass
 permission checks, overwrite files through links, break rollback, or leak secrets. Use GitHub's
-private vulnerability reporting for this repository. Do not include real credential files, tokens,
-OAuth URLs, full email addresses, private logs, or environment dumps in a report.
+private vulnerability reporting for this repository. Reports must not include reusable credentials;
+coordinate sensitive supporting material privately with the maintainers when it is necessary.
 
 High-impact areas include credential disclosure, unsafe ownership or permissions, symlink/hardlink
 overwrite, secret logging, transaction corruption, and failed rollback. Reports should contain a

@@ -15,9 +15,11 @@ effective home directory. That report is an untrusted observation, not project p
 capability evidence. Earlier dedicated-user experiments also reused an existing identity despite a
 fresh home and runtime, so environment isolation must be proven rather than inferred from filenames.
 
-The product still excludes private API calls, OAuth implementation, token parsing, credential
-copying, keyring enumeration, and quota-driven rotation. The official `agy` process must perform
-login, refresh, and model requests.
+The product still excludes quota-driven rotation and using another person's credentials. Authorized
+research may inspect private API behavior, OAuth state, tokens, credential storage, and keyrings to
+discover the real client contract. Shipping an independent OAuth or backend implementation remains
+a separate architecture decision; the current product still delegates login, refresh, and model
+requests to `agy`.
 
 ## Decision
 
@@ -31,10 +33,10 @@ homes receive distinct environment roots, inherited variables do not leak, unsaf
 closed, and shell metacharacters are never evaluated. It does not enable `add`, `use`, `exec`, or
 doctor capability claims.
 
-Real-client enablement requires a later reviewed experiment with two dedicated test accounts. That
-experiment may observe only allowed metadata such as file existence, ownership, permissions, client
-version, process exit, and an explicitly supplied masked account label. It must never read, hash,
-copy, diff, print, or retain credential contents or private logs.
+Real-client enablement requires a later reviewed experiment with two operator-controlled test
+accounts. The experiment may inspect and compare the client state necessary to establish isolation,
+including credential storage and private logs. Raw sensitive artifacts must remain outside Git and
+published evidence; the committed record contains only the derived contract and reproducible steps.
 
 ## Enablement gate
 

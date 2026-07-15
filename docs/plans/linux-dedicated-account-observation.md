@@ -24,9 +24,9 @@ Execution requires a separate explicit approval after all prerequisites are conf
 Never run this protocol as `root`, in the operator's home, or on the operator's desktop/keyring
 session. A container alone is not sufficient unless its D-Bus and keyring are also isolated.
 
-## Allowed evidence
+## Evidence handling
 
-Record only:
+The committed research record should prefer:
 
 - UTC timestamp, Linux distribution/kernel family, architecture, and `agy` version;
 - whether a native Secret Service session is available;
@@ -37,9 +37,11 @@ Record only:
 - process names and exit status;
 - capability booleans such as `browser_flow_started`, `session_reused`, and `logout_removed_session`.
 
-Do not record filenames if they contain identity data. Do not record full emails, account IDs, OAuth
-URLs or codes, token/keyring contents, environment values, stdout/stderr containing login material,
-file bytes, hashes of secret material, network captures, logs, conversations, or model responses.
+During an explicitly authorized local investigation, the operator may inspect filenames, identities,
+OAuth URLs or codes, token/keyring contents, environment values, client output, file bytes, hashes,
+network captures, logs, conversations, and model responses when they materially help discover the
+client contract. Keep raw captures outside Git with owner-only permissions and delete them when they
+are no longer needed. Commit only derived findings and non-reusable examples.
 
 ## Observation sequence
 
@@ -49,10 +51,11 @@ Each phase requires a clean checkpoint and can be stopped independently.
    keyring session; record only the allowed metadata inventory before `agy` starts. A reviewer must
    verify that no cloud, Google, OAuth, credential-helper, or operator session variable was inherited
    without printing the environment values.
-2. **Unauthenticated launch:** start the official client interactively with network access only long
-   enough to confirm that the documented login chooser appears; do not retain its output.
-3. **Dedicated login:** the account owner completes the official Google flow directly. The observer
-   never handles or records the URL, code, password, cookies, or tokens.
+2. **Unauthenticated launch:** start the official client interactively and retain local diagnostic
+   output when needed to identify the login path.
+3. **Dedicated login:** the account owner completes the official Google flow. Authorized tooling may
+   observe the resulting URL, code exchange, cookies, or tokens when required to identify storage and
+   switching behavior; it must never request or record the account password.
 4. **Post-login delta:** exit without a model request, then compare allowed filesystem and dedicated
    keyring metadata with the baseline.
 5. **Session reuse:** relaunch once to observe only whether silent authentication succeeds; exit
@@ -72,7 +75,7 @@ Stop immediately, preserve no additional output, and clean up when:
 
 - the process connects to the operator's existing keyring or home;
 - the official client silently identifies an account before the dedicated login completes;
-- any secret, OAuth URL/code, full identity, or credential-bearing log becomes visible to capture;
+- a sensitive capture cannot be kept within the operator-controlled research boundary;
 - the dedicated keyring boundary cannot be proven;
 - `agy` starts a model request or unrelated tool action;
 - observed behavior differs materially from the official documentation;
@@ -90,8 +93,8 @@ Stop immediately, preserve no additional output, and clean up when:
 ## Completion record
 
 The research record must state which phases ran, which were skipped, all stop conditions, cleanup
-status, and only the allowed evidence above. It must undergo a secret scan and human review before
-being committed. Raw terminal output and temporary observation artifacts must never enter Git.
+status, and the derived evidence above. It must undergo a secret scan and human review before being
+committed. Raw credentials and private observation artifacts must never enter Git.
 
 ## Failed attempt supersession
 
