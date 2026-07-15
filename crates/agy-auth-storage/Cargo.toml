@@ -1,5 +1,5 @@
 [package]
-name = "gemini-auth-storage"
+name = "agy-auth-storage"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -8,7 +8,7 @@ repository.workspace = true
 
 [dependencies]
 fs2.workspace = true
-gemini-auth-domain.workspace = true
+agy-auth-domain.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true

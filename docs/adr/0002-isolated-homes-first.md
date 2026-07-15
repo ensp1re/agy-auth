@@ -1,6 +1,6 @@
 # ADR 0002: Prefer Isolated Official-Client Homes
 
-- Status: Proposed
+- Status: Superseded by ADR 0005
 - Date: 2026-07-15
 
 ## Context
@@ -15,5 +15,5 @@ Use one Gemini CLI home per profile and launch the official client with that hom
 
 - Strong account isolation and resilience to token schema changes.
 - Settings/history/cache are isolated too, using extra disk and requiring optional configuration templates.
-- Users normally invoke `gemini-auth exec <profile> -- gemini` or a shell alias.
+- Users normally invoke `agy-auth exec <profile> -- gemini` or a shell alias.
 - Antigravity requires a different fallback because no equivalent override is currently confirmed.

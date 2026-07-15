@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "status": "operational",
   "project": {
-    "name": "gemini-auth",
+    "name": "agy-auth",
     "root": "."
   },
   "sources": {

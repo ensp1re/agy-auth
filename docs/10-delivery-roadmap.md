@@ -1,110 +1,60 @@
 # Delivery Roadmap
 
-The phases are outcome gates, not calendar promises. Do not begin a riskier phase merely because earlier code exists.
+Phases are evidence gates, not calendar promises.
 
-## Phase 0 — Repository foundation
+## Phase 0 — Repository foundation (complete)
 
-Deliverables:
+- Rust workspace and dependency boundaries.
+- Local format, Clippy, test, dependency, and secret gates.
+- Non-secret registry and safe process discovery.
+- Contribution, security, and harness workflow.
 
-- Cargo workspace and crate boundaries.
-- CI on Linux/macOS/Windows.
-- lint, formatting, audit, deny, secret scanning.
-- domain model and stable error codes.
-- synthetic fixture policy.
-- `SECURITY.md`, `CONTRIBUTING.md`, initial ADRs.
+## Phase 1 — Antigravity product transition (active)
 
-Exit gate: empty CLI builds reproducibly on all targets and dependency direction is enforced.
+- Rename product and binary to `agy-auth`.
+- Make `provider-antigravity-cli` the sole MVP provider.
+- Record the May/June 2026 Gemini CLI transition in product truth and ADRs.
+- Remove the unverified Gemini isolated-home path from the MVP.
+- Confirm `agy 1.1.2` discovery and bounded diagnostic behavior.
 
-## Phase 1 — Gemini CLI isolated profiles (MVP)
+Exit gate: repository sources consistently describe an Antigravity-first, diagnostics-only product
+and no executable path claims real switching support.
 
-Deliverables:
+## Phase 2 — Antigravity capability research
 
-- official binary discovery and override;
-- profile registry;
-- isolated profile homes using `GEMINI_CLI_HOME`;
-- `add`, `list`, `current`, `rename`, `remove`, `exec`, `doctor`;
-- shell completions;
-- masked account hints only if obtainable without token decoding/backend calls.
+- Identify official profile/account/home commands or documented overrides.
+- Observe file versus keyring modes without enumerating unrelated secrets.
+- Verify paths, permissions, process behavior, refresh behavior, and version compatibility.
+- Record synthetic reproduction evidence and an ADR for the selected strategy.
 
-Important simplification: no token parsing, file swapping, keyring API, import/export, or global active-home replacement.
+Exit gate: one supported mode is deterministic, reversible, policy-compatible, and independently
+reviewable, or the project explicitly remains diagnostics-only.
 
-Exit gate: two profiles can be created and launched repeatedly on each target platform without credentials crossing homes.
+## Phase 3 — First vertical profile slice
 
-## Phase 2 — Storage transaction engine
+- `add` through the official login flow;
+- `list` and `current` using non-secret metadata;
+- `exec <profile> -- agy` where an official isolated mechanism exists, otherwise transactional `use`;
+- fake-client integration tests plus dedicated-account manual validation.
 
-Deliverables:
+Exit gate: two profiles switch manually without credential disclosure, backend calls, or automatic
+fallback, and interruption recovery is demonstrated.
 
-- registry/provider locks;
-- atomic write module;
-- permission/ACL module;
-- journal and recovery state machine;
-- OS keyring-backed `SecretStore`;
-- full fault-injection suite.
+## Phase 4 — Hardening and platform coverage
 
-Exit gate: exhaustive injected failures demonstrate old-or-new atomicity and idempotent recovery.
+- fault injection and recovery;
+- Linux, macOS, and Windows permission/atomic behavior;
+- schema/version compatibility matrix;
+- packaging, SBOM, provenance, and release documentation.
 
-## Phase 3 — Antigravity CLI file mode
+## Deferred
 
-Deliverables:
+- Gemini CLI enterprise/API-key compatibility;
+- desktop keyring mutation;
+- encrypted export/import;
+- GUI and plugin SDK.
 
-- discovery of verified active file path;
-- process guard;
-- tolerant credential-envelope validation;
-- capture from current official login;
-- transactional `use` and rollback;
-- client-version/schema fingerprint warnings;
-- explicit unsupported response for keyring-backed desktop mode.
+## Permanently excluded
 
-Exit gate: SSH/headless Linux smoke tests switch two test profiles through official `agy`, including an access-token refresh performed by `agy` after switching.
-
-## Phase 4 — Hardened import and encrypted portability
-
-Deliverables:
-
-- encrypted export bundle;
-- import with ownership/permission/schema validation;
-- collision resolution and audit summary;
-- backup/restore documentation;
-- security review of crypto and archive parsing.
-
-Exit gate: no plaintext secret export in default paths; corrupted/tampered bundles fail safely.
-
-## Phase 5 — Desktop keyring research, not automatic implementation
-
-Research first:
-
-- determine whether Google documents account-profile storage;
-- identify exact keyring service/account semantics without enumerating unrelated secrets;
-- verify interaction with running desktop processes and Electron state;
-- obtain an independent security review.
-
-Only add support if the adapter can be deterministic, reversible, and compatible without copying private application databases. Otherwise retain diagnostics-only support indefinitely.
-
-## Phase 6 — Usability, packaging, ecosystem
-
-- Homebrew, WinGet/Scoop, cargo-binstall, Debian/RPM where maintainable.
-- man pages and shell integration.
-- optional minimal desktop menu wrapper that calls the same application core.
-- plugin/provider SDK only if a third provider has a legitimate local-switching use case.
-
-## Permanently excluded roadmap items
-
-- OpenAI/Anthropic/Gemini-compatible API server.
-- Direct Google backend protocol.
-- Quota display obtained via private endpoints.
-- Automatic account fallback/rotation.
-- Shared/team vault or cloud synchronization.
-- Anti-ban/fingerprint behavior.
-
-## Work breakdown for the first implementation PRs
-
-1. Workspace, CI, linting, domain types.
-2. Registry store plus migrations and locking.
-3. Process runner and official-client discovery.
-4. Gemini isolated-home adapter.
-5. `add` and `exec` vertical slice.
-6. list/current/rename/remove.
-7. doctor and environment-conflict detection.
-8. platform packaging and MVP documentation.
-9. Transaction engine as a separately reviewed series.
-10. Antigravity adapter only after transaction engine acceptance.
+Backend protocol access, proxy/server modes, quota polling, automatic account rotation, shared
+credentials, fingerprint spoofing, and anti-ban behavior.

@@ -47,7 +47,7 @@ The registry stores only `SecretRef`, never data. `SecretBytes` cannot implement
 
 ## Keyring naming
 
-- Service: `dev.gemini-auth.credentials`
+- Service: `dev.agy-auth.credentials`
 - Account: profile UUID, not email or display name.
 - Payload: versioned envelope with provider kind and opaque bytes.
 

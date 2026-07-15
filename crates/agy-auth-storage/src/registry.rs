@@ -1,8 +1,8 @@
-use fs2::FileExt;
-use gemini_auth_domain::{
+use agy_auth_domain::{
     DomainError, Profile, ProfileId, ProfileName, ProfileStatus, ProviderKind, Registry,
     StorageLocator,
 };
+use fs2::FileExt;
 use serde::{Deserialize, Serialize};
 use std::fs::{self, File, OpenOptions};
 use std::io::{self, Write};
@@ -364,10 +364,10 @@ pub enum RegistryStoreError {
 #[cfg(test)]
 mod tests {
     use super::{RegistryFile, RegistryStoreError};
-    use fs2::FileExt;
-    use gemini_auth_domain::{
+    use agy_auth_domain::{
         Profile, ProfileId, ProfileName, ProfileStatus, ProviderKind, Registry, StorageLocator,
     };
+    use fs2::FileExt;
     use std::fs;
     use time::OffsetDateTime;
 
@@ -389,7 +389,7 @@ mod tests {
     }
 
     fn temporary_directory() -> std::path::PathBuf {
-        let path = std::env::temp_dir().join(format!("gemini-auth-test-{}", uuid::Uuid::new_v4()));
+        let path = std::env::temp_dir().join(format!("agy-auth-test-{}", uuid::Uuid::new_v4()));
         fs::create_dir(&path).expect("create test directory");
         path
     }

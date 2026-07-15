@@ -1,63 +1,52 @@
-# gemini-auth
+# agy-auth
 
-`gemini-auth` is a planned local account-profile switcher for Google Gemini CLI and Antigravity CLI.
+`agy-auth` is a planned local profile manager for Google Antigravity CLI (`agy`). It aims to
+let one person select among their own legitimate Google account contexts without implementing OAuth,
+calling Google model backends, pooling quota, or sharing credentials.
 
-The project has one narrow purpose: let one person authenticate each of their own Google accounts through the official client, save those local credential states as named profiles, and switch the active profile without repeatedly logging out and back in.
+## Why Antigravity CLI
 
-It is **not** an API proxy, credential-sharing service, traffic interceptor, quota pool, or automatic rate-limit failover system.
+Google announced on May 19, 2026 that consumer Gemini CLI access was transitioning to Antigravity
+CLI. Consumer requests through Gemini CLI stopped on June 18, 2026; enterprise and paid API-key cases
+remain separate compatibility paths. Antigravity CLI is therefore the primary product target.
 
-## Proposed experience
+The exact `agy` profile and credential-storage contract is still under research. Until a supported,
+reversible isolation or switching mechanism is verified, this project must remain diagnostics-only
+for real Antigravity authentication state.
+
+## Intended experience
+
+The target interface, subject to capability verification, is:
 
 ```text
-gemini-auth add personal --provider gemini-cli
-gemini-auth add work --provider gemini-cli
-gemini-auth list
-gemini-auth use personal
-gemini-auth current
-gemini-auth exec work -- gemini
+agy-auth add personal
+agy-auth add work
+agy-auth list
+agy-auth use personal
+agy-auth current
+agy-auth exec work -- agy
 ```
 
-Antigravity CLI support is intentionally capability-gated:
+Commands that require an unverified storage capability must fail closed with a clear diagnostic.
 
-```text
-gemini-auth add personal-agy --provider antigravity-cli
-gemini-auth use personal-agy
-```
+## Current status
 
-The first Antigravity implementation supports only the verified file-backed credential mode used in SSH/headless environments. Desktop keyring modification remains out of scope until its storage contract is documented or independently verified.
-
-## Status
-
-This repository contains the research, implementation plan, and compiling Phase 0 Rust workspace.
-The CLI currently exposes only its global help/version shell; no credential-management feature has
-been implemented yet.
-
-## Documentation
-
-- [Product scope](docs/01-product-scope.md)
-- [Research findings](docs/02-research-findings.md)
-- [Stack decision](docs/03-stack-decision.md)
-- [Architecture](docs/04-architecture.md)
-- [Repository structure](docs/05-repository-structure.md)
-- [Credential and storage design](docs/06-credential-storage.md)
-- [CLI specification](docs/07-cli-specification.md)
-- [Security and policy boundaries](docs/08-security-policy.md)
-- [Testing strategy](docs/09-testing-strategy.md)
-- [Delivery phases](docs/10-delivery-roadmap.md)
-- [Operations and release engineering](docs/11-operations-release.md)
-- [Open questions](docs/12-open-questions.md)
-- [Source catalog](docs/13-source-catalog.md)
-- [Architecture decisions](docs/adr/)
+The repository has a compiling Rust workspace, non-secret profile registry, safe client discovery,
+bounded process execution, and a verified `agy 1.1.2 --version` smoke test. It does not yet read,
+write, capture, or switch real authentication state.
 
 ## Non-negotiable principles
 
-1. Official login only. The tool invokes or guides the official client's login flow; it never asks for a Google password.
-2. Manual switching only. No automatic rotation based on quota, errors, or rate limits.
-3. Local-only secrets. Credentials are never uploaded, synchronized, logged, or committed.
-4. Fail closed. Unknown credential schemas, active client processes, unsafe permissions, or unsupported keyrings stop the operation.
-5. Reversible changes. Every activation uses a transaction, backup, atomic replacement, and recovery journal.
-6. Adapter isolation. Gemini CLI and Antigravity CLI storage rules never leak into generic profile-management code.
+1. Official login only; the tool never requests a Google password or implements OAuth.
+2. Manual profile selection only; no quota-aware fallback, scoring, or rotation.
+3. Local-only secrets; nothing is uploaded, synchronized, logged, or committed.
+4. Fail closed on undocumented storage, schemas, permissions, links, or running-client conflicts.
+5. Reversible mutations only after a versioned Antigravity storage contract is verified.
+6. The official `agy` binary remains responsible for login, refresh, and model requests.
+
+See [product scope](docs/01-product-scope.md), [architecture](docs/04-architecture.md),
+[security policy](docs/08-security-policy.md), and [roadmap](docs/10-delivery-roadmap.md).
 
 ## License
 
-Choose a license before implementation. MIT or Apache-2.0 are reasonable; Apache-2.0 adds an explicit patent grant.
+Choose a license before publication or package distribution.

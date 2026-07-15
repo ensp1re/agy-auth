@@ -1,7 +1,7 @@
 # Agent instructions
 
-`gemini-auth` is a local-only profile switcher for credentials created and used by official Google
-clients. Preserve the hard boundary: never implement OAuth, backend API calls, quota-aware selection,
+`agy-auth` is a capability-gated local profile manager for Google Antigravity CLI (`agy`).
+Preserve the hard boundary: never implement OAuth, backend API calls, quota-aware selection,
 credential sharing, or automatic account rotation. Never print, log, commit, or retain real secrets.
 
 ## Start here
@@ -23,6 +23,8 @@ architecture is in `docs/04-architecture.md`, with decisions in `docs/adr/`. Sec
   providers implement ports. Provider code must not mutate active credentials directly.
 - Use synthetic credential fixtures only. Never use realistic token prefixes or copied local state.
 - Prefer a small vertical change with its owning tests. Do not broaden the roadmap without approval.
+- Real authentication-state mutation remains disabled until versioned `agy` capability evidence is
+  approved in an ADR; filenames and local observations alone are not a contract.
 - Run `python3 scripts/check.py` for the complete local gate. Use
   `python3 scripts/harness/validate.py` only for a narrow harness-state diagnosis.
 - Review the complete diff before committing. Do not bypass hooks or weaken a failing check.

@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-15T20:15:00Z",
-  "goal": "Implement safe official-client discovery and bounded process execution.",
+  "updatedAt": "2026-07-15T20:49:00Z",
+  "goal": "Pivot the product, binary, crates, and roadmap from Gemini CLI to Antigravity CLI.",
   "scope": [
-    "phase-1-client-discovery"
+    "phase-1-antigravity-transition"
   ],
   "status": "ready_for_review",
   "git": {
-    "branch": "feat/client-discovery",
-    "head": "764691d9ed1bcf4ea73bf5c4ae315e7f523c3524",
+    "branch": "pivot/antigravity-auth",
+    "head": "f02d8fb00c3f5a94768358fb29b5fce4a42615f6",
     "worktree": "dirty"
   },
   "completed": [
@@ -18,10 +18,12 @@
     "Pull request 1 was merged at commit 1f9a36d39818c347f0a04714f91df8a9a1140580.",
     "Profile registry pull request 2 was merged at commit 73f24b65889f78b6e44bf77c53424ca896db55ee.",
     "The VPS agy binary was observed at /root/.local/bin/agy and reports version 1.1.2 from --version; no authentication state was accessed.",
-    "Client discovery pull request 3 was opened at https://github.com/ensp1re/gemini-auth/pull/3."
+    "Client discovery pull request 3 was merged at commit c6be00c4225b66900a2d0b725260c87b046b1da4.",
+    "Gemini isolated-home pull request 4 was closed because consumer Gemini CLI transitioned to Antigravity CLI.",
+    "Antigravity transition pull request 5 was opened at https://github.com/ensp1re/gemini-auth/pull/5."
   ],
   "nextActions": [
-    "Review and merge pull request 3 using the recorded local and agy 1.1.2 evidence; hosted CI remains deferred."
+    "Review and merge pull request 5, then rename the GitHub repository to agy-auth and reconcile links."
   ],
   "decisions": [
     "Use the Core harness profile only; no hooks, daemon, event journal, database, or client adapter.",
@@ -42,6 +44,8 @@
       "cargo deny check: advisories, bans, licenses, and sources passing",
       "profile registry at 05dbd82: 14 tests passing, including lock contention, symlink refusal, 0600 permissions, schema rejection, and repeated round trips",
       "client discovery at c506fcc: 20 tests passing plus installed agy 1.1.2 smoke test passing",
+      "Antigravity transition at bfe91d7: renamed workspace, 20 tests, agy 1.1.2 smoke test, dependency policy, and strict harness validation passing",
+      "Short naming at f02d8fb: agy-auth binary and agy-auth-* crates compile and pass all local gates",
       "python3 scripts/check_dependencies.py: passing",
       "python3 scripts/check_no_secrets.py: passing"
     ],
@@ -52,7 +56,7 @@
     ]
   },
   "risks": [
-    "GEMINI_CLI_HOME credential isolation is an unverified product assumption and must not be represented as proven behavior.",
+    "Antigravity CLI authentication storage and profile isolation remain unverified and must not be represented as supported.",
     "Cross-platform CI remains unverified while GitHub Actions usage is unavailable."
   ],
   "touchedPaths": [

@@ -1,6 +1,6 @@
 # ADR 0004: Transactional Antigravity File-Mode Support
 
-- Status: Proposed, pending compatibility tests
+- Status: Proposed, pending renewed `agy` 1.1.2 compatibility research
 - Date: 2026-07-15
 
 ## Context

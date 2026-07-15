@@ -2,156 +2,73 @@
 
 ## Architectural style
 
-Use a ports-and-adapters design with a small application core. Provider-specific knowledge belongs behind `ProviderAdapter`; persistence belongs behind `RegistryStore`, `SecretStore`, and `ActivationStore`. Commands orchestrate these ports but never parse provider tokens directly.
+Use ports and adapters with strict dependency direction:
 
 ```text
-┌─────────────────────────────────────────────────────────────┐
-│ CLI presentation                                            │
-│ clap args, prompts, tables, JSON output, exit codes          │
-└────────────────────────────┬────────────────────────────────┘
-                             │ Command DTOs
-┌────────────────────────────▼────────────────────────────────┐
-│ Application services                                       │
-│ AddProfile, ActivateProfile, ExecProfile, Remove, Doctor    │
-└──────────────┬─────────────────┬─────────────────┬──────────┘
-               │                 │                 │
-┌──────────────▼───────┐ ┌──────▼────────┐ ┌──────▼──────────┐
-│ Provider adapters    │ │ Profile vault │ │ Transaction mgr │
-│ Gemini / Antigravity │ │ metadata+secret│ │ lock/journal/RB │
-└──────────────┬───────┘ └──────┬────────┘ └──────┬──────────┘
-               │                 │                 │
-┌──────────────▼─────────────────▼─────────────────▼──────────┐
-│ Infrastructure                                             │
-│ filesystem, OS keyring, process runner, clock, permissions  │
-└─────────────────────────────────────────────────────────────┘
+agy-auth-cli -> application -> domain/ports
+process, storage, and provider-antigravity-cli implement infrastructure boundaries
 ```
 
-## Domain model
+The official `agy` process is the only component permitted to perform login, refresh credentials, or
+make model requests. Provider code returns declarative capability and mutation plans; it does not
+silently mutate authentication state.
 
-```rust
-ProfileId(Uuid)
-ProfileName(String)          // validated, unique case-folded name
-ProviderKind                 // GeminiCli | AntigravityCli
-Profile {
-  id, name, provider, created_at, updated_at,
-  storage_locator, account_hint, schema_fingerprint,
-  client_version_at_capture, status
-}
-AccountHint { masked_email } // optional; never required for identity
-ActiveSelection { provider, profile_id, activated_at }
-CapabilitySet {
-  isolated_home, capture_active_file, activate_file,
-  os_keyring, exec, logout, process_detection
-}
-```
+## Current implemented core
 
-Do not use email as the primary key. Accounts can change email aliases and the same account may exist under multiple providers. `ProfileId` is immutable; `ProfileName` is user-facing.
+- strongly typed non-secret profile registry;
+- locked, atomic metadata persistence;
+- safe executable discovery;
+- direct argv execution with bounded output and timeout;
+- installed `agy 1.1.2` version probe;
+- capability gates that keep unverified auth-state behavior disabled.
 
-## Provider adapter contract
+## Antigravity provider discovery
 
-```rust
-trait ProviderAdapter {
-    fn kind(&self) -> ProviderKind;
-    fn discover(&self, ctx: &Context) -> Result<Discovery>;
-    fn capabilities(&self, discovery: &Discovery) -> CapabilitySet;
-    fn begin_login(&self, profile: &ProfileDraft, runner: &dyn ProcessRunner)
-        -> Result<CapturedState>;
-    fn validate_state(&self, state: &OpaqueSecret) -> Result<StateMetadata>;
-    fn capture_active(&self, discovery: &Discovery) -> Result<CapturedState>;
-    fn plan_activation(&self, profile: &Profile, discovery: &Discovery)
-        -> Result<ActivationPlan>;
-    fn verify_activation(&self, plan: &ActivationPlan) -> Result<Verification>;
-}
-```
+Discovery may inspect only:
 
-Adapters return declarative `ActivationPlan` operations. They do not directly mutate the active filesystem. The transaction manager executes the plan, ensuring identical locking, backup, permissions, journaling, and rollback semantics across providers.
+- explicit executable path or supplied `PATH`;
+- regular-file and executable metadata;
+- bounded output from allowlisted commands such as `agy --version` and documented diagnostics.
 
-## Gemini CLI adapter
+Discovery must not inspect credential files, keyrings, process environments, client homes, logs, or
+conversation content by default.
 
-Preferred mode is not activation at all:
+## Capability states
+
+Each installed client version and platform reports capabilities independently:
 
 ```text
-gemini-auth exec personal -- gemini
-  -> resolve profile
-  -> set GEMINI_CLI_HOME=<profile home root>
-  -> sanitize inherited auth-conflicting environment variables
-  -> exec official binary
+unknown -> observed -> verified -> enabled
+                    -> stale
+                    -> unsupported
 ```
 
-`add` creates the isolated home and launches Gemini CLI. Success is detected by presence of expected state and, if possible, an official-client command that reports authentication. The tool must not read access/refresh tokens merely to prove success.
+Only `verified` capabilities may produce mutation plans. Evidence includes client version, platform,
+storage mode, reproduction procedure, trust level, and reverification trigger. Upgrades make storage
+evidence stale until compatibility is confirmed.
 
-Optional `use` can maintain a shell integration or active launcher configuration. It should not merge profile homes into `~/.gemini` in MVP.
+## Preferred switching strategy
 
-## Antigravity CLI adapter
+Choose the first verified option in this order:
 
-File-mode activation plan:
+1. Official Antigravity account/profile command.
+2. Official documented home/config override that isolates all credential and keyring lookups.
+3. Verified file-backed mode using opaque bytes and a transactional activation engine.
+4. Diagnostics-only refusal.
 
-```text
-1. Discover fixed active file and verify regular file/no symlink.
-2. Detect running `agy`/Antigravity processes; stop unless absent.
-3. Validate stored opaque JSON envelope without logging values.
-4. Acquire global provider lock.
-5. Hash current active bytes and save rollback copy in vault.
-6. Write candidate to same-directory temporary file.
-7. Set owner-only permissions/ACL.
-8. fsync candidate; atomic rename over active path; fsync directory.
-9. Re-read and compare bytes/hash/permissions.
-10. Update active selection and commit journal.
-11. Release lock.
-```
+Never infer support from filenames alone. Keyring-backed desktop state remains unsupported until
+Google documents it or deterministic, reversible behavior receives independent security review.
 
-If any post-write step fails, restore the rollback copy using the same atomic procedure. A crash leaves a journal that `gemini-auth doctor --repair` can reconcile.
+## Transaction boundary
 
-## Activation transaction state machine
+If file-backed activation is approved later, use a provider lock, regular-file/link checks, owner-only
+permissions, rollback copy, same-directory atomic replacement, reread verification, journaled state,
+and idempotent recovery. The provider supplies paths and opaque bytes; the transaction manager owns
+all mutation and rollback.
 
-```text
-Planned
-  -> Locked
-  -> BackupCreated
-  -> CandidateWritten
-  -> Installed
-  -> Verified
-  -> RegistryCommitted
-  -> Complete
+## Error and redaction boundary
 
-Any pre-Installed error -> discard candidate -> Aborted
-Any post-Installed error -> restore backup -> RolledBack
-Crash/unknown            -> NeedsRecovery
-```
-
-State transitions are monotonic and persisted before destructive steps. Re-running recovery is idempotent.
-
-## Concurrency model
-
-- One global registry lock prevents concurrent profile mutation.
-- One provider activation lock prevents competing active-state changes.
-- Read commands may proceed without the activation lock after taking a consistent registry snapshot.
-- `exec` against isolated homes needs no global activation lock.
-- Never hold a lock while waiting for browser login; reserve the profile name, release, authenticate, then reacquire to commit.
-
-## Dependency direction
-
-```text
-cli -> application -> domain
-                  -> ports
-infrastructure implements ports
-providers implement provider port using infrastructure abstractions
-```
-
-The domain crate must not depend on `clap`, OS keyring libraries, filesystem APIs, or provider JSON structures.
-
-## Error taxonomy
-
-- Usage/configuration error
-- Profile not found/conflict
-- Provider not installed
-- Unsupported provider mode
-- Client currently running
-- Secret store unavailable/locked
-- Credential schema unsupported/corrupt
-- Permission/ownership unsafe
-- Transaction conflict/recovery required
-- Official login failed/cancelled
-- Internal invariant failure
-
-Every error has a stable machine code and a remediation message. Errors must not wrap raw secret payloads.
+Errors expose stable categories and remediation, never raw output or state objects. Allowed evidence
+is limited to provider enum, client version, capability booleans, operation ID, redacted paths, byte
+length, and short integrity fingerprints. Full emails, tokens, authorization URLs, and environment
+values are forbidden.

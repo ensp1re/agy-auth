@@ -6,10 +6,10 @@ This document separates stable public contracts from local observations and desi
 
 | Source | Used for | Evidence grade |
 |---|---|---|
-| [Gemini CLI configuration](https://github.com/google-gemini/gemini-cli/blob/main/docs/reference/configuration.md) | `GEMINI_CLI_HOME`, configuration precedence and user storage | Official documentation |
-| [Gemini CLI authentication](https://github.com/google-gemini/gemini-cli/blob/main/docs/get-started/authentication.mdx) | Supported authentication modes and cached headless auth | Official documentation |
-| [Gemini CLI FAQ](https://github.com/google-gemini/gemini-cli/blob/main/docs/resources/faq.md) | Security storage advice and prohibition on OAuth piggybacking | Official documentation |
-| [Gemini CLI source repository](https://github.com/google-gemini/gemini-cli) | Future adapter verification, tests, configuration implementation | Official source |
+| [Gemini CLI transition announcement](https://developers.googleblog.com/en/an-important-update-transitioning-gemini-cli-to-antigravity-cli/) | Consumer transition timeline and enterprise exceptions | Official announcement |
+| [Antigravity CLI announcement](https://antigravity.google/blog/introducing-google-antigravity-cli) | Product direction and shared harness | Official announcement |
+| [Antigravity CLI product page](https://antigravity.google/product/antigravity-cli) | Current CLI positioning and launch command | Official product page |
+| [Antigravity documentation](https://www.antigravity.google/docs) | Current supported settings and behavior | Official documentation |
 | [Rust `keyring` documentation](https://docs.rs/keyring/latest/keyring/) | Cross-platform native credential-store feasibility | Upstream library documentation |
 | [Rust `clap` documentation](https://docs.rs/clap/latest/clap/) | Typed CLI and completion implementation | Upstream library documentation |
 | [Go keyring documentation](https://pkg.go.dev/github.com/zalando/go-keyring) | Go alternative evaluation | Upstream library documentation |
@@ -19,7 +19,7 @@ This document separates stable public contracts from local observations and desi
 | Project | Relevant pattern | Caution |
 |---|---|---|
 | [`Loongphy/codex-auth`](https://github.com/Loongphy/codex-auth) | Named account registry, explicit switching, import/export UX | Provider-specific direct API/usage behavior should not be copied |
-| [`NoeFabris/opencode-antigravity-auth`](https://github.com/NoeFabris/opencode-antigravity-auth) | Multiple Google account storage and model configuration | Quota rotation/backend access are outside this project's boundary |
+| [`NoeFabris/opencode-agy-auth`](https://github.com/NoeFabris/opencode-agy-auth) | Multiple Google account storage and model configuration | Quota rotation/backend access are outside this project's boundary |
 | [`lbjlaq/Antigravity-Manager`](https://github.com/lbjlaq/Antigravity-Manager) | Demonstrates broad compatibility complexity | It is a proxy; not a template for a local selector |
 | [`badrisnarayanan/antigravity-claude-proxy`](https://github.com/badrisnarayanan/antigravity-claude-proxy) | Antigravity credential reuse ecosystem | Proxy behavior is intentionally excluded |
 
@@ -41,7 +41,7 @@ Evidence grade: verified for the inspected build/environment, not a public compa
 - Antigravity must be stopped before file activation to prevent refresh-write races.
 - The tool should preserve opaque bytes and unknown JSON fields.
 - Desktop keyring support is unsafe to implement without exact identifiers and lifecycle tests.
-- Isolated Gemini CLI homes are safer than copying individual credential documents.
+- An official Antigravity profile/home mechanism is preferable to copying credential documents.
 
 Evidence grade: architecture conclusions derived from the primary sources and observations. Each must be validated by adapter contract tests.
 
@@ -49,7 +49,7 @@ Evidence grade: architecture conclusions derived from the primary sources and ob
 
 Repeat relevant research when:
 
-- Gemini CLI changes major/minor authentication behavior or removes/changes `GEMINI_CLI_HOME`;
+- Antigravity CLI changes version, storage mode, profile commands, or authentication behavior;
 - Antigravity CLI changes its major version, token filename, storage log, or credential envelope;
 - a provider adds official multi-account support;
 - keyring crate changes its backend architecture or minimum platform versions;

@@ -1,14 +1,13 @@
 [workspace]
 resolver = "2"
 members = [
-  "crates/gemini-auth-app",
-  "crates/gemini-auth-cli",
-  "crates/gemini-auth-domain",
-  "crates/gemini-auth-process",
-  "crates/gemini-auth-storage",
-  "crates/gemini-auth-test-support",
+  "crates/agy-auth-app",
+  "crates/agy-auth-cli",
+  "crates/agy-auth-domain",
+  "crates/agy-auth-process",
+  "crates/agy-auth-storage",
+  "crates/agy-auth-test-support",
   "crates/provider-antigravity-cli",
-  "crates/provider-gemini-cli",
 ]
 
 [workspace.package]
@@ -21,8 +20,8 @@ repository = "https://github.com/ensp1re/gemini-auth"
 [workspace.dependencies]
 clap = { version = "4.5.41", features = ["derive"] }
 fs2 = "0.4.3"
-gemini-auth-app = { version = "=0.1.0", path = "crates/gemini-auth-app" }
-gemini-auth-domain = { version = "=0.1.0", path = "crates/gemini-auth-domain" }
+agy-auth-app = { version = "=0.1.0", path = "crates/agy-auth-app" }
+agy-auth-domain = { version = "=0.1.0", path = "crates/agy-auth-domain" }
 serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0.140"
 thiserror = "2.0.12"

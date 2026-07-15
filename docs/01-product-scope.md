@@ -1,85 +1,52 @@
 # Product Scope and Requirements
 
-## Problem statement
-
-Google's command-line clients generally expose one active OAuth identity at a time. A developer who legitimately separates personal and work activity must repeatedly sign out, complete browser login, and reinitialize the client. The desired workflow is the same ergonomic improvement offered by account switchers in other ecosystems: save locally authenticated states under names and activate one explicitly.
-
-The product must improve local ergonomics without changing how Google authenticates requests, increasing quota, impersonating an official client, or exposing a subscription through another protocol.
-
 ## Product definition
 
-`gemini-auth` is a local credential-profile orchestrator. It manages references to credential states and delegates authentication and request execution to official Google clients.
+`agy-auth` is a local profile-state orchestrator for Google Antigravity CLI (`agy`). It
+manages non-secret profile metadata and, only where an official or independently verified local
+contract permits, selects the local authentication context used by the official client.
 
-It supports two operating models:
+It does not authenticate to Google itself. The official client owns login, token refresh, requests,
+entitlements, safety controls, and account policy.
 
-1. **Isolated-home execution**: each profile owns a separate official-client home directory. The tool launches the official client with the selected home. This is preferred because no credential copying is required.
-2. **Transactional activation**: where the official client has a fixed credential path, the tool atomically installs a previously captured credential document into that path. This is a compatibility fallback.
+## Transition context
+
+Google announced the transition from consumer Gemini CLI to Antigravity CLI on May 19, 2026. Consumer
+Gemini CLI service stopped on June 18, 2026. Gemini CLI remains a possible legacy enterprise/API-key
+compatibility target, but it is not part of the MVP.
 
 ## Target users
 
-- A single developer with separate personal and employer-owned Google accounts.
-- A consultant who keeps client identities isolated.
-- A developer testing behavior across legitimate accounts or organizations.
-- SSH users who cannot conveniently repeat browser login.
+- One developer separating their own personal and employer-approved Google accounts.
+- A consultant isolating legitimate client identities on one workstation.
+- SSH/headless users who need explicit, manual account-context selection.
 
-## Explicit non-users
+## First-release scope
 
-- Teams sharing one person's credentials.
-- Services exposing Gemini or Antigravity as a public/private API.
-- Operators aggregating free or paid quotas.
-- Bots automatically choosing another identity after rate limiting.
-- Any workflow intended to evade account, region, entitlement, or safety controls.
+The first release is capability-gated:
 
-## Functional requirements
+1. Discover and diagnose the installed `agy` version without reading authentication state.
+2. Maintain a local non-secret profile registry.
+3. Use an official Antigravity profile/home mechanism if Google documents one.
+4. Otherwise support a versioned, independently verified local file mode only after reversible
+   behavior, permissions, refresh behavior, and running-process interaction are tested.
+5. Refuse mutation in unsupported desktop/keyring or unknown modes.
 
-### Profile lifecycle
+## Explicit exclusions
 
-- Add a named profile using the official client login flow.
-- Import an already-active local credential state only after explicit confirmation.
-- List profiles without reading or displaying secret values.
-- Show the active profile and provider.
-- Rename profile metadata without touching credentials.
-- Remove a profile with confirmation and best-effort secret deletion.
-- Diagnose storage, permissions, schema compatibility, and client-process conflicts.
-
-### Activation
-
-- Explicitly activate one profile.
-- Atomically update the active credential state.
-- Preserve a rollback point until activation is verified.
-- Refuse activation while the target client is running unless `--force` is explicitly supplied; `--force` still must not corrupt files.
-- Provide `exec <profile> -- <command>` to avoid global mutation when isolated homes are supported.
-
-### Providers
-
-- `gemini-cli`: first-class, preferred isolated-home model through `GEMINI_CLI_HOME`.
-- `antigravity-cli`: v1 support for verified file-backed tokens only.
-- `antigravity-desktop`: discovery/diagnostics only until keyring and state behavior are verified.
-
-### Output
-
-- Human-readable tables by default.
-- Stable `--json` output for scripting.
-- No secrets in stdout, stderr, diagnostics, crash reports, or JSON output.
-- Defined exit codes documented in the CLI specification.
-
-## Non-functional requirements
-
-- Linux, macOS, and Windows support.
-- Single self-contained executable per platform.
-- Startup under 100 ms for metadata-only commands on a warm filesystem.
-- No network access except when launching an official login or optional, explicit update check.
-- No daemon required.
-- Atomicity under crash/power loss as far as the host filesystem permits.
-- Backward-compatible registry migrations.
-- Reproducible release builds and signed checksums.
+- Gemini/model backend calls, proxies, protocol emulation, or OAuth implementation.
+- Quota display through private endpoints or automatic switching after errors or limits.
+- Shared/team vaults, credential synchronization, impersonation, or account pooling.
+- Keyring enumeration, private database modification, fingerprint spoofing, or anti-ban claims.
+- Gemini CLI consumer support; legacy enterprise compatibility requires a separate approved task.
 
 ## Success criteria
 
-The MVP is successful when a user can create two Gemini CLI profiles, run each in an isolated home, switch between them without another OAuth login, and recover cleanly from a deliberately interrupted activation. No secret may appear in tests, logs, or shell history.
+Research is successful when an `agy` storage/profile contract is documented with version, platform,
+non-secret reproduction steps, reversibility, and expiry triggers.
 
-Antigravity support is successful when the same workflow works in its verified file-token mode and refuses unsupported keyring-backed environments with a clear explanation.
+The MVP is successful only when two synthetic or dedicated test accounts can be selected manually
+through the official `agy` client on each claimed platform, switching survives refresh and restart,
+interrupted mutation recovers safely, and no secret appears in output, logs, tests, or Git.
 
-## Policy-safe product boundary
-
-Convenient manual selection is the product. Quota-aware selection is not. The codebase must not include rate-limit polling, account scoring, round-robin selection, retry-to-another-account, fingerprint spoofing, backend protocol calls, or token refresh calls made on behalf of the official client.
+Until those criteria are met, the product may expose diagnostics but must not claim account switching.

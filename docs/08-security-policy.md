@@ -23,7 +23,7 @@ These boundaries should appear in `CONTRIBUTING.md` and pull-request review temp
 
 ## Policy analysis
 
-Google's Gemini CLI FAQ states that harvesting or piggybacking on CLI OAuth to access backend services from third-party software violates applicable terms and may lead to suspension. This design avoids that behavior: the official client performs login, refresh, and requests; `gemini-auth` only selects local client state.
+Google's Gemini CLI FAQ states that harvesting or piggybacking on CLI OAuth to access backend services from third-party software violates applicable terms and may lead to suspension. This design avoids that behavior: the official client performs login, refresh, and requests; `agy-auth` only selects local client state.
 
 That does not equal formal Google endorsement. Users remain responsible for account terms and employer policies. Manual switching should never be marketed as "ban safe."
 

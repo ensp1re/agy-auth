@@ -1,5 +1,5 @@
 [package]
-name = "gemini-auth-app"
+name = "agy-auth-test-support"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -7,7 +7,7 @@ publish.workspace = true
 repository.workspace = true
 
 [dependencies]
-gemini-auth-domain.workspace = true
+agy-auth-domain.workspace = true
 
 [lints]
 workspace = true

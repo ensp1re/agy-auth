@@ -1,5 +1,5 @@
 [package]
-name = "gemini-auth-domain"
+name = "agy-auth-domain"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
