@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-15T21:19:55Z",
+  "updatedAt": "2026-07-15T21:20:42Z",
   "goal": "Implement a secret-safe diagnostics-only agy-auth doctor vertical slice.",
   "scope": [
     "phase-2a-doctor-diagnostics"
   ],
-  "status": "active",
+  "status": "ready_for_review",
   "git": {
     "branch": "feature/doctor-diagnostics",
-    "head": "c54ecb7ddeaa20bd1e72b8423bec4a2c6555705b",
+    "head": "8d4ac783a46d48063f1375bd35cf71fd915ae18a",
     "worktree": "dirty"
   },
   "completed": [
@@ -29,10 +29,11 @@
     "Failed-attempt pull request 9 was merged at commit b3f97af74fdf1b94f50117abe90e945e63fcdeff.",
     "A corrected clean-environment retry produced the same identity reuse and was stopped and cleaned up without logout or a model prompt.",
     "ADR 0006 selects diagnostics-only behavior until a supported Antigravity profile contract exists.",
-    "Diagnostics-only decision pull request 10 was merged at commit c54ecb7ddeaa20bd1e72b8423bec4a2c6555705b."
+    "Diagnostics-only decision pull request 10 was merged at commit c54ecb7ddeaa20bd1e72b8423bec4a2c6555705b.",
+    "The agy-auth doctor vertical slice was implemented at 8d4ac78 with human/JSON output, stable exit codes, and no authentication access."
   ],
   "nextActions": [
-    "Complete doctor edge-case tests, run all local gates, and publish the diagnostics vertical slice for review."
+    "Review and merge the agy-auth doctor diagnostics pull request."
   ],
   "decisions": [
     "Use the Core harness profile only; no hooks, daemon, event journal, database, or client adapter.",
