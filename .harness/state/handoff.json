@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-15T20:30:00Z",
+  "updatedAt": "2026-07-15T20:42:00Z",
   "goal": "Pivot the product, binary, crates, and roadmap from Gemini CLI to Antigravity CLI.",
   "scope": [
     "phase-1-antigravity-transition"
   ],
-  "status": "active",
+  "status": "ready_for_review",
   "git": {
     "branch": "pivot/antigravity-auth",
-    "head": "c6be00c4225b66900a2d0b725260c87b046b1da4",
+    "head": "bfe91d72075b40231b18e015d8681e9794ee8991",
     "worktree": "dirty"
   },
   "completed": [
@@ -22,7 +22,7 @@
     "Gemini isolated-home pull request 4 was closed because consumer Gemini CLI transitioned to Antigravity CLI."
   ],
   "nextActions": [
-    "Complete the antigravity-auth rename and verify that no MVP source still enables Gemini isolated-home behavior."
+    "Push the Antigravity transition branch and open its review PR; rename the GitHub repository only after merge."
   ],
   "decisions": [
     "Use the Core harness profile only; no hooks, daemon, event journal, database, or client adapter.",
@@ -43,6 +43,7 @@
       "cargo deny check: advisories, bans, licenses, and sources passing",
       "profile registry at 05dbd82: 14 tests passing, including lock contention, symlink refusal, 0600 permissions, schema rejection, and repeated round trips",
       "client discovery at c506fcc: 20 tests passing plus installed agy 1.1.2 smoke test passing",
+      "Antigravity transition at bfe91d7: renamed workspace, 20 tests, agy 1.1.2 smoke test, dependency policy, and strict harness validation passing",
       "python3 scripts/check_dependencies.py: passing",
       "python3 scripts/check_no_secrets.py: passing"
     ],

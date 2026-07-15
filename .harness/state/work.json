@@ -133,7 +133,23 @@
         "All local build, test, dependency, secret, link, and harness checks pass after the migration."
       ],
       "blocker": null,
-      "verification": [],
+      "verification": [
+        {
+          "command": "python3 scripts/check.py",
+          "revision": "bfe91d72075b40231b18e015d8681e9794ee8991",
+          "outcome": "passing; renamed workspace and 20 tests"
+        },
+        {
+          "command": "cargo deny check",
+          "revision": "bfe91d72075b40231b18e015d8681e9794ee8991",
+          "outcome": "advisories, bans, licenses, and sources passing"
+        },
+        {
+          "command": "ANTIGRAVITY_AUTH_TEST_AGY=/root/.local/bin/agy ANTIGRAVITY_AUTH_TEST_AGY_VERSION=1.1.2 cargo test -p antigravity-auth-process --test installed_client -- --ignored --exact discovers_and_probes_installed_agy_without_authentication",
+          "revision": "bfe91d72075b40231b18e015d8681e9794ee8991",
+          "outcome": "passing; installed agy 1.1.2 discovered without authentication access"
+        }
+      ],
       "completion": null
     }
   ]
