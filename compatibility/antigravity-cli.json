@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "provider": "antigravity-cli",
+  "versions": [
+    {
+      "version": "1.1.2",
+      "observedAt": "2026-07-15",
+      "platform": "linux-x86_64",
+      "discovery": "passing",
+      "versionProbe": "passing",
+      "profileSwitching": "unsupported",
+      "authStateMutation": "disabled",
+      "evidence": "docs/02-research-findings.md",
+      "reverifyWhen": "agy version changes or official profile documentation is published"
+    }
+  ]
+}

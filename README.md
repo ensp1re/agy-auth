@@ -31,9 +31,10 @@ Commands that require an unverified storage capability must fail closed with a c
 
 ## Current status
 
-The repository has a compiling Rust workspace, non-secret profile registry, safe client discovery,
-bounded process execution, and a verified `agy 1.1.2 --version` smoke test. It does not yet read,
-write, capture, or switch real authentication state.
+The repository has a diagnostics-only `agy-auth doctor` command, non-secret profile registry, safe
+client discovery, bounded process execution, filesystem safety checks, and a verified `agy 1.1.2
+--version` compatibility entry. It does not read, write, capture, or switch real authentication
+state.
 
 ## Non-negotiable principles
 

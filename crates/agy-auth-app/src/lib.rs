@@ -7,6 +7,18 @@ pub use agy_auth_domain::{ErrorCode, ProviderKind};
 /// Stable diagnostics schema version.
 pub const DOCTOR_SCHEMA_VERSION: u32 = 1;
 
+/// Reproducible build identity without builder paths or environment values.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolDiagnostic {
+    /// Package version.
+    pub version: &'static str,
+    /// Source revision, or `unknown` outside a Git build context.
+    pub git_revision: &'static str,
+    /// Rust compilation target triple.
+    pub target: &'static str,
+}
+
 /// Safe official-client diagnostic result.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -57,6 +69,8 @@ pub struct CapabilityDiagnostic {
 pub struct DoctorReport {
     /// Report schema version.
     pub schema_version: u32,
+    /// agy-auth build identity.
+    pub tool: ToolDiagnostic,
     /// Provider identifier.
     pub provider: &'static str,
     /// Official-client status.
@@ -103,6 +117,11 @@ pub fn doctor(
 ) -> DoctorReport {
     DoctorReport {
         schema_version: DOCTOR_SCHEMA_VERSION,
+        tool: ToolDiagnostic {
+            version: env!("CARGO_PKG_VERSION"),
+            git_revision: env!("AGY_AUTH_GIT_REVISION"),
+            target: env!("AGY_AUTH_BUILD_TARGET"),
+        },
         provider: "antigravity-cli",
         client: client.probe(),
         registry: registry.probe(),

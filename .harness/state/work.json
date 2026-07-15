@@ -258,7 +258,7 @@
     {
       "id": "phase-2b-doctor-filesystem-diagnostics",
       "title": "Harden doctor with project-owned filesystem diagnostics",
-      "status": "active",
+      "status": "passing",
       "source": "docs/07-cli-specification.md",
       "plan": "docs/plans/phase-2b-doctor-filesystem-diagnostics.md",
       "acceptance": [
@@ -291,6 +291,27 @@
           "outcome": "passing; 0 errors and 0 warnings"
         }
       ],
+      "completion": {
+        "commit": "26579ef78439b2138cafa3ef293f12eae5f0f8fa",
+        "review": "https://github.com/ensp1re/agy-auth/pull/12",
+        "completedAt": "2026-07-15T21:32:47Z"
+      }
+    },
+    {
+      "id": "phase-4-release-readiness-foundation",
+      "title": "Add end-to-end contracts and compatibility build metadata",
+      "status": "active",
+      "source": "docs/11-operations-release.md",
+      "plan": "docs/plans/phase-4-release-readiness-foundation.md",
+      "acceptance": [
+        "Compiled-binary end-to-end tests cover human and JSON doctor behavior.",
+        "Exit codes 0, 4, 8, and 10 are verified through the CLI boundary.",
+        "Doctor embeds package version, Git revision, and compilation target without builder data.",
+        "A schema-validated compatibility matrix records agy 1.1.2 diagnostics-only support.",
+        "All local repository and harness checks pass without hosted CI."
+      ],
+      "blocker": null,
+      "verification": [],
       "completion": null
     }
   ]
