@@ -166,7 +166,7 @@
       "title": "Research the supported Antigravity authentication and profile contract",
       "status": "active",
       "source": "docs/12-open-questions.md",
-      "plan": null,
+      "plan": "docs/plans/phase-2-capability-research.md",
       "acceptance": [
         "The installed agy command surface is inventoried without accessing authentication state.",
         "Official account, profile, home, configuration, and diagnostic mechanisms are identified or explicitly ruled out with evidence.",
@@ -175,7 +175,18 @@
         "No real authentication-state mutation is enabled during research."
       ],
       "blocker": null,
-      "verification": [],
+      "verification": [
+        {
+          "command": "/root/.local/bin/agy --version; /root/.local/bin/agy --help; /root/.local/bin/agy help <subcommand>",
+          "revision": "355448d2951cd63eb72ff55164c5fd01f77cedb4",
+          "outcome": "passing; agy 1.1.2 public command surface inventoried without authentication-state access"
+        },
+        {
+          "command": "Review official Antigravity CLI installation/authentication and getting-started documentation",
+          "revision": "355448d2951cd63eb72ff55164c5fd01f77cedb4",
+          "outcome": "official docs describe OS keyring token profiles and destructive /logout, but no profile selector or credential-home override"
+        }
+      ],
       "completion": null
     }
   ]
