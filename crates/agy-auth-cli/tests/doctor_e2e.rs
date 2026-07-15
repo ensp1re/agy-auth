@@ -4,6 +4,7 @@
 
 use serde_json::Value;
 use std::fs;
+use std::io::Write;
 use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
@@ -21,7 +22,11 @@ fn fixture() -> (PathBuf, PathBuf) {
     fs::create_dir(&root).expect("create fixture root");
     fs::set_permissions(&root, fs::Permissions::from_mode(0o700)).expect("secure fixture root");
     let client = root.join("agy");
-    fs::write(&client, "#!/bin/sh\nprintf '1.1.2\\n'\n").expect("write fake client");
+    let mut file = fs::File::create(&client).expect("create fake client");
+    file.write_all(b"#!/bin/sh\nprintf '1.1.2\\n'\n")
+        .expect("write fake client");
+    file.sync_all().expect("sync fake client");
+    drop(file);
     fs::set_permissions(&client, fs::Permissions::from_mode(0o700))
         .expect("make client executable");
     (root, client)

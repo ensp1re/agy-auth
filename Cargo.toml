@@ -16,6 +16,7 @@ edition = "2024"
 rust-version = "1.88"
 publish = false
 repository = "https://github.com/ensp1re/agy-auth"
+license = "MIT"
 
 [workspace.dependencies]
 clap = { version = "4.5.41", features = ["derive"] }

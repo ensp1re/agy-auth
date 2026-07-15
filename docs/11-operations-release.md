@@ -52,15 +52,16 @@ Nightly/scheduled:
 
 `scripts/package_linux_rc.sh` builds a clean-worktree, host-target release archive with deterministic
 tar ownership/order/time metadata, a SHA-256 checksum manifest, an SPDX 2.3 JSON SBOM, and embedded
-version/revision/target identity. The archive is explicitly marked `local-rc` and
-`NOT-FOR-DISTRIBUTION` while the project license remains unresolved.
+version/revision/target identity. The archive includes the approved MIT license and is labeled
+`rc.1` until release acceptance is complete.
 
 ```bash
 PATH=/root/.cargo/bin:$PATH scripts/package_linux_rc.sh dist
-(cd dist && sha256sum -c agy-auth-*-local-rc.sha256)
+(cd dist && sha256sum -c agy-auth-*-rc.1.sha256)
 ```
 
-This is a local validation artifact, not authorization to publish a GitHub release or package.
+Creating the archive is not authorization to publish a GitHub release or package; publication is a
+separate externally visible action.
 
 ### Manual local installation
 
