@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-15T21:04:39Z",
+  "updatedAt": "2026-07-15T21:13:11Z",
   "goal": "Research the supported Antigravity CLI authentication and profile contract without mutating real authentication state.",
   "scope": [
     "phase-2-antigravity-capability-research"
   ],
-  "status": "active",
+  "status": "ready_for_review",
   "git": {
-    "branch": "research/record-linux-isolation-failure",
-    "head": "4394b9f2e14fe74dc513733f60fea0ae803f51cd",
+    "branch": "research/diagnostics-only-decision",
+    "head": "b3f97af74fdf1b94f50117abe90e945e63fcdeff",
     "worktree": "dirty"
   },
   "completed": [
@@ -25,10 +25,13 @@
     "The agy 1.1.2 public command surface and official authentication documentation were inventoried without accessing authentication state.",
     "Capability inventory pull request 7 was merged at commit 833f3216838c73db811f08f7a192105dcb817ad5.",
     "A dedicated-account Linux observation protocol was designed in pull request 8 and merged at commit 4394b9f2e14fe74dc513733f60fea0ae803f51cd.",
-    "The first Linux observation attempt stopped because agy silently reused an existing identity; no logout occurred and all disposable state was removed."
+    "The first Linux observation attempt stopped because agy silently reused an existing identity; no logout occurred and all disposable state was removed.",
+    "Failed-attempt pull request 9 was merged at commit b3f97af74fdf1b94f50117abe90e945e63fcdeff.",
+    "A corrected clean-environment retry produced the same identity reuse and was stopped and cleaned up without logout or a model prompt.",
+    "ADR 0006 selects diagnostics-only behavior until a supported Antigravity profile contract exists."
   ],
   "nextActions": [
-    "Review the failed-attempt record and revised clean-environment protocol; require fresh explicit approval before creating a new disposable environment or retrying."
+    "Review and merge the diagnostics-only decision, then start the agy-auth doctor vertical slice."
   ],
   "decisions": [
     "Use the Core harness profile only; no hooks, daemon, event journal, database, or client adapter.",
@@ -84,7 +87,8 @@
     "SECURITY.md"
   ],
   "doNotRepeat": [
-    "Do not launch the test user with inherited root environment values or from the operator's working directory; the July 15 attempt silently reused an existing identity."
+    "Do not launch the test user with inherited root environment values or from the operator's working directory; the July 15 attempt silently reused an existing identity.",
+    "Do not repeat Linux authentication experiments without new official documentation or a materially new reviewed isolation hypothesis; the corrected clean-environment attempt also reused an existing identity."
   ],
   "contextSources": [
     "docs/01-product-scope.md",

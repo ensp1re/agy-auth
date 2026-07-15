@@ -20,7 +20,7 @@ Phases are evidence gates, not calendar promises.
 Exit gate: repository sources consistently describe an Antigravity-first, diagnostics-only product
 and no executable path claims real switching support.
 
-## Phase 2 — Antigravity capability research
+## Phase 2 — Antigravity capability research (complete: diagnostics-only)
 
 - Identify official profile/account/home commands or documented overrides.
 - Observe file versus keyring modes without enumerating unrelated secrets.
@@ -29,6 +29,20 @@ and no executable path claims real switching support.
 
 Exit gate: one supported mode is deterministic, reversible, policy-compatible, and independently
 reviewable, or the project explicitly remains diagnostics-only.
+
+Outcome: no supported profile or authentication-isolation contract was found for `agy 1.1.2`.
+ADR 0006 keeps authentication-state mutation disabled.
+
+## Phase 2A — Diagnostics vertical slice
+
+- implement `agy-auth doctor` with human-readable and JSON output;
+- report executable discovery, client version, and capability-gate results;
+- explain that profile switching is unavailable without a supported contract;
+- validate the non-secret registry without enumerating authentication state;
+- test all output for secret-safe, deterministic behavior.
+
+Exit gate: users can determine whether `agy` is installed and why switching is unavailable without
+authentication access, model requests, or misleading support claims.
 
 ## Phase 3 — First vertical profile slice
 

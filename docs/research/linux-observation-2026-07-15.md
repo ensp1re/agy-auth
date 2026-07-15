@@ -33,3 +33,20 @@ Do not repeat the inherited-environment launch. Any revised attempt requires a f
 must use an empty environment with an explicit allowlist, a dedicated working directory, a newly
 created disposable user, and a newly verified isolated Secret Service session. Silent recognition of
 any account before dedicated login is an immediate stop condition.
+
+## Corrected retry
+
+A second attempt used a newly created disposable user, mode-0700 home and runtime directories, a
+dedicated working directory, `env -i` with an explicit allowlist, a new D-Bus session, and a verified
+Secret Service registration. The copied `agy 1.1.2` binary matched the original binary digest.
+
+The client again silently identified an existing signed-in account before any dedicated login. The
+client was terminated immediately without `/logout` or a model prompt. All disposable-user
+processes, the user, home, and runtime directory were removed. A process-name-only check found no
+separate persistent Antigravity service. No credentials, environment values, files, keyring items,
+logs, or network traffic were inspected.
+
+This retry rules out inherited environment values and the operator working directory as sufficient
+explanations. It does not identify the reuse mechanism and does not establish a storage contract.
+Further login experiments are not justified without new official documentation or a materially new,
+reviewed isolation hypothesis.
