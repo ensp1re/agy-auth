@@ -53,11 +53,15 @@ Choose the first verified option in this order:
 
 1. Official Antigravity account/profile command.
 2. Official documented home/config override that isolates all credential and keyring lookups.
-3. Verified file-backed mode using opaque bytes and a transactional activation engine.
-4. Diagnostics-only refusal.
+3. Version-scoped, independently verified isolated environment that delegates login and refresh to
+   the official client without reading or copying credential state.
+4. Verified file-backed activation using opaque bytes and a transactional engine, if separately
+   approved.
+5. Diagnostics-only refusal.
 
-Never infer support from filenames alone. Keyring-backed desktop state remains unsupported until
-Google documents it or deterministic, reversible behavior receives independent security review.
+Never infer support from filenames alone. A reverse-engineered behavior becomes a project contract
+only after the versioned black-box gates in ADR 0007 pass. Keyring-backed desktop state remains
+unsupported until deterministic, reversible behavior receives independent security review.
 
 ## Transaction boundary
 

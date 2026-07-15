@@ -10,416 +10,22 @@
   "retention": "Keep the active item and at most two recently passing items; durable outcomes belong in specifications, ADRs, commits, and reviews.",
   "items": [
     {
-      "id": "phase-0-repository-foundation",
-      "title": "Create the Rust workspace foundation and delivery checks",
-      "status": "passing",
-      "source": "docs/10-delivery-roadmap.md",
-      "plan": null,
-      "acceptance": [
-        "The proposed Cargo workspace and crate dependency direction are represented.",
-        "An empty CLI builds and its help output is testable.",
-        "Formatting, Clippy, tests, dependency policy, and secret scanning have executable checks.",
-        "SECURITY.md and CONTRIBUTING.md encode the approved security and fixture boundaries."
-      ],
-      "blocker": null,
-      "verification": [
-        {
-          "command": "python3 scripts/check.py",
-          "revision": "416c3aa1218f3d70355ed895f00db92605ae9aff",
-          "outcome": "passing"
-        },
-        {
-          "command": "cargo deny check",
-          "revision": "416c3aa1218f3d70355ed895f00db92605ae9aff",
-          "outcome": "passing"
-        },
-        {
-          "command": "GitHub Actions run 29445729618",
-          "revision": "416c3aa1218f3d70355ed895f00db92605ae9aff",
-          "outcome": "not run due account usage limit; explicitly deferred and non-blocking by user direction"
-        }
-      ],
-      "completion": {
-        "commit": "1f9a36d39818c347f0a04714f91df8a9a1140580",
-        "review": "https://github.com/ensp1re/agy-auth/pull/1",
-        "completedAt": "2026-07-15T19:51:04Z"
-      }
-    },
-    {
-      "id": "phase-1-profile-registry",
-      "title": "Implement the versioned non-secret profile registry",
-      "status": "passing",
-      "source": "docs/05-repository-structure.md",
-      "plan": "docs/plans/phase-1-profile-registry.md",
-      "acceptance": [
-        "Profile IDs, validated names, providers, storage locators, and statuses are strongly typed.",
-        "Registry schema v1 round-trips without storing credential material or full account emails.",
-        "Writes use a same-directory temporary file, flush, atomic replacement, and a mutation lock.",
-        "Duplicate case-folded names, unsupported schema versions, corrupt JSON, and unsafe file types fail closed.",
-        "Migration scaffolding and synthetic unit, integration, and property-style invariant tests pass."
-      ],
-      "blocker": null,
-      "verification": [
-        {
-          "command": "python3 scripts/check.py",
-          "revision": "05dbd82cfc2c8b2154cc92dd92d3bf03d0976314",
-          "outcome": "passing; 14 tests"
-        },
-        {
-          "command": "cargo deny check",
-          "revision": "05dbd82cfc2c8b2154cc92dd92d3bf03d0976314",
-          "outcome": "advisories, bans, licenses, and sources passing"
-        },
-        {
-          "command": "build-agent-harness validate_harness.py --strict",
-          "revision": "05dbd82cfc2c8b2154cc92dd92d3bf03d0976314",
-          "outcome": "0 errors and 0 warnings"
-        }
-      ],
-      "completion": {
-        "commit": "73f24b65889f78b6e44bf77c53424ca896db55ee",
-        "review": "https://github.com/ensp1re/agy-auth/pull/2",
-        "completedAt": "2026-07-15T19:59:35Z"
-      }
-    },
-    {
-      "id": "phase-1-client-discovery",
-      "title": "Implement safe official-client discovery and process execution",
-      "status": "passing",
-      "source": "docs/10-delivery-roadmap.md",
-      "plan": "docs/plans/phase-1-client-discovery.md",
-      "acceptance": [
-        "Gemini CLI and Antigravity CLI executables can be discovered through PATH or an explicit override without shell evaluation.",
-        "Discovery rejects missing, non-regular, non-executable, and unsafe explicit paths with typed errors.",
-        "A bounded process runner captures version output, exit status, timeout, and truncation without retaining credential-bearing output.",
-        "Child arguments are passed as argv values and fake-client tests prove shell metacharacters are never evaluated.",
-        "The installed agy executable is detected and version 1.1.2 is reported through the new abstraction without accessing authentication state."
-      ],
-      "blocker": null,
-      "verification": [
-        {
-          "command": "python3 scripts/check.py",
-          "revision": "c506fcc8f17ceee7df1cb593f7d3cc719e32a08c",
-          "outcome": "passing; 20 tests and 1 expected ignored installed-client smoke test"
-        },
-        {
-          "command": "cargo deny check",
-          "revision": "c506fcc8f17ceee7df1cb593f7d3cc719e32a08c",
-          "outcome": "advisories, bans, licenses, and sources passing"
-        },
-        {
-          "command": "GEMINI_AUTH_TEST_AGY=/root/.local/bin/agy GEMINI_AUTH_TEST_AGY_VERSION=1.1.2 cargo test -p agy-auth-process --test installed_client -- --ignored --exact discovers_and_probes_installed_agy_without_authentication",
-          "revision": "c506fcc8f17ceee7df1cb593f7d3cc719e32a08c",
-          "outcome": "passing; agy 1.1.2 discovered and probed without authentication access"
-        }
-      ],
-      "completion": {
-        "commit": "c6be00c4225b66900a2d0b725260c87b046b1da4",
-        "review": "https://github.com/ensp1re/agy-auth/pull/3",
-        "completedAt": "2026-07-15T20:15:03Z"
-      }
-    },
-    {
-      "id": "phase-1-antigravity-transition",
-      "title": "Pivot the product and repository sources to Antigravity CLI",
-      "status": "passing",
-      "source": "docs/adr/0005-antigravity-cli-primary.md",
-      "plan": null,
-      "acceptance": [
-        "The product, binary, workspace crates, manifest, and current documentation use the agy-auth name.",
-        "Antigravity CLI is the sole MVP provider and Gemini CLI is documented only as deferred legacy/enterprise compatibility.",
-        "The roadmap requires capability research before any real authentication-state mutation.",
-        "The unmerged Gemini isolated-home pull request is closed with its rationale preserved.",
-        "All local build, test, dependency, secret, link, and harness checks pass after the migration."
-      ],
-      "blocker": null,
-      "verification": [
-        {
-          "command": "python3 scripts/check.py && cargo run --quiet --bin agy-auth -- --help",
-          "revision": "f02d8fb00c3f5a94768358fb29b5fce4a42615f6",
-          "outcome": "passing; agy-auth binary and agy-auth-* workspace crates verified"
-        },
-        {
-          "command": "python3 scripts/check.py",
-          "revision": "bfe91d72075b40231b18e015d8681e9794ee8991",
-          "outcome": "passing; renamed workspace and 20 tests"
-        },
-        {
-          "command": "cargo deny check",
-          "revision": "bfe91d72075b40231b18e015d8681e9794ee8991",
-          "outcome": "advisories, bans, licenses, and sources passing"
-        },
-        {
-          "command": "AGY_AUTH_TEST_AGY=/root/.local/bin/agy AGY_AUTH_TEST_AGY_VERSION=1.1.2 cargo test -p agy-auth-process --test installed_client -- --ignored --exact discovers_and_probes_installed_agy_without_authentication",
-          "revision": "bfe91d72075b40231b18e015d8681e9794ee8991",
-          "outcome": "passing; installed agy 1.1.2 discovered without authentication access"
-        }
-      ],
-      "completion": {
-        "commit": "8846b9846e9b92c0b0f7a7e1b61c1384a9e872d0",
-        "review": "https://github.com/ensp1re/agy-auth/pull/5",
-        "completedAt": "2026-07-15T20:41:34Z"
-      }
-    },
-    {
-      "id": "phase-2-antigravity-capability-research",
-      "title": "Research the supported Antigravity authentication and profile contract",
-      "status": "passing",
-      "source": "docs/adr/0006-diagnostics-only-until-supported-profile-contract.md",
-      "plan": "docs/plans/phase-2-capability-research.md",
-      "acceptance": [
-        "The installed agy command surface is inventoried without accessing authentication state.",
-        "Official account, profile, home, configuration, and diagnostic mechanisms are identified or explicitly ruled out with evidence.",
-        "Any filesystem or keyring observation uses a dedicated test account and records only non-secret metadata.",
-        "A reviewed ADR selects a deterministic and reversible strategy or keeps the product diagnostics-only.",
-        "No real authentication-state mutation is enabled during research."
-      ],
-      "blocker": null,
-      "verification": [
-        {
-          "command": "/root/.local/bin/agy --version; /root/.local/bin/agy --help; /root/.local/bin/agy help <subcommand>",
-          "revision": "355448d2951cd63eb72ff55164c5fd01f77cedb4",
-          "outcome": "passing; agy 1.1.2 public command surface inventoried without authentication-state access"
-        },
-        {
-          "command": "Review official Antigravity CLI installation/authentication and getting-started documentation",
-          "revision": "355448d2951cd63eb72ff55164c5fd01f77cedb4",
-          "outcome": "official docs describe OS keyring token profiles and destructive /logout, but no profile selector or credential-home override"
-        },
-        {
-          "command": "Review docs/plans/linux-dedicated-account-observation.md against docs/08-security-policy.md and docs/09-testing-strategy.md",
-          "revision": "833f3216838c73db811f08f7a192105dcb817ad5",
-          "outcome": "protocol designed with separate approval, disposable OS user/keyring, metadata allowlist, stop conditions, and cleanup; not executed"
-        },
-        {
-          "command": "Execute Linux observation through unauthenticated-launch phase under the approved protocol",
-          "revision": "4394b9f2e14fe74dc513733f60fea0ae803f51cd",
-          "outcome": "failed safely; existing account was silently recognized, process was stopped without logout, and disposable state was removed"
-        },
-        {
-          "command": "Retry Linux unauthenticated launch with env -i, dedicated workdir, fresh home/runtime, D-Bus, and Secret Service",
-          "revision": "b3f97af74fdf1b94f50117abe90e945e63fcdeff",
-          "outcome": "stopped safely; existing identity was still recognized, no logout or model prompt occurred, and all disposable state was removed"
-        },
-        {
-          "command": "Review ADR 0006 against official docs, command inventory, and both Linux observation records",
-          "revision": "b3f97af74fdf1b94f50117abe90e945e63fcdeff",
-          "outcome": "diagnostics-only decision accepted; no authentication-state mutation authorized"
-        }
-      ],
-      "completion": {
-        "commit": "c54ecb7ddeaa20bd1e72b8423bec4a2c6555705b",
-        "review": "https://github.com/ensp1re/agy-auth/pull/10",
-        "completedAt": "2026-07-15T21:14:49Z"
-      }
-    },
-    {
-      "id": "phase-2a-doctor-diagnostics",
-      "title": "Implement the diagnostics-only agy-auth doctor vertical slice",
-      "status": "passing",
-      "source": "docs/adr/0006-diagnostics-only-until-supported-profile-contract.md",
-      "plan": "docs/plans/phase-2a-doctor-diagnostics.md",
-      "acceptance": [
-        "Doctor discovers and version-probes agy without authentication access.",
-        "Doctor validates only the project-owned non-secret registry.",
-        "Human and schema-versioned JSON output explicitly report switching unsupported and mutation disabled.",
-        "Missing clients and unsafe registries use stable exit codes and error categories.",
-        "All local repository and harness checks pass without relying on hosted CI."
-      ],
-      "blocker": null,
-      "verification": [
-        {
-          "command": "python3 scripts/check.py && cargo deny check",
-          "revision": "8d4ac78",
-          "outcome": "passing; 24 tests plus one expected ignored installed-client smoke, dependency policy, secret scan, and architecture checks"
-        },
-        {
-          "command": "cargo run --quiet --bin agy-auth -- --data-dir <temp> doctor --client /root/.local/bin/agy",
-          "revision": "8d4ac78",
-          "outcome": "passing; agy 1.1.2, healthy empty registry, switching unsupported, and mutation disabled"
-        },
-        {
-          "command": "doctor JSON, missing-client exit 4, corrupt-registry exit 8, and --repair no-op smoke checks",
-          "revision": "8d4ac78",
-          "outcome": "passing; stable schemaVersion 1 and error categories"
-        },
-        {
-          "command": "strict harness validation and git diff --check",
-          "revision": "8d4ac78",
-          "outcome": "passing; 0 errors and 0 warnings"
-        }
-      ],
-      "completion": {
-        "commit": "be45bb15242556a327b6b8f83c26a7ef0b937185",
-        "review": "https://github.com/ensp1re/agy-auth/pull/11",
-        "completedAt": "2026-07-15T21:22:28Z"
-      }
-    },
-    {
-      "id": "phase-2b-doctor-filesystem-diagnostics",
-      "title": "Harden doctor with project-owned filesystem diagnostics",
-      "status": "passing",
-      "source": "docs/07-cli-specification.md",
-      "plan": "docs/plans/phase-2b-doctor-filesystem-diagnostics.md",
-      "acceptance": [
-        "Absent data roots are reported without creation or mutation.",
-        "Unsafe data-root type, Unix permissions, and Linux ownership fail closed.",
-        "Interrupted project-owned transaction entries are counted without names or contents.",
-        "Human and JSON output use stable categories and exit codes 8 and 10.",
-        "All local repository and harness checks pass without hosted CI."
-      ],
-      "blocker": null,
-      "verification": [
-        {
-          "command": "python3 scripts/check.py && cargo deny check",
-          "revision": "46609266737bc3771f0ff6dcc7313fc9b7d22361",
-          "outcome": "passing; 29 tests plus one expected ignored installed-client smoke and all local policy checks"
-        },
-        {
-          "command": "doctor absent/secure/unsafe-permission/unsafe-owner/symlink data-root smoke checks",
-          "revision": "46609266737bc3771f0ff6dcc7313fc9b7d22361",
-          "outcome": "passing; absent is non-mutating and healthy, unsafe states return exit 8 with stable categories"
-        },
-        {
-          "command": "doctor interrupted transaction marker smoke check",
-          "revision": "46609266737bc3771f0ff6dcc7313fc9b7d22361",
-          "outcome": "passing; marker count only, no names or contents, exit 10"
-        },
-        {
-          "command": "strict harness validation and git diff --check",
-          "revision": "46609266737bc3771f0ff6dcc7313fc9b7d22361",
-          "outcome": "passing; 0 errors and 0 warnings"
-        }
-      ],
-      "completion": {
-        "commit": "26579ef78439b2138cafa3ef293f12eae5f0f8fa",
-        "review": "https://github.com/ensp1re/agy-auth/pull/12",
-        "completedAt": "2026-07-15T21:32:47Z"
-      }
-    },
-    {
-      "id": "phase-4-release-readiness-foundation",
-      "title": "Add end-to-end contracts and compatibility build metadata",
-      "status": "passing",
-      "source": "docs/11-operations-release.md",
-      "plan": "docs/plans/phase-4-release-readiness-foundation.md",
-      "acceptance": [
-        "Compiled-binary end-to-end tests cover human and JSON doctor behavior.",
-        "Exit codes 0, 4, 8, and 10 are verified through the CLI boundary.",
-        "Doctor embeds package version, Git revision, and compilation target without builder data.",
-        "A schema-validated compatibility matrix records agy 1.1.2 diagnostics-only support.",
-        "All local repository and harness checks pass without hosted CI."
-      ],
-      "blocker": null,
-      "verification": [
-        {
-          "command": "python3 scripts/check.py && cargo deny check",
-          "revision": "86139d982d5b04c9ccdde698140fcfaaa4eabfd3",
-          "outcome": "passing; 33 tests plus one expected ignored installed-client smoke and all local policy gates"
-        },
-        {
-          "command": "cargo test -p agy-auth-cli --test doctor_e2e",
-          "revision": "86139d982d5b04c9ccdde698140fcfaaa4eabfd3",
-          "outcome": "passing; compiled binary human/JSON contracts and exits 0, 4, 8, and 10"
-        },
-        {
-          "command": "cargo build --release --bin agy-auth and installed agy 1.1.2 JSON smoke",
-          "revision": "86139d982d5b04c9ccdde698140fcfaaa4eabfd3",
-          "outcome": "passing; version 0.1.0, 40-character revision, linux target, and diagnostics-only capability gate"
-        },
-        {
-          "command": "python3 scripts/check_compatibility.py and strict harness validation",
-          "revision": "86139d982d5b04c9ccdde698140fcfaaa4eabfd3",
-          "outcome": "passing; one agy 1.1.2 compatibility entry and 0 harness errors/warnings"
-        }
-      ],
-      "completion": {
-        "commit": "d7ac4f2b7c9bc0b4a0f60b4c8105674f8d75f297",
-        "review": "https://github.com/ensp1re/agy-auth/pull/13",
-        "completedAt": "2026-07-15T21:54:09Z"
-      }
-    },
-    {
-      "id": "phase-4-linux-release-candidate",
-      "title": "Build a reproducible local Linux release candidate",
-      "status": "passing",
-      "source": "docs/11-operations-release.md",
-      "plan": "docs/plans/phase-4-linux-release-candidate.md",
-      "acceptance": [
-        "Packaging requires a clean worktree and the native Linux target.",
-        "Archive and SPDX SBOM outputs are reproducible from the same revision.",
-        "SHA-256 checksums are generated and verified during packaging.",
-        "Install and uninstall preserve project and Antigravity state.",
-        "Artifacts are clearly local-only and no external release is published."
-      ],
-      "blocker": null,
-      "verification": [
-        {
-          "command": "python3 scripts/check.py && cargo deny check",
-          "revision": "7ebddeee3adc1d11d3dfc7785fbaad08e33ad145",
-          "outcome": "passing; 33 tests plus one expected ignored installed-client smoke and all local policy gates"
-        },
-        {
-          "command": "scripts/package_linux_rc.sh dist/run-one and dist/run-two",
-          "revision": "7ebddeee3adc1d11d3dfc7785fbaad08e33ad145",
-          "outcome": "passing; byte-identical archive and SPDX SBOM hashes across two clean-tree builds"
-        },
-        {
-          "command": "sha256sum -c local RC manifests and extracted-binary doctor smoke",
-          "revision": "7ebddeee3adc1d11d3dfc7785fbaad08e33ad145",
-          "outcome": "passing; embedded revision/target, agy 1.1.2 probe, and mutation-disabled gate verified"
-        },
-        {
-          "command": "dirty-worktree packaging refusal and strict harness validation",
-          "revision": "7ebddeee3adc1d11d3dfc7785fbaad08e33ad145",
-          "outcome": "passing; dirty tree exits 2 and harness reports 0 errors/warnings"
-        }
-      ],
-      "completion": {
-        "commit": "2f8fe0622bf13d5414701c12e25975b05ffffabe",
-        "review": "https://github.com/ensp1re/agy-auth/pull/14",
-        "completedAt": "2026-07-15T21:59:54Z"
-      }
-    },
-    {
       "id": "phase-4-mit-installable-release-candidate",
       "title": "Build the MIT-licensed installable Linux release candidate",
       "status": "passing",
       "source": "docs/11-operations-release.md",
       "plan": "docs/plans/phase-4-mit-installable-release-candidate.md",
       "acceptance": [
-        "Repository, Cargo metadata, README, SBOM, and archive consistently declare MIT.",
-        "The deterministic archive includes LICENSE and is labeled rc.1.",
+        "Repository and release artifacts consistently declare MIT.",
         "Two clean builds produce identical archive and SBOM checksums.",
-        "The extracted binary passes installed agy 1.1.2 diagnostics.",
-        "No external release or artifact upload occurs."
+        "The extracted binary passes installed agy 1.1.2 diagnostics."
       ],
       "blocker": null,
       "verification": [
         {
-          "command": "python3 scripts/check.py && cargo deny check",
-          "revision": "e32c15d262e3b0a666e91586133bfc392ed34a42",
-          "outcome": "passing; 33 tests, MIT metadata for 7 workspace packages, and all local policy gates"
-        },
-        {
-          "command": "scripts/package_linux_rc.sh dist/run-one and dist/run-two",
-          "revision": "e32c15d262e3b0a666e91586133bfc392ed34a42",
-          "outcome": "passing; byte-identical rc.1 archive and SPDX SBOM hashes"
-        },
-        {
-          "command": "archive content, checksum, SPDX MIT declaration, and extracted-binary diagnostics checks",
-          "revision": "e32c15d262e3b0a666e91586133bfc392ed34a42",
-          "outcome": "passing; 5 files including LICENSE, all workspace SBOM packages MIT, agy 1.1.2 diagnostics"
-        },
-        {
-          "command": "agy-auth-process tests repeated five times and strict harness validation",
-          "revision": "e32c15d262e3b0a666e91586133bfc392ed34a42",
-          "outcome": "passing; ETXTBSY retry stable and harness has 0 errors/warnings"
-        },
-        {
-          "command": "install merged rc.1 to /root/.local/bin/agy-auth and run human/JSON doctor against installed agy 1.1.2",
+          "command": "python3 scripts/check.py && cargo deny check; deterministic package and extracted-binary checks",
           "revision": "13efd35877ab719985649d2093ce253a55be147c",
-          "outcome": "passing; installed hash matched archive, registry healthy, no recovery, switching unsupported, mutation disabled"
+          "outcome": "passing; 33 tests, MIT metadata, reproducible artifacts, install, and agy 1.1.2 diagnostics"
         }
       ],
       "completion": {
@@ -430,38 +36,60 @@
     },
     {
       "id": "phase-4-release-publication-preflight",
-      "title": "Prepare the diagnostics-only rc.1 publication preflight",
-      "status": "active",
-      "source": "docs/11-operations-release.md",
+      "title": "Publish the diagnostics-only v0.1.0-rc.1 release candidate",
+      "status": "passing",
+      "source": "docs/releases/v0.1.0-rc.1.md",
       "plan": "docs/plans/phase-4-release-publication-preflight.md",
       "acceptance": [
-        "Release notes clearly state diagnostics-only scope and unsupported profile switching.",
-        "Tag and artifact versioning are consistent with rc.1.",
-        "Archive, checksum, SPDX SBOM, and installation instructions are ready from the merged revision.",
-        "Deferred hosted CI and untested non-Linux targets are disclosed.",
-        "No tag, GitHub release, or artifact upload occurs without explicit user approval."
+        "Release notes state diagnostics-only scope and unsupported profile switching.",
+        "Tag and artifact versioning are consistent with v0.1.0-rc.1.",
+        "Archive, checksum, and SPDX SBOM are reproducible from the merged revision.",
+        "Hosted CI and non-Linux limitations are disclosed.",
+        "Publication occurs only after explicit user approval."
+      ],
+      "blocker": null,
+      "verification": [
+        {
+          "command": "two clean merged-revision builds, checksum, SBOM, extracted doctor, remote tag and release asset verification",
+          "revision": "4aa3b93acfc9d7fd7111d50688b8db51be7d6768",
+          "outcome": "passing; prerelease v0.1.0-rc.1 published with three verified Linux assets after explicit approval"
+        }
+      ],
+      "completion": {
+        "commit": "4aa3b93acfc9d7fd7111d50688b8db51be7d6768",
+        "review": "https://github.com/ensp1re/agy-auth/releases/tag/v0.1.0-rc.1",
+        "completedAt": "2026-07-15T22:31:40Z"
+      }
+    },
+    {
+      "id": "phase-3-linux-isolated-home-contract",
+      "title": "Establish the Linux unofficial isolated-home contract",
+      "status": "active",
+      "source": "docs/adr/0007-versioned-unofficial-isolated-homes.md",
+      "plan": "docs/plans/phase-3-linux-isolated-home-contract.md",
+      "acceptance": [
+        "ADR 0007 records the product owner's approval of version-scoped reverse-engineered isolation.",
+        "Two synthetic profiles receive distinct HOME, XDG data, and runtime roots.",
+        "The child environment is cleared and reconstructed from a minimal allowlist.",
+        "Unsafe or shared isolation directories fail closed.",
+        "No real profile command or authentication mutation is enabled before dedicated-account validation."
       ],
       "blocker": null,
       "verification": [
         {
           "command": "python3 scripts/check.py && cargo deny check",
-          "revision": "7a0d2ba0746ab407e806e18408d0f05241d10a1f",
-          "outcome": "passing; 33 tests, release preflight, dependency policy, secret scan, and architecture checks"
+          "revision": "9edeb984bf6a503dbf54418627514052bcb739ce",
+          "outcome": "passing; 35 tests, dependency policy, compatibility, release identity, secrets, and harness checks"
         },
         {
-          "command": "scripts/package_linux_rc.sh dist/run-one and dist/run-two",
-          "revision": "7a0d2ba0746ab407e806e18408d0f05241d10a1f",
-          "outcome": "passing; byte-identical archive SHA-256 9afa042bc15bb4ef1ca4c235d58c134adcf256a20e10a9a8b49ad8f18744e08d and SPDX SBOM SHA-256 6a1124f515f4ee97a51f5ceac74f6c8a6935ac1b5979a0ec017ed15f383dce32"
+          "command": "cargo test -p agy-auth-process --lib",
+          "revision": "9edeb984bf6a503dbf54418627514052bcb739ce",
+          "outcome": "passing; distinct synthetic homes/XDG/runtime, cleared inherited environment, direct argv, and unsafe/shared/linked root refusal"
         },
         {
-          "command": "checksum, archive-content, SPDX metadata, and extracted-binary doctor assertions",
-          "revision": "7a0d2ba0746ab407e806e18408d0f05241d10a1f",
-          "outcome": "passing; 5-file archive, version rc.1, embedded revision and target, 68-package SBOM with 7 MIT workspace packages, agy 1.1.2 diagnostics, switching unsupported, and mutation disabled"
-        },
-        {
-          "command": "release/tag absence checks and strict harness validation",
-          "revision": "7a0d2ba0746ab407e806e18408d0f05241d10a1f",
-          "outcome": "passing; proposed tag and GitHub release absent, harness reports 0 errors and 0 warnings"
+          "command": "strict harness validation and context budget evaluation",
+          "revision": "9edeb984bf6a503dbf54418627514052bcb739ce",
+          "outcome": "passing; 0 errors/warnings, root instructions 2213/8000 bytes, live startup state 6713/16000 bytes"
         }
       ],
       "completion": null

@@ -28,8 +28,9 @@ The first release is capability-gated:
 1. Discover and diagnose the installed `agy` version without reading authentication state.
 2. Maintain a local non-secret profile registry.
 3. Use an official Antigravity profile/home mechanism if Google documents one.
-4. Otherwise support a versioned, independently verified local file mode only after reversible
-   behavior, permissions, refresh behavior, and running-process interaction are tested.
+4. Otherwise support a clearly labeled, version-scoped unofficial isolated-home mode only after
+   black-box tests prove separation, refresh behavior, restart behavior, permissions, and
+   running-process safety without reading or copying credential contents.
 5. Refuse mutation in unsupported desktop/keyring or unknown modes.
 
 ## Explicit exclusions
@@ -42,8 +43,8 @@ The first release is capability-gated:
 
 ## Success criteria
 
-Research is successful when an `agy` storage/profile contract is documented with version, platform,
-non-secret reproduction steps, reversibility, and expiry triggers.
+Research is successful when an official or project-verified unofficial `agy` isolation contract is
+documented with version, platform, non-secret reproduction steps, reversibility, and expiry triggers.
 
 The MVP is successful only when two synthetic or dedicated test accounts can be selected manually
 through the official `agy` client on each claimed platform, switching survives refresh and restart,

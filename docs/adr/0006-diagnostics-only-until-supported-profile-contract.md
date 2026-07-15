@@ -1,6 +1,6 @@
 # ADR 0006: Remain Diagnostics-Only Without a Supported Profile Contract
 
-- Status: Accepted
+- Status: Superseded by ADR 0007
 - Date: 2026-07-15
 
 ## Context
@@ -26,6 +26,10 @@ authentication state.
 Do not repeat authentication experiments unless new official documentation or a materially new,
 reviewed hypothesis identifies a supported isolation boundary. Any future mutation proposal requires
 a superseding ADR with deterministic, reversible, independently reproducible evidence.
+
+ADR 0007 supersedes this decision after the product owner explicitly approved a version-scoped,
+reverse-engineered isolated-home strategy. The diagnostics-only behavior remains the production
+default until that strategy passes its stated evidence gates.
 
 ## Consequences
 

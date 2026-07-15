@@ -43,6 +43,10 @@ Using multiple accounts for legitimate identity separation is different from swi
 - Clipboard use is forbidden for tokens.
 - No shell command construction; use argv arrays.
 - Environment allowlist for child modifications.
+- Isolated-home launch clears inherited environment state before applying reviewed HOME, XDG, PATH,
+  locale, and terminal variables.
+- Reverse-engineering evidence may guide black-box tests but does not authorize reading, hashing,
+  copying, diffing, or retaining credential contents or private client logs.
 
 ## Supply-chain controls
 
