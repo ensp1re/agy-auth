@@ -1,23 +1,24 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-15T18:34:00Z",
+  "updatedAt": "2026-07-15T18:51:00Z",
   "goal": "Begin Phase 0 by creating the Rust workspace foundation and its delivery checks.",
   "scope": [
     "phase-0-repository-foundation"
   ],
-  "status": "active",
+  "status": "blocked",
   "git": {
     "branch": "feat/phase-0-repository-foundation",
-    "head": "bef0e3f7f53cd7c546daa85bca4986962d404e26",
+    "head": "775f3cb0f007781088778a9df014661e135114ab",
     "worktree": "dirty"
   },
   "completed": [
     "Approved product, stack, architecture, security boundaries, and roadmap are documented.",
     "The Core project harness was designed around the existing authoritative documents.",
-    "The Phase 0 Rust workspace, crate boundaries, CLI shell, policies, and CI definition were implemented."
+    "The Phase 0 Rust workspace, crate boundaries, CLI shell, policies, and CI definition were implemented.",
+    "Pull request 1 was opened at https://github.com/ensp1re/gemini-auth/pull/1."
   ],
   "nextActions": [
-    "Run the full gate after handoff reconciliation, then review, commit, push, and open the Phase 0 pull request."
+    "Resolve the GitHub Actions billing or spending-limit issue, then rerun failed jobs for pull request 1."
   ],
   "decisions": [
     "Use the Core harness profile only; no hooks, daemon, event journal, database, or client adapter.",
@@ -39,13 +40,16 @@
       "python3 scripts/check_dependencies.py: passing",
       "python3 scripts/check_no_secrets.py: passing"
     ],
-    "failed": [],
+    "failed": [
+      "GitHub Actions run 29445729618: all jobs blocked before execution because account payments failed or the spending limit must be increased."
+    ],
     "notRun": [
       "Cross-client portability is untested; only the canonical AGENTS.md surface is configured."
     ]
   },
   "risks": [
-    "GEMINI_CLI_HOME credential isolation is an unverified product assumption and must not be represented as proven behavior."
+    "GEMINI_CLI_HOME credential isolation is an unverified product assumption and must not be represented as proven behavior.",
+    "Cross-platform CI evidence is unavailable until GitHub Actions billing or spending limits are repaired."
   ],
   "touchedPaths": [
     "AGENTS.md",
