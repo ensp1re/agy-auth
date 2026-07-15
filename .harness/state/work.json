@@ -433,7 +433,7 @@
       "title": "Prepare the diagnostics-only rc.1 publication preflight",
       "status": "active",
       "source": "docs/11-operations-release.md",
-      "plan": null,
+      "plan": "docs/plans/phase-4-release-publication-preflight.md",
       "acceptance": [
         "Release notes clearly state diagnostics-only scope and unsupported profile switching.",
         "Tag and artifact versioning are consistent with rc.1.",

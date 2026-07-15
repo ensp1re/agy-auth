@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-15T22:13:51Z",
+  "updatedAt": "2026-07-15T22:20:39Z",
   "goal": "Prepare the diagnostics-only rc.1 publication preflight without external publication.",
   "scope": [
     "phase-4-release-publication-preflight"
   ],
   "status": "active",
   "git": {
-    "branch": "chore/record-production-diagnostics-smoke",
-    "head": "13efd35877ab719985649d2093ce253a55be147c",
+    "branch": "release/v0.1.0-rc.1-preflight",
+    "head": "dbb996be48909c297785e556a06cf9f7e1118835",
     "worktree": "dirty"
   },
   "completed": [
@@ -41,7 +41,8 @@
     "The user approved the MIT license; copyright identity is Enspire.",
     "The MIT installable rc.1 at e32c15d is reproducible, checksum-verified, SPDX-labeled, and passes extracted-binary diagnostics.",
     "MIT installable rc.1 pull request 15 was merged at commit 13efd35877ab719985649d2093ce253a55be147c.",
-    "The merged rc.1 was installed at /root/.local/bin/agy-auth and passed production human/JSON diagnostics against agy 1.1.2."
+    "The merged rc.1 was installed at /root/.local/bin/agy-auth and passed production human/JSON diagnostics against agy 1.1.2.",
+    "Production diagnostics smoke pull request 16 was merged at commit dbb996be48909c297785e556a06cf9f7e1118835."
   ],
   "nextActions": [
     "Prepare diagnostics-only release notes and publication preflight; request explicit approval before tagging or uploading artifacts."
