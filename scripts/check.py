@@ -12,6 +12,7 @@ COMMANDS = (
     ("dependencies", ["python3", "scripts/check_dependencies.py"]),
     ("compatibility", ["python3", "scripts/check_compatibility.py"]),
     ("release metadata", ["python3", "scripts/check_release_metadata.py"]),
+    ("release preflight", ["python3", "scripts/check_release_preflight.py"]),
     ("secrets", ["python3", "scripts/check_no_secrets.py"]),
     ("harness", ["python3", "scripts/harness/validate.py"]),
 )

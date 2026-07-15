@@ -433,7 +433,7 @@
       "title": "Prepare the diagnostics-only rc.1 publication preflight",
       "status": "active",
       "source": "docs/11-operations-release.md",
-      "plan": null,
+      "plan": "docs/plans/phase-4-release-publication-preflight.md",
       "acceptance": [
         "Release notes clearly state diagnostics-only scope and unsupported profile switching.",
         "Tag and artifact versioning are consistent with rc.1.",
@@ -442,7 +442,28 @@
         "No tag, GitHub release, or artifact upload occurs without explicit user approval."
       ],
       "blocker": null,
-      "verification": [],
+      "verification": [
+        {
+          "command": "python3 scripts/check.py && cargo deny check",
+          "revision": "7a0d2ba0746ab407e806e18408d0f05241d10a1f",
+          "outcome": "passing; 33 tests, release preflight, dependency policy, secret scan, and architecture checks"
+        },
+        {
+          "command": "scripts/package_linux_rc.sh dist/run-one and dist/run-two",
+          "revision": "7a0d2ba0746ab407e806e18408d0f05241d10a1f",
+          "outcome": "passing; byte-identical archive SHA-256 9afa042bc15bb4ef1ca4c235d58c134adcf256a20e10a9a8b49ad8f18744e08d and SPDX SBOM SHA-256 6a1124f515f4ee97a51f5ceac74f6c8a6935ac1b5979a0ec017ed15f383dce32"
+        },
+        {
+          "command": "checksum, archive-content, SPDX metadata, and extracted-binary doctor assertions",
+          "revision": "7a0d2ba0746ab407e806e18408d0f05241d10a1f",
+          "outcome": "passing; 5-file archive, version rc.1, embedded revision and target, 68-package SBOM with 7 MIT workspace packages, agy 1.1.2 diagnostics, switching unsupported, and mutation disabled"
+        },
+        {
+          "command": "release/tag absence checks and strict harness validation",
+          "revision": "7a0d2ba0746ab407e806e18408d0f05241d10a1f",
+          "outcome": "passing; proposed tag and GitHub release absent, harness reports 0 errors and 0 warnings"
+        }
+      ],
       "completion": null
     }
   ]

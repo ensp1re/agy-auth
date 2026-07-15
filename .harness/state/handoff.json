@@ -1,15 +1,15 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-15T22:13:51Z",
+  "updatedAt": "2026-07-15T22:24:43Z",
   "goal": "Prepare the diagnostics-only rc.1 publication preflight without external publication.",
   "scope": [
     "phase-4-release-publication-preflight"
   ],
-  "status": "active",
+  "status": "ready_for_review",
   "git": {
-    "branch": "chore/record-production-diagnostics-smoke",
-    "head": "13efd35877ab719985649d2093ce253a55be147c",
-    "worktree": "dirty"
+    "branch": "release/v0.1.0-rc.1-preflight",
+    "head": "7a0d2ba0746ab407e806e18408d0f05241d10a1f",
+    "worktree": "clean"
   },
   "completed": [
     "Approved product, stack, architecture, security boundaries, and roadmap are documented.",
@@ -41,10 +41,12 @@
     "The user approved the MIT license; copyright identity is Enspire.",
     "The MIT installable rc.1 at e32c15d is reproducible, checksum-verified, SPDX-labeled, and passes extracted-binary diagnostics.",
     "MIT installable rc.1 pull request 15 was merged at commit 13efd35877ab719985649d2093ce253a55be147c.",
-    "The merged rc.1 was installed at /root/.local/bin/agy-auth and passed production human/JSON diagnostics against agy 1.1.2."
+    "The merged rc.1 was installed at /root/.local/bin/agy-auth and passed production human/JSON diagnostics against agy 1.1.2.",
+    "Production diagnostics smoke pull request 16 was merged at commit dbb996be48909c297785e556a06cf9f7e1118835.",
+    "The v0.1.0-rc.1 publication preflight at 7a0d2ba is reproducible and locally verified; no tag, GitHub release, or artifact upload was created."
   ],
   "nextActions": [
-    "Prepare diagnostics-only release notes and publication preflight; request explicit approval before tagging or uploading artifacts."
+    "Review and merge the v0.1.0-rc.1 publication preflight pull request, then request explicit approval before tagging or uploading artifacts."
   ],
   "decisions": [
     "Use the Core harness profile only; no hooks, daemon, event journal, database, or client adapter.",
@@ -68,7 +70,11 @@
       "Antigravity transition at bfe91d7: renamed workspace, 20 tests, agy 1.1.2 smoke test, dependency policy, and strict harness validation passing",
       "Short naming at f02d8fb: agy-auth binary and agy-auth-* crates compile and pass all local gates",
       "python3 scripts/check_dependencies.py: passing",
-      "python3 scripts/check_no_secrets.py: passing"
+      "python3 scripts/check_no_secrets.py: passing",
+      "release preflight at 7a0d2ba: 33 tests and dependency policy passing",
+      "two v0.1.0-rc.1 builds: archive and SPDX SBOM byte-identical",
+      "extracted v0.1.0-rc.1 binary: embedded revision/target and agy 1.1.2 diagnostics passing",
+      "proposed tag v0.1.0-rc.1 and GitHub release: absent"
     ],
     "failed": [],
     "notRun": [
@@ -78,7 +84,8 @@
   },
   "risks": [
     "Antigravity CLI authentication storage and profile isolation remain unverified and must not be represented as supported.",
-    "Cross-platform CI remains unverified while GitHub Actions usage is unavailable."
+    "Cross-platform CI remains unverified while GitHub Actions usage is unavailable.",
+    "The accumulated live startup state is 31583 bytes against the harness evaluator's 16000-byte advisory budget; structural validation remains clean."
   ],
   "touchedPaths": [
     "AGENTS.md",

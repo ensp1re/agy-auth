@@ -25,7 +25,7 @@ version=$(cargo metadata --locked --format-version 1 --no-deps | python3 -c \
   'import json,sys; d=json.load(sys.stdin); print(next(p["version"] for p in d["packages"] if p["name"] == "agy-auth-cli"))')
 revision=${AGY_AUTH_GIT_REVISION:-$(git rev-parse --verify HEAD)}
 epoch=${SOURCE_DATE_EPOCH:-$(git show -s --format=%ct HEAD)}
-name="agy-auth-${version}-${target}-rc.1"
+name="agy-auth-${version}-${target}"
 output_dir=${1:-dist}
 mkdir -p "$output_dir"
 output_dir=$(cd "$output_dir" && pwd)
