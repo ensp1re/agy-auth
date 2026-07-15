@@ -1,39 +1,9 @@
 {
   "schemaVersion": 1,
   "parallelMode": false,
-  "allowedStatuses": [
-    "not_started",
-    "active",
-    "blocked",
-    "passing"
-  ],
+  "allowedStatuses": ["not_started", "active", "blocked", "passing"],
   "retention": "Keep the active item and at most two recently passing items; durable outcomes belong in specifications, ADRs, commits, and reviews.",
   "items": [
-    {
-      "id": "phase-4-mit-installable-release-candidate",
-      "title": "Build the MIT-licensed installable Linux release candidate",
-      "status": "passing",
-      "source": "docs/11-operations-release.md",
-      "plan": "docs/plans/phase-4-mit-installable-release-candidate.md",
-      "acceptance": [
-        "Repository and release artifacts consistently declare MIT.",
-        "Two clean builds produce identical archive and SBOM checksums.",
-        "The extracted binary passes installed agy 1.1.2 diagnostics."
-      ],
-      "blocker": null,
-      "verification": [
-        {
-          "command": "python3 scripts/check.py && cargo deny check; deterministic package and extracted-binary checks",
-          "revision": "13efd35877ab719985649d2093ce253a55be147c",
-          "outcome": "passing; 33 tests, MIT metadata, reproducible artifacts, install, and agy 1.1.2 diagnostics"
-        }
-      ],
-      "completion": {
-        "commit": "13efd35877ab719985649d2093ce253a55be147c",
-        "review": "https://github.com/ensp1re/agy-auth/pull/15",
-        "completedAt": "2026-07-15T22:11:59Z"
-      }
-    },
     {
       "id": "phase-4-release-publication-preflight",
       "title": "Publish the diagnostics-only v0.1.0-rc.1 release candidate",
@@ -41,18 +11,14 @@
       "source": "docs/releases/v0.1.0-rc.1.md",
       "plan": "docs/plans/phase-4-release-publication-preflight.md",
       "acceptance": [
-        "Release notes state diagnostics-only scope and unsupported profile switching.",
-        "Tag and artifact versioning are consistent with v0.1.0-rc.1.",
-        "Archive, checksum, and SPDX SBOM are reproducible from the merged revision.",
-        "Hosted CI and non-Linux limitations are disclosed.",
-        "Publication occurs only after explicit user approval."
+        "Release scope, artifacts, limitations, and authorization are recorded."
       ],
       "blocker": null,
       "verification": [
         {
-          "command": "two clean merged-revision builds, checksum, SBOM, extracted doctor, remote tag and release asset verification",
+          "command": "reproducible merged-revision build and remote release verification",
           "revision": "4aa3b93acfc9d7fd7111d50688b8db51be7d6768",
-          "outcome": "passing; prerelease v0.1.0-rc.1 published with three verified Linux assets after explicit approval"
+          "outcome": "passing; v0.1.0-rc.1 published with three verified Linux assets after explicit approval"
         }
       ],
       "completion": {
@@ -64,34 +30,42 @@
     {
       "id": "phase-3-linux-isolated-home-contract",
       "title": "Establish the Linux unofficial isolated-home contract",
-      "status": "active",
+      "status": "passing",
       "source": "docs/adr/0007-versioned-unofficial-isolated-homes.md",
       "plan": "docs/plans/phase-3-linux-isolated-home-contract.md",
       "acceptance": [
-        "ADR 0007 records the product owner's approval of version-scoped reverse-engineered isolation.",
-        "Two synthetic profiles receive distinct HOME, XDG data, and runtime roots.",
-        "The child environment is cleared and reconstructed from a minimal allowlist.",
-        "Unsafe or shared isolation directories fail closed.",
-        "No real profile command or authentication mutation is enabled before dedicated-account validation."
+        "ADR 0007 authorizes version-scoped black-box isolation while production capabilities remain gated.",
+        "Synthetic profiles receive distinct cleared environments and unsafe roots fail closed."
       ],
       "blocker": null,
       "verification": [
         {
-          "command": "python3 scripts/check.py && cargo deny check",
+          "command": "python3 scripts/check.py && cargo deny check; synthetic isolation tests; strict harness validation",
           "revision": "9edeb984bf6a503dbf54418627514052bcb739ce",
-          "outcome": "passing; 35 tests, dependency policy, compatibility, release identity, secrets, and harness checks"
-        },
-        {
-          "command": "cargo test -p agy-auth-process --lib",
-          "revision": "9edeb984bf6a503dbf54418627514052bcb739ce",
-          "outcome": "passing; distinct synthetic homes/XDG/runtime, cleared inherited environment, direct argv, and unsafe/shared/linked root refusal"
-        },
-        {
-          "command": "strict harness validation and context budget evaluation",
-          "revision": "9edeb984bf6a503dbf54418627514052bcb739ce",
-          "outcome": "passing; 0 errors/warnings, root instructions 2213/8000 bytes, live startup state 6713/16000 bytes"
+          "outcome": "passing; 35 tests, dependency policy, distinct environments, unsafe-root refusal, and context budgets"
         }
       ],
+      "completion": {
+        "commit": "d443d626674bbeaaf5d6867c6269463a1f21375e",
+        "review": "https://github.com/ensp1re/agy-auth/pull/18",
+        "completedAt": "2026-07-15T22:56:33Z"
+      }
+    },
+    {
+      "id": "phase-3-tty-isolated-launcher",
+      "title": "Implement the TTY-preserving isolated launcher",
+      "status": "active",
+      "source": "docs/07-cli-specification.md",
+      "plan": "docs/plans/phase-3-tty-isolated-launcher.md",
+      "acceptance": [
+        "Interactive children inherit standard streams while ambient environment variables remain cleared.",
+        "Arguments bypass the shell and the exact child exit status is returned.",
+        "Only a conservatively validated TERM value extends the environment allowlist.",
+        "Fake-client tests cover environment, argv, terminal validation, and nonzero exit behavior.",
+        "Two disposable isolated homes safely probe installed agy 1.1.2 with --version only."
+      ],
+      "blocker": null,
+      "verification": [],
       "completion": null
     }
   ]

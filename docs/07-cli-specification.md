@@ -76,7 +76,8 @@ agy-auth exec <name> -- agy [args...]
 
 Enabled only if an official or version-scoped project-verified isolated-home mechanism separates all
 relevant client state. Arguments are direct argv values, child exit status is propagated, and only
-reviewed child environment changes are permitted.
+reviewed child environment changes are permitted. Interactive launches inherit the caller's standard
+streams, clear ambient environment variables, and forward only validated terminal metadata.
 
 ### `rename` and `remove`
 

@@ -55,23 +55,47 @@ impl DiscoveredClient {
     /// Returns a process error when spawning, waiting, reading, or the probe status fails.
     pub fn probe_version(&self, timeout: Duration) -> Result<VersionProbe, ProcessError> {
         let output = run_bounded(&self.executable, [OsStr::new("--version")], timeout, 4096)?;
-        if !output.status.success() {
-            return Err(ProcessError::ProbeFailed(output.status.code()));
-        }
-        let stdout = String::from_utf8_lossy(&output.stdout);
-        let version = stdout
-            .lines()
-            .map(str::trim)
-            .find(|line| !line.is_empty())
-            .ok_or(ProcessError::EmptyVersion)?;
-        if version.chars().any(char::is_control) || version.len() > 256 {
-            return Err(ProcessError::InvalidVersion);
-        }
-        Ok(VersionProbe {
-            version: version.to_owned(),
-            truncated: output.stdout_truncated || output.stderr_truncated,
-        })
+        parse_version_output(&output)
     }
+
+    /// Run the allowlisted `--version` probe inside a validated isolated environment.
+    ///
+    /// # Errors
+    ///
+    /// Returns a process error when spawning, waiting, reading, or the probe status fails.
+    pub fn probe_version_isolated(
+        &self,
+        environment: &IsolatedClientEnvironment,
+        timeout: Duration,
+    ) -> Result<VersionProbe, ProcessError> {
+        let output = run_bounded_isolated(
+            &self.executable,
+            [OsStr::new("--version")],
+            environment,
+            timeout,
+            4096,
+        )?;
+        parse_version_output(&output)
+    }
+}
+
+fn parse_version_output(output: &ProcessOutput) -> Result<VersionProbe, ProcessError> {
+    if !output.status.success() {
+        return Err(ProcessError::ProbeFailed(output.status.code()));
+    }
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let version = stdout
+        .lines()
+        .map(str::trim)
+        .find(|line| !line.is_empty())
+        .ok_or(ProcessError::EmptyVersion)?;
+    if version.chars().any(char::is_control) || version.len() > 256 {
+        return Err(ProcessError::InvalidVersion);
+    }
+    Ok(VersionProbe {
+        version: version.to_owned(),
+        truncated: output.stdout_truncated || output.stderr_truncated,
+    })
 }
 
 /// Safe, bounded version-probe result.
@@ -185,6 +209,7 @@ pub struct IsolatedClientEnvironment {
     home: PathBuf,
     runtime_directory: PathBuf,
     search_path: OsString,
+    terminal: Option<String>,
 }
 
 impl IsolatedClientEnvironment {
@@ -213,7 +238,27 @@ impl IsolatedClientEnvironment {
             home,
             runtime_directory,
             search_path,
+            terminal: None,
         })
+    }
+
+    /// Add a validated terminal type for an interactive child.
+    ///
+    /// # Errors
+    ///
+    /// Returns a process error when `TERM` is empty, oversized, or contains characters outside the
+    /// conservative terminal-name allowlist.
+    pub fn with_terminal(mut self, terminal: &str) -> Result<Self, ProcessError> {
+        if terminal.is_empty()
+            || terminal.len() > 64
+            || !terminal
+                .bytes()
+                .all(|byte| byte.is_ascii_alphanumeric() || b"._+-".contains(&byte))
+        {
+            return Err(ProcessError::UnsafeIsolation("TERM is invalid"));
+        }
+        self.terminal = Some(terminal.to_owned());
+        Ok(self)
     }
 
     fn apply(&self, command: &mut Command) {
@@ -227,6 +272,9 @@ impl IsolatedClientEnvironment {
             .env("XDG_RUNTIME_DIR", &self.runtime_directory)
             .env("PATH", &self.search_path)
             .env("LANG", "C.UTF-8");
+        if let Some(terminal) = &self.terminal {
+            command.env("TERM", terminal);
+        }
     }
 }
 
@@ -314,6 +362,48 @@ where
         environment.apply(command);
     })?;
     collect_bounded(&mut child, timeout, max_stream_bytes)
+}
+
+/// Launch an isolated client with the caller's terminal streams attached and wait for it to exit.
+///
+/// Arguments are passed directly without a shell. Standard input, output, and error are inherited,
+/// so interactive terminal behavior belongs to the official client while its environment remains
+/// cleared and allowlisted.
+///
+/// # Errors
+///
+/// Returns an error when spawning or waiting for the client fails.
+pub fn run_interactive_isolated<I, S>(
+    executable: &Path,
+    arguments: I,
+    environment: &IsolatedClientEnvironment,
+) -> Result<ExitStatus, ProcessError>
+where
+    I: IntoIterator<Item = S>,
+    S: AsRef<OsStr>,
+{
+    const ATTEMPTS: usize = 4;
+    let arguments = arguments
+        .into_iter()
+        .map(|argument| argument.as_ref().to_owned())
+        .collect::<Vec<OsString>>();
+    for attempt in 0..ATTEMPTS {
+        let mut command = Command::new(executable);
+        command
+            .args(&arguments)
+            .stdin(Stdio::inherit())
+            .stdout(Stdio::inherit())
+            .stderr(Stdio::inherit());
+        environment.apply(&mut command);
+        match command.status() {
+            Ok(status) => return Ok(status),
+            Err(error) if error.raw_os_error() == Some(26) && attempt + 1 < ATTEMPTS => {
+                thread::sleep(Duration::from_millis(10));
+            }
+            Err(error) => return Err(error.into()),
+        }
+    }
+    unreachable!("interactive spawn loop returns on every final attempt")
 }
 
 fn spawn_bounded(executable: &Path, arguments: &[OsString]) -> io::Result<Child> {
@@ -508,7 +598,7 @@ impl std::error::Error for ProcessError {
 mod tests {
     use super::{
         DiscoveryError, IsolatedClientEnvironment, OfficialClient, ProcessError, discover_client,
-        run_bounded, run_bounded_isolated,
+        run_bounded, run_bounded_isolated, run_interactive_isolated,
     };
     use std::ffi::{OsStr, OsString};
     use std::fs;
@@ -717,6 +807,61 @@ mod tests {
                 runtime,
                 OsString::from("/usr/bin:/bin")
             ),
+            Err(ProcessError::UnsafeIsolation(_))
+        ));
+        remove(&directory);
+    }
+
+    #[test]
+    fn interactive_launcher_passes_argv_and_allowlisted_terminal_only() {
+        let (directory, executable) = fixture(
+            "interactive",
+            "printf '%s|%s|%s|%s' \"$2\" \"$HOME\" \"${TERM-unset}\" \"${USER-unset}\" > \"$1\"; exit 23",
+        );
+        let home = directory.join("home");
+        let runtime = directory.join("runtime");
+        let observation = directory.join("observation");
+        for path in [&home, &runtime] {
+            fs::create_dir(path).expect("create isolation directory");
+            fs::set_permissions(path, fs::Permissions::from_mode(0o700))
+                .expect("secure isolation directory");
+        }
+        let environment =
+            IsolatedClientEnvironment::new(home.clone(), runtime, OsString::from("/usr/bin:/bin"))
+                .expect("isolated environment")
+                .with_terminal("xterm-256color")
+                .expect("valid terminal");
+        let argument = "literal; shell syntax is data";
+        let status = run_interactive_isolated(
+            &executable,
+            [observation.as_os_str(), OsStr::new(argument)],
+            &environment,
+        )
+        .expect("run interactive fixture");
+        assert_eq!(status.code(), Some(23));
+        assert_eq!(
+            fs::read_to_string(&observation).expect("read observation"),
+            format!("{argument}|{}|xterm-256color|unset", home.display())
+        );
+        assert!(!directory.join("shell syntax is data").exists());
+        remove(&directory);
+    }
+
+    #[test]
+    fn terminal_name_is_validated() {
+        let (directory, _) = fixture("unused-terminal", "exit 0");
+        let home = directory.join("home");
+        let runtime = directory.join("runtime");
+        for path in [&home, &runtime] {
+            fs::create_dir(path).expect("create isolation directory");
+            fs::set_permissions(path, fs::Permissions::from_mode(0o700))
+                .expect("secure isolation directory");
+        }
+        let environment =
+            IsolatedClientEnvironment::new(home, runtime, OsString::from("/usr/bin:/bin"))
+                .expect("isolated environment");
+        assert!(matches!(
+            environment.with_terminal("xterm; injected"),
             Err(ProcessError::UnsafeIsolation(_))
         ));
         remove(&directory);
