@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-15T20:10:00Z",
-  "goal": "Implement the versioned, non-secret profile registry with atomic locked persistence.",
+  "updatedAt": "2026-07-15T20:01:01Z",
+  "goal": "Implement safe official-client discovery and bounded process execution.",
   "scope": [
-    "phase-1-profile-registry"
+    "phase-1-client-discovery"
   ],
-  "status": "ready_for_review",
+  "status": "active",
   "git": {
-    "branch": "feat/profile-registry",
-    "head": "388ed9b5785bd1be091a8741fcf50da5ef1582c3",
+    "branch": "feat/client-discovery",
+    "head": "73f24b65889f78b6e44bf77c53424ca896db55ee",
     "worktree": "dirty"
   },
   "completed": [
@@ -16,10 +16,11 @@
     "The Core project harness was designed around the existing authoritative documents.",
     "The Phase 0 Rust workspace, crate boundaries, CLI shell, policies, and CI definition were implemented.",
     "Pull request 1 was merged at commit 1f9a36d39818c347f0a04714f91df8a9a1140580.",
-    "Profile registry pull request 2 was opened at https://github.com/ensp1re/gemini-auth/pull/2."
+    "Profile registry pull request 2 was merged at commit 73f24b65889f78b6e44bf77c53424ca896db55ee.",
+    "The VPS agy binary was observed at /root/.local/bin/agy and reports version 1.1.2 from --version; no authentication state was accessed."
   ],
   "nextActions": [
-    "Review and merge pull request 2 using the recorded local verification; hosted CI remains deferred."
+    "Implement the process runner and client discovery abstraction using fake executables before integrating the observed agy binary."
   ],
   "decisions": [
     "Use the Core harness profile only; no hooks, daemon, event journal, database, or client adapter.",
