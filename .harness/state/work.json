@@ -135,6 +135,11 @@
       "blocker": null,
       "verification": [
         {
+          "command": "python3 scripts/check.py && cargo run --quiet --bin agy-auth -- --help",
+          "revision": "f02d8fb00c3f5a94768358fb29b5fce4a42615f6",
+          "outcome": "passing; agy-auth binary and agy-auth-* workspace crates verified"
+        },
+        {
           "command": "python3 scripts/check.py",
           "revision": "bfe91d72075b40231b18e015d8681e9794ee8991",
           "outcome": "passing; renamed workspace and 20 tests"

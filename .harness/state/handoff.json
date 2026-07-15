@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-15T20:44:00Z",
+  "updatedAt": "2026-07-15T20:49:00Z",
   "goal": "Pivot the product, binary, crates, and roadmap from Gemini CLI to Antigravity CLI.",
   "scope": [
     "phase-1-antigravity-transition"
@@ -8,7 +8,7 @@
   "status": "ready_for_review",
   "git": {
     "branch": "pivot/antigravity-auth",
-    "head": "f77012c45230a9991537bc40b3c53613a4db24b9",
+    "head": "f02d8fb00c3f5a94768358fb29b5fce4a42615f6",
     "worktree": "dirty"
   },
   "completed": [
@@ -45,6 +45,7 @@
       "profile registry at 05dbd82: 14 tests passing, including lock contention, symlink refusal, 0600 permissions, schema rejection, and repeated round trips",
       "client discovery at c506fcc: 20 tests passing plus installed agy 1.1.2 smoke test passing",
       "Antigravity transition at bfe91d7: renamed workspace, 20 tests, agy 1.1.2 smoke test, dependency policy, and strict harness validation passing",
+      "Short naming at f02d8fb: agy-auth binary and agy-auth-* crates compile and pass all local gates",
       "python3 scripts/check_dependencies.py: passing",
       "python3 scripts/check_no_secrets.py: passing"
     ],
