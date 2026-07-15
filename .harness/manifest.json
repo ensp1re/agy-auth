@@ -27,8 +27,8 @@
   },
   "commands": {
     "context": "python3 scripts/harness/context.py",
-    "check": "python3 scripts/harness/validate.py",
-    "verify": "python3 scripts/harness/validate.py"
+    "check": "python3 scripts/check.py",
+    "verify": "python3 scripts/check.py"
   },
   "budgets": [
     {

@@ -1,6 +1,6 @@
 # ADR 0001: Use a Rust Workspace
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-07-15
 
 ## Context

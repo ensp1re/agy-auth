@@ -52,12 +52,12 @@ def main() -> int:
     head = git("rev-parse", "HEAD")
     status = git("status", "--short")
     actual_tree = "dirty" if status and status != "unavailable" else "clean"
-    active = [item for item in work["items"] if item["status"] == "active"]
+    current = [item for item in work["items"] if item["status"] in {"active", "blocked"}]
     conflicts = []
-    if len(active) != 1:
-        conflicts.append(f"expected exactly one active item, found {len(active)}")
-    if handoff["scope"] != [item["id"] for item in active]:
-        conflicts.append("handoff scope differs from active work")
+    if len(current) != 1:
+        conflicts.append(f"expected exactly one active or blocked item, found {len(current)}")
+    if handoff["scope"] != [item["id"] for item in current]:
+        conflicts.append("handoff scope differs from current work")
     if handoff["git"]["branch"] != branch:
         conflicts.append("handoff branch differs from Git")
     closeout = is_closeout_commit(handoff["git"]["head"], head, actual_tree)
@@ -68,9 +68,9 @@ def main() -> int:
 
     print(f"root: {ROOT}")
     print(f"git: {branch} {head[:12]} {actual_tree}")
-    if active:
-        item = active[0]
-        print(f"active: {item['id']} — {item['title']}")
+    if current:
+        item = current[0]
+        print(f"current: {item['id']} ({item['status']}) — {item['title']}")
         print(f"source: {item['source']}")
     print(f"next: {handoff['nextActions'][0] if handoff['nextActions'] else 'none recorded'}")
     print(f"verification: {len(handoff['verification']['passed'])} passed, "

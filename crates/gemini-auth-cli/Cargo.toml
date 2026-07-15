@@ -1,0 +1,18 @@
+[package]
+name = "gemini-auth-cli"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "gemini-auth"
+path = "src/main.rs"
+
+[dependencies]
+clap.workspace = true
+gemini-auth-app.workspace = true
+
+[lints]
+workspace = true

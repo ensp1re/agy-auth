@@ -22,7 +22,23 @@
         "SECURITY.md and CONTRIBUTING.md encode the approved security and fixture boundaries."
       ],
       "blocker": null,
-      "verification": [],
+      "verification": [
+        {
+          "command": "python3 scripts/check.py",
+          "revision": "416c3aa1218f3d70355ed895f00db92605ae9aff",
+          "outcome": "passing"
+        },
+        {
+          "command": "cargo deny check",
+          "revision": "416c3aa1218f3d70355ed895f00db92605ae9aff",
+          "outcome": "passing"
+        },
+        {
+          "command": "GitHub Actions run 29445729618",
+          "revision": "416c3aa1218f3d70355ed895f00db92605ae9aff",
+          "outcome": "not run due account usage limit; explicitly deferred and non-blocking by user direction"
+        }
+      ],
       "completion": null
     }
   ]

@@ -61,10 +61,13 @@ def main() -> int:
     if invalid:
         errors.append(f"invalid work status: {', '.join(invalid)}")
     active = [item for item in items if item.get("status") == "active"]
+    current = [item for item in items if item.get("status") in {"active", "blocked"}]
     if not work.get("parallelMode") and len(active) > 1:
         errors.append("multiple active items without parallel mode")
-    if handoff.get("scope") != [item.get("id") for item in active]:
-        errors.append("handoff scope differs from active work")
+    if not work.get("parallelMode") and len(current) > 1:
+        errors.append("multiple current items without parallel mode")
+    if handoff.get("scope") != [item.get("id") for item in current]:
+        errors.append("handoff scope differs from current work")
     for item in items:
         if item.get("status") == "passing" and not item.get("verification"):
             errors.append(f"passing item lacks verification: {item.get('id')}")
