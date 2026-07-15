@@ -33,6 +33,12 @@ client and destructive logout, but not third-party account selection. The previo
 file-backed switching strategy has no current official contract and is withdrawn. `agy-auth` remains
 diagnostics-only while dedicated-account, non-secret platform research continues.
 
+Two isolated Linux attempts subsequently stopped because `agy 1.1.2` silently recognized an existing
+identity before dedicated login, including a corrected attempt with a clean environment, dedicated
+working directory, fresh home/runtime, D-Bus, and Secret Service. The mechanism remains unknown by
+design because credential-state inspection is outside the approved boundary. ADR 0006 therefore
+keeps the product diagnostics-only until a supported profile contract exists.
+
 ## What remains unverified
 
 - official account/profile selection commands;

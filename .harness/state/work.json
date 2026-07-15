@@ -165,7 +165,7 @@
       "id": "phase-2-antigravity-capability-research",
       "title": "Research the supported Antigravity authentication and profile contract",
       "status": "active",
-      "source": "docs/12-open-questions.md",
+      "source": "docs/adr/0006-diagnostics-only-until-supported-profile-contract.md",
       "plan": "docs/plans/phase-2-capability-research.md",
       "acceptance": [
         "The installed agy command surface is inventoried without accessing authentication state.",
@@ -195,6 +195,16 @@
           "command": "Execute Linux observation through unauthenticated-launch phase under the approved protocol",
           "revision": "4394b9f2e14fe74dc513733f60fea0ae803f51cd",
           "outcome": "failed safely; existing account was silently recognized, process was stopped without logout, and disposable state was removed"
+        },
+        {
+          "command": "Retry Linux unauthenticated launch with env -i, dedicated workdir, fresh home/runtime, D-Bus, and Secret Service",
+          "revision": "b3f97af74fdf1b94f50117abe90e945e63fcdeff",
+          "outcome": "stopped safely; existing identity was still recognized, no logout or model prompt occurred, and all disposable state was removed"
+        },
+        {
+          "command": "Review ADR 0006 against official docs, command inventory, and both Linux observation records",
+          "revision": "b3f97af74fdf1b94f50117abe90e945e63fcdeff",
+          "outcome": "diagnostics-only decision accepted; no authentication-state mutation authorized"
         }
       ],
       "completion": null
