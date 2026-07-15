@@ -15,7 +15,7 @@ version = "0.1.0"
 edition = "2024"
 rust-version = "1.88"
 publish = false
-repository = "https://github.com/ensp1re/gemini-auth"
+repository = "https://github.com/ensp1re/agy-auth"
 
 [workspace.dependencies]
 clap = { version = "4.5.41", features = ["derive"] }

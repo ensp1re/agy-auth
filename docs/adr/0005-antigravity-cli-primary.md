@@ -23,7 +23,7 @@ verified, reversible storage/profile contract exists.
 - Existing registry and process infrastructure remain reusable.
 - Prior Gemini isolated-home assumptions no longer drive the MVP.
 - The next milestone is capability research, not credential implementation.
-- Repository URL remains `ensp1re/agy-auth` until the migration PR is reviewed and merged.
+- The repository is published as `ensp1re/agy-auth`.
 
 ## Sources
 

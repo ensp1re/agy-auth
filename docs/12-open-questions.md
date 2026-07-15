@@ -12,7 +12,7 @@
 
 ## Product decisions
 
-- Final product/repository name: proposed `agy-auth`; repository rename waits for review.
+- Product, binary, crates, and repository use the approved `agy-auth` name.
 - Whether an “auth” name is too easily confused with an OAuth library.
 - Whether diagnostics-only is valuable if no supported switching contract exists.
 - Whether legacy Gemini CLI enterprise compatibility warrants a separate optional provider.

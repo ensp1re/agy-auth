@@ -2,7 +2,7 @@
 /target/
 
 # Local test and runtime data
-/.gemini-auth/
+/.agy-auth/
 /tmp/
 /coverage/
 *.profraw

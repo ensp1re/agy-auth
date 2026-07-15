@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-15T20:49:00Z",
-  "goal": "Pivot the product, binary, crates, and roadmap from Gemini CLI to Antigravity CLI.",
+  "updatedAt": "2026-07-15T20:42:31Z",
+  "goal": "Research the supported Antigravity CLI authentication and profile contract without mutating real authentication state.",
   "scope": [
-    "phase-1-antigravity-transition"
+    "phase-2-antigravity-capability-research"
   ],
-  "status": "ready_for_review",
+  "status": "active",
   "git": {
-    "branch": "pivot/antigravity-auth",
-    "head": "f02d8fb00c3f5a94768358fb29b5fce4a42615f6",
+    "branch": "chore/reconcile-agy-auth-rename",
+    "head": "8846b9846e9b92c0b0f7a7e1b61c1384a9e872d0",
     "worktree": "dirty"
   },
   "completed": [
@@ -20,17 +20,18 @@
     "The VPS agy binary was observed at /root/.local/bin/agy and reports version 1.1.2 from --version; no authentication state was accessed.",
     "Client discovery pull request 3 was merged at commit c6be00c4225b66900a2d0b725260c87b046b1da4.",
     "Gemini isolated-home pull request 4 was closed because consumer Gemini CLI transitioned to Antigravity CLI.",
-    "Antigravity transition pull request 5 was opened at https://github.com/ensp1re/gemini-auth/pull/5."
+    "Antigravity transition pull request 5 was merged at commit 8846b9846e9b92c0b0f7a7e1b61c1384a9e872d0.",
+    "The GitHub repository was renamed to https://github.com/ensp1re/agy-auth."
   ],
   "nextActions": [
-    "Review and merge pull request 5, then rename the GitHub repository to agy-auth and reconcile links."
+    "Inventory the installed agy 1.1.2 command surface using help and version output only, then record non-secret capability evidence."
   ],
   "decisions": [
     "Use the Core harness profile only; no hooks, daemon, event journal, database, or client adapter.",
     "Treat the numbered documentation and ADRs as authoritative rather than duplicating them in agent instructions."
   ],
   "openQuestions": [
-    "The MVP research questions in docs/12-open-questions.md must be resolved before claiming Gemini profile isolation works."
+    "The MVP research questions in docs/12-open-questions.md must be resolved before claiming Antigravity profile isolation works."
   ],
   "verification": {
     "passed": [
