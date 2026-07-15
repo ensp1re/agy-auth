@@ -25,17 +25,17 @@
       "verification": [
         {
           "command": "python3 scripts/check.py",
-          "revision": "775f3cb0f007781088778a9df014661e135114ab",
+          "revision": "416c3aa1218f3d70355ed895f00db92605ae9aff",
           "outcome": "passing"
         },
         {
           "command": "cargo deny check",
-          "revision": "775f3cb0f007781088778a9df014661e135114ab",
+          "revision": "416c3aa1218f3d70355ed895f00db92605ae9aff",
           "outcome": "passing"
         },
         {
           "command": "GitHub Actions run 29445729618",
-          "revision": "775f3cb0f007781088778a9df014661e135114ab",
+          "revision": "416c3aa1218f3d70355ed895f00db92605ae9aff",
           "outcome": "not run due account usage limit; explicitly deferred and non-blocking by user direction"
         }
       ],
