@@ -23,8 +23,9 @@ during research.
 2. Compare it with current official installation, authentication, configuration, and release docs.
 3. Determine whether a supported profile selector, alternate home, keyring namespace, or reversible
    session mechanism exists.
-4. If the public contract is insufficient, design a dedicated-account observation protocol for
-   Linux, then separately scope macOS and Windows evidence.
+4. If the public contract is insufficient, design the
+   [dedicated-account Linux observation protocol](linux-dedicated-account-observation.md), then
+   separately scope macOS and Windows evidence.
 5. Record a new ADR selecting a supported strategy or explicitly retaining diagnostics-only scope.
 
 ## Exit evidence

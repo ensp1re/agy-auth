@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-15T20:47:23Z",
+  "updatedAt": "2026-07-15T20:55:53Z",
   "goal": "Research the supported Antigravity CLI authentication and profile contract without mutating real authentication state.",
   "scope": [
     "phase-2-antigravity-capability-research"
   ],
   "status": "active",
   "git": {
-    "branch": "research/agy-capability-inventory",
-    "head": "355448d2951cd63eb72ff55164c5fd01f77cedb4",
+    "branch": "research/linux-observation-protocol",
+    "head": "833f3216838c73db811f08f7a192105dcb817ad5",
     "worktree": "dirty"
   },
   "completed": [
@@ -22,10 +22,12 @@
     "Gemini isolated-home pull request 4 was closed because consumer Gemini CLI transitioned to Antigravity CLI.",
     "Antigravity transition pull request 5 was merged at commit 8846b9846e9b92c0b0f7a7e1b61c1384a9e872d0.",
     "The GitHub repository was renamed to https://github.com/ensp1re/agy-auth.",
-    "The agy 1.1.2 public command surface and official authentication documentation were inventoried without accessing authentication state."
+    "The agy 1.1.2 public command surface and official authentication documentation were inventoried without accessing authentication state.",
+    "Capability inventory pull request 7 was merged at commit 833f3216838c73db811f08f7a192105dcb817ad5.",
+    "A dedicated-account Linux observation protocol was designed but not executed."
   ],
   "nextActions": [
-    "Design the dedicated-account Linux observation protocol needed to determine whether any reversible isolation mechanism exists."
+    "Review the Linux observation protocol, then obtain explicit approval and confirm a disposable test account, non-root OS user, and isolated Secret Service session before executing any phase."
   ],
   "decisions": [
     "Use the Core harness profile only; no hooks, daemon, event journal, database, or client adapter.",
