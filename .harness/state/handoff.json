@@ -1,65 +1,61 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-15T23:01:26Z",
-  "goal": "Implement and verify a TTY-preserving isolated client launcher without accessing authentication state.",
-  "scope": ["phase-3-tty-isolated-launcher"],
-  "status": "ready_for_review",
+  "updatedAt": "2026-07-15T23:09:00Z",
+  "goal": "Implement secure managed profile directories and fake add/exec application contracts.",
+  "scope": ["phase-3-managed-profile-contracts"],
+  "status": "active",
   "git": {
-    "branch": "feature/tty-isolated-launcher",
-    "head": "c71f0d583568591ee89b86ae1f5bd07182898794",
-    "worktree": "clean"
+    "branch": "feature/managed-profile-contracts",
+    "head": "8b578a8b185f7d36d0565be34bb03c772961fb03",
+    "worktree": "dirty"
   },
   "completed": [
-    "PR 18 merged ADR 0007 and the synthetic cleared-environment primitive at d443d626674bbeaaf5d6867c6269463a1f21375e.",
-    "The user authorized read-only reverse engineering of the installed agy client; destructive actions and secret retention remain excluded.",
-    "The TTY-preserving launcher inherits standard streams, returns exact child status, validates TERM, and preserves the cleared environment boundary.",
-    "Installed agy 1.1.2 returned --version from two empty disposable homes without creating files; all disposable state was removed."
+    "PR 19 merged the TTY-preserving isolated launcher at 8b578a8b185f7d36d0565be34bb03c772961fb03.",
+    "The next slice is restricted to managed project directories and fake catalog/client adapters."
   ],
   "nextActions": [
-    "Review and merge the TTY-preserving launcher, then implement managed profile directories and fake-client add/exec contracts."
+    "Verify managed directory security and fake add/exec ordering, then deliver the slice for review."
   ],
   "decisions": [
-    "Interactive children inherit standard streams but not ambient environment variables.",
-    "TERM is the only new variable and uses a conservative name allowlist."
+    "Profile UUIDs are the only values used to derive managed filesystem paths.",
+    "A post-reservation failure leaves pending metadata and retained project-owned home state for explicit recovery."
   ],
   "openQuestions": [
-    "Which D-Bus/keyring variables are actually required for a later dedicated-account login experiment?"
+    "How should the next atomic registry adapter expose pending-profile recovery to the CLI?"
   ],
   "verification": {
-    "passed": [
-      "python3 scripts/check.py: passing; 37 tests and all local gates",
-      "cargo deny check: advisories, bans, licenses, and sources passing",
-      "fake interactive child: inherited streams, exact exit 23, direct argv, cleared USER, validated TERM",
-      "installed agy 1.1.2: two isolated --version probes passed and left homes/runtime empty",
-      "strict harness validation: 0 errors and 0 warnings",
-      "context budgets: root instructions and live startup state passing"
-    ],
+    "passed": [],
     "failed": [],
     "notRun": [
-      "No login, account identity observation, model prompt, logout, or credential inspection is included.",
-      "Hosted CI, macOS, Windows, and desktop keyrings remain untested."
+      "No real Antigravity login, identity observation, credential access, or model prompt is included.",
+      "CLI profile commands, hosted CI, macOS, Windows, and keyrings remain untested."
     ]
   },
   "risks": [
-    "TTY inheritance alone does not prove authentication isolation.",
-    "Antigravity may require a separately isolated D-Bus/Secret Service session for real login."
+    "Path validation without directory-handle-relative APIs cannot eliminate every same-user rename race; the next hardening phase must review this boundary.",
+    "Fake ports prove orchestration but not Antigravity account isolation."
   ],
   "touchedPaths": [
-    "crates/agy-auth-process/src/lib.rs",
-    "docs/07-cli-specification.md",
-    "docs/plans/phase-3-linux-isolated-home-contract.md",
-    "docs/plans/phase-3-tty-isolated-launcher.md",
+    "crates/agy-auth-app/Cargo.toml",
+    "crates/agy-auth-app/src/lib.rs",
+    "crates/agy-auth-storage/src/lib.rs",
+    "crates/agy-auth-storage/src/profiles.rs",
+    "docs/05-repository-structure.md",
+    "docs/06-credential-storage.md",
+    "docs/09-testing-strategy.md",
+    "docs/plans/phase-3-managed-profile-contracts.md",
     ".harness/state/work.json",
     ".harness/state/handoff.json"
   ],
   "doNotRepeat": [
     "Do not inspect, hash, copy, diff, print, or retain credential contents or private Antigravity logs.",
-    "Do not launch an interactive real-account session in this task; use --version only."
+    "Do not expose CLI add/exec until the catalog adapter and experimental capability gate are reviewed."
   ],
   "contextSources": [
-    "docs/07-cli-specification.md",
+    "docs/04-architecture.md",
+    "docs/06-credential-storage.md",
     "docs/08-security-policy.md",
     "docs/adr/0007-versioned-unofficial-isolated-homes.md",
-    "docs/plans/phase-3-tty-isolated-launcher.md"
+    "docs/plans/phase-3-managed-profile-contracts.md"
   ]
 }

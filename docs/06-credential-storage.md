@@ -30,7 +30,10 @@ Out of scope: protecting credentials from a fully compromised same-user session 
 3. **Encrypted file vault**: opt-in fallback for headless systems without Secret Service.
 4. **Plaintext mode-0600 vault**: not offered by default. A later expert-only mode would require loud warnings and explicit configuration.
 
-Antigravity's active file is necessarily plaintext because that is the official client's verified SSH storage format. The stored inactive copy should still go to the keyring/encrypted vault.
+For the ADR 0007 isolated-home strategy, each profile retains official-client state only inside its
+own owner-only home. `agy-auth` does not create inactive credential copies, parse the official file,
+or move authentication bytes between homes. Vault and keyring capture remain deferred alternatives,
+not part of the isolated-home workflow.
 
 ## Secret-store interface
 
