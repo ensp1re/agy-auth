@@ -1,3 +1,4 @@
+use agy_auth_app::{DoctorRegistryProbe, RegistryDiagnostic};
 use agy_auth_domain::{
     DomainError, Profile, ProfileId, ProfileName, ProfileStatus, ProviderKind, Registry,
     StorageLocator,
@@ -18,6 +19,57 @@ const CURRENT_SCHEMA_VERSION: u64 = 1;
 pub struct RegistryFile {
     path: PathBuf,
     lock_path: PathBuf,
+}
+
+/// Read-only health probe for project-owned registry metadata.
+#[derive(Debug)]
+pub struct RegistryDoctorProbe {
+    registry: RegistryFile,
+}
+
+impl RegistryDoctorProbe {
+    /// Configure the registry path to validate.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the path has no parent or filename.
+    pub fn new(path: impl Into<PathBuf>) -> Result<Self, RegistryStoreError> {
+        RegistryFile::new(path).map(|registry| Self { registry })
+    }
+}
+
+impl DoctorRegistryProbe for RegistryDoctorProbe {
+    fn probe(&self) -> RegistryDiagnostic {
+        match self.registry.load() {
+            Ok(registry) => RegistryDiagnostic {
+                healthy: true,
+                profile_count: Some(registry.profiles().len()),
+                error_code: None,
+            },
+            Err(error) => RegistryDiagnostic {
+                healthy: false,
+                profile_count: None,
+                error_code: Some(registry_error_code(&error).to_owned()),
+            },
+        }
+    }
+}
+
+fn registry_error_code(error: &RegistryStoreError) -> &'static str {
+    match error {
+        RegistryStoreError::MissingParent => "registry_path_invalid",
+        RegistryStoreError::UnsafeFileType => "registry_unsafe_file_type",
+        RegistryStoreError::Oversized => "registry_oversized",
+        RegistryStoreError::MissingSchemaVersion => "registry_schema_missing",
+        RegistryStoreError::UnsupportedSchema(_) => "registry_schema_unsupported",
+        RegistryStoreError::Locked => "registry_locked",
+        RegistryStoreError::Domain(_) => "registry_invariant_invalid",
+        RegistryStoreError::Json(_) => "registry_json_invalid",
+        RegistryStoreError::Io(_) => "registry_io",
+        RegistryStoreError::TimestampParse(_) | RegistryStoreError::TimestampFormat(_) => {
+            "registry_time_invalid"
+        }
+    }
 }
 
 impl RegistryFile {

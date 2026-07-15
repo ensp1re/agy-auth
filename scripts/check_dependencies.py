@@ -11,9 +11,9 @@ ALLOWED = {
     "agy-auth-domain": set(),
     "agy-auth-process": set(),
     "agy-auth-app": {"agy-auth-domain"},
-    "agy-auth-storage": {"agy-auth-domain"},
-    "provider-antigravity-cli": {"agy-auth-domain"},
-    "agy-auth-cli": {"agy-auth-app"},
+    "agy-auth-storage": {"agy-auth-app", "agy-auth-domain"},
+    "provider-antigravity-cli": {"agy-auth-app", "agy-auth-domain", "agy-auth-process"},
+    "agy-auth-cli": {"agy-auth-app", "agy-auth-storage", "provider-antigravity-cli"},
     "agy-auth-test-support": {"agy-auth-domain"},
 }
 

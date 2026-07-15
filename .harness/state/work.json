@@ -164,7 +164,7 @@
     {
       "id": "phase-2-antigravity-capability-research",
       "title": "Research the supported Antigravity authentication and profile contract",
-      "status": "active",
+      "status": "passing",
       "source": "docs/adr/0006-diagnostics-only-until-supported-profile-contract.md",
       "plan": "docs/plans/phase-2-capability-research.md",
       "acceptance": [
@@ -205,6 +205,48 @@
           "command": "Review ADR 0006 against official docs, command inventory, and both Linux observation records",
           "revision": "b3f97af74fdf1b94f50117abe90e945e63fcdeff",
           "outcome": "diagnostics-only decision accepted; no authentication-state mutation authorized"
+        }
+      ],
+      "completion": {
+        "commit": "c54ecb7ddeaa20bd1e72b8423bec4a2c6555705b",
+        "review": "https://github.com/ensp1re/agy-auth/pull/10",
+        "completedAt": "2026-07-15T21:14:49Z"
+      }
+    },
+    {
+      "id": "phase-2a-doctor-diagnostics",
+      "title": "Implement the diagnostics-only agy-auth doctor vertical slice",
+      "status": "active",
+      "source": "docs/adr/0006-diagnostics-only-until-supported-profile-contract.md",
+      "plan": "docs/plans/phase-2a-doctor-diagnostics.md",
+      "acceptance": [
+        "Doctor discovers and version-probes agy without authentication access.",
+        "Doctor validates only the project-owned non-secret registry.",
+        "Human and schema-versioned JSON output explicitly report switching unsupported and mutation disabled.",
+        "Missing clients and unsafe registries use stable exit codes and error categories.",
+        "All local repository and harness checks pass without relying on hosted CI."
+      ],
+      "blocker": null,
+      "verification": [
+        {
+          "command": "python3 scripts/check.py && cargo deny check",
+          "revision": "8d4ac78",
+          "outcome": "passing; 24 tests plus one expected ignored installed-client smoke, dependency policy, secret scan, and architecture checks"
+        },
+        {
+          "command": "cargo run --quiet --bin agy-auth -- --data-dir <temp> doctor --client /root/.local/bin/agy",
+          "revision": "8d4ac78",
+          "outcome": "passing; agy 1.1.2, healthy empty registry, switching unsupported, and mutation disabled"
+        },
+        {
+          "command": "doctor JSON, missing-client exit 4, corrupt-registry exit 8, and --repair no-op smoke checks",
+          "revision": "8d4ac78",
+          "outcome": "passing; stable schemaVersion 1 and error categories"
+        },
+        {
+          "command": "strict harness validation and git diff --check",
+          "revision": "8d4ac78",
+          "outcome": "passing; 0 errors and 0 warnings"
         }
       ],
       "completion": null
