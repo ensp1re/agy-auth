@@ -108,6 +108,9 @@ Keyring tests use a unique service namespace and delete it in teardown. They mus
 
 Run manually or in a protected, non-fork CI environment with dedicated test accounts:
 
+Linux authentication-state research must first follow the approval and isolation requirements in
+[`docs/plans/linux-dedicated-account-observation.md`](plans/linux-dedicated-account-observation.md).
+
 1. Antigravity CLI profile A login and repeat launch through a verified strategy.
 2. Antigravity CLI profile B login; verify the selected identity without backend or token inspection.
 3. Alternate manual selection and confirm isolated or transaction-safe behavior.

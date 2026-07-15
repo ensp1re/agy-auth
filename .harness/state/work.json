@@ -185,6 +185,11 @@
           "command": "Review official Antigravity CLI installation/authentication and getting-started documentation",
           "revision": "355448d2951cd63eb72ff55164c5fd01f77cedb4",
           "outcome": "official docs describe OS keyring token profiles and destructive /logout, but no profile selector or credential-home override"
+        },
+        {
+          "command": "Review docs/plans/linux-dedicated-account-observation.md against docs/08-security-policy.md and docs/09-testing-strategy.md",
+          "revision": "833f3216838c73db811f08f7a192105dcb817ad5",
+          "outcome": "protocol designed with separate approval, disposable OS user/keyring, metadata allowlist, stop conditions, and cleanup; not executed"
         }
       ],
       "completion": null
