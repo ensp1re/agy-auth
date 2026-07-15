@@ -1,20 +1,22 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-15T23:02:00Z",
+  "updatedAt": "2026-07-15T23:01:26Z",
   "goal": "Implement and verify a TTY-preserving isolated client launcher without accessing authentication state.",
   "scope": ["phase-3-tty-isolated-launcher"],
-  "status": "active",
+  "status": "ready_for_review",
   "git": {
     "branch": "feature/tty-isolated-launcher",
-    "head": "d443d626674bbeaaf5d6867c6269463a1f21375e",
-    "worktree": "dirty"
+    "head": "c71f0d583568591ee89b86ae1f5bd07182898794",
+    "worktree": "clean"
   },
   "completed": [
     "PR 18 merged ADR 0007 and the synthetic cleared-environment primitive at d443d626674bbeaaf5d6867c6269463a1f21375e.",
-    "The user authorized read-only reverse engineering of the installed agy client; destructive actions and secret retention remain excluded."
+    "The user authorized read-only reverse engineering of the installed agy client; destructive actions and secret retention remain excluded.",
+    "The TTY-preserving launcher inherits standard streams, returns exact child status, validates TERM, and preserves the cleared environment boundary.",
+    "Installed agy 1.1.2 returned --version from two empty disposable homes without creating files; all disposable state was removed."
   ],
   "nextActions": [
-    "Verify the fake interactive launcher and two disposable agy --version environments, then deliver the change for review."
+    "Review and merge the TTY-preserving launcher, then implement managed profile directories and fake-client add/exec contracts."
   ],
   "decisions": [
     "Interactive children inherit standard streams but not ambient environment variables.",
@@ -24,7 +26,14 @@
     "Which D-Bus/keyring variables are actually required for a later dedicated-account login experiment?"
   ],
   "verification": {
-    "passed": [],
+    "passed": [
+      "python3 scripts/check.py: passing; 37 tests and all local gates",
+      "cargo deny check: advisories, bans, licenses, and sources passing",
+      "fake interactive child: inherited streams, exact exit 23, direct argv, cleared USER, validated TERM",
+      "installed agy 1.1.2: two isolated --version probes passed and left homes/runtime empty",
+      "strict harness validation: 0 errors and 0 warnings",
+      "context budgets: root instructions and live startup state passing"
+    ],
     "failed": [],
     "notRun": [
       "No login, account identity observation, model prompt, logout, or credential inspection is included.",

@@ -65,7 +65,28 @@
         "Two disposable isolated homes safely probe installed agy 1.1.2 with --version only."
       ],
       "blocker": null,
-      "verification": [],
+      "verification": [
+        {
+          "command": "python3 scripts/check.py && cargo deny check",
+          "revision": "c71f0d583568591ee89b86ae1f5bd07182898794",
+          "outcome": "passing; 37 tests, dependency policy, compatibility, release identity, secrets, and harness checks"
+        },
+        {
+          "command": "cargo test -p agy-auth-process --lib",
+          "revision": "c71f0d583568591ee89b86ae1f5bd07182898794",
+          "outcome": "passing; inherited standard streams, exact exit 23, direct metacharacter argv, cleared USER, validated TERM, and existing isolation cases"
+        },
+        {
+          "command": "AGY_AUTH_TEST_AGY=/root/.local/bin/agy AGY_AUTH_TEST_AGY_VERSION=1.1.2 cargo test -p agy-auth-process --test installed_client -- --ignored",
+          "revision": "c71f0d583568591ee89b86ae1f5bd07182898794",
+          "outcome": "passing; two disposable empty homes returned agy 1.1.2 from --version, remained empty, and were removed"
+        },
+        {
+          "command": "strict harness validation and context budget evaluation",
+          "revision": "c71f0d583568591ee89b86ae1f5bd07182898794",
+          "outcome": "passing; 0 errors/warnings, root instructions 2213/8000 bytes, live startup state 5531/16000 bytes"
+        }
+      ],
       "completion": null
     }
   ]
