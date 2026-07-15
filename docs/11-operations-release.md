@@ -60,6 +60,12 @@ Registry schema: 1
 Pending recovery: none
 ```
 
+The machine-readable compatibility ledger is
+[`compatibility/antigravity-cli.json`](../compatibility/antigravity-cli.json). Each entry records a
+client version, platform, bounded diagnostic evidence, capability gate, and reverification trigger.
+`agy-auth doctor --json` also embeds the tool version, source revision, and compilation target without
+builder paths, timestamps, or environment values.
+
 When an official client changes storage:
 
 - discovery may continue;

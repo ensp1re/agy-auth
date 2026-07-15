@@ -258,7 +258,7 @@
     {
       "id": "phase-2b-doctor-filesystem-diagnostics",
       "title": "Harden doctor with project-owned filesystem diagnostics",
-      "status": "active",
+      "status": "passing",
       "source": "docs/07-cli-specification.md",
       "plan": "docs/plans/phase-2b-doctor-filesystem-diagnostics.md",
       "acceptance": [
@@ -289,6 +289,48 @@
           "command": "strict harness validation and git diff --check",
           "revision": "46609266737bc3771f0ff6dcc7313fc9b7d22361",
           "outcome": "passing; 0 errors and 0 warnings"
+        }
+      ],
+      "completion": {
+        "commit": "26579ef78439b2138cafa3ef293f12eae5f0f8fa",
+        "review": "https://github.com/ensp1re/agy-auth/pull/12",
+        "completedAt": "2026-07-15T21:32:47Z"
+      }
+    },
+    {
+      "id": "phase-4-release-readiness-foundation",
+      "title": "Add end-to-end contracts and compatibility build metadata",
+      "status": "active",
+      "source": "docs/11-operations-release.md",
+      "plan": "docs/plans/phase-4-release-readiness-foundation.md",
+      "acceptance": [
+        "Compiled-binary end-to-end tests cover human and JSON doctor behavior.",
+        "Exit codes 0, 4, 8, and 10 are verified through the CLI boundary.",
+        "Doctor embeds package version, Git revision, and compilation target without builder data.",
+        "A schema-validated compatibility matrix records agy 1.1.2 diagnostics-only support.",
+        "All local repository and harness checks pass without hosted CI."
+      ],
+      "blocker": null,
+      "verification": [
+        {
+          "command": "python3 scripts/check.py && cargo deny check",
+          "revision": "86139d982d5b04c9ccdde698140fcfaaa4eabfd3",
+          "outcome": "passing; 33 tests plus one expected ignored installed-client smoke and all local policy gates"
+        },
+        {
+          "command": "cargo test -p agy-auth-cli --test doctor_e2e",
+          "revision": "86139d982d5b04c9ccdde698140fcfaaa4eabfd3",
+          "outcome": "passing; compiled binary human/JSON contracts and exits 0, 4, 8, and 10"
+        },
+        {
+          "command": "cargo build --release --bin agy-auth and installed agy 1.1.2 JSON smoke",
+          "revision": "86139d982d5b04c9ccdde698140fcfaaa4eabfd3",
+          "outcome": "passing; version 0.1.0, 40-character revision, linux target, and diagnostics-only capability gate"
+        },
+        {
+          "command": "python3 scripts/check_compatibility.py and strict harness validation",
+          "revision": "86139d982d5b04c9ccdde698140fcfaaa4eabfd3",
+          "outcome": "passing; one agy 1.1.2 compatibility entry and 0 harness errors/warnings"
         }
       ],
       "completion": null
