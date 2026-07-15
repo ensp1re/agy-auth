@@ -395,7 +395,28 @@
         "No external release or artifact upload occurs."
       ],
       "blocker": null,
-      "verification": [],
+      "verification": [
+        {
+          "command": "python3 scripts/check.py && cargo deny check",
+          "revision": "e32c15d262e3b0a666e91586133bfc392ed34a42",
+          "outcome": "passing; 33 tests, MIT metadata for 7 workspace packages, and all local policy gates"
+        },
+        {
+          "command": "scripts/package_linux_rc.sh dist/run-one and dist/run-two",
+          "revision": "e32c15d262e3b0a666e91586133bfc392ed34a42",
+          "outcome": "passing; byte-identical rc.1 archive and SPDX SBOM hashes"
+        },
+        {
+          "command": "archive content, checksum, SPDX MIT declaration, and extracted-binary diagnostics checks",
+          "revision": "e32c15d262e3b0a666e91586133bfc392ed34a42",
+          "outcome": "passing; 5 files including LICENSE, all workspace SBOM packages MIT, agy 1.1.2 diagnostics"
+        },
+        {
+          "command": "agy-auth-process tests repeated five times and strict harness validation",
+          "revision": "e32c15d262e3b0a666e91586133bfc392ed34a42",
+          "outcome": "passing; ETXTBSY retry stable and harness has 0 errors/warnings"
+        }
+      ],
       "completion": null
     }
   ]

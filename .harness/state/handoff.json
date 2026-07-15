@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-15T22:01:34Z",
+  "updatedAt": "2026-07-15T22:04:20Z",
   "goal": "Build the MIT-licensed installable Linux release candidate without external publication.",
   "scope": [
     "phase-4-mit-installable-release-candidate"
   ],
-  "status": "active",
+  "status": "ready_for_review",
   "git": {
     "branch": "feature/mit-installable-rc",
-    "head": "2f8fe0622bf13d5414701c12e25975b05ffffabe",
+    "head": "e32c15d262e3b0a666e91586133bfc392ed34a42",
     "worktree": "dirty"
   },
   "completed": [
@@ -38,10 +38,11 @@
     "Release-readiness pull request 13 was merged at commit d7ac4f2b7c9bc0b4a0f60b4c8105674f8d75f297.",
     "Linux local RC tooling at 7ebddee produces reproducible archives, verified checksums, and a 68-package SPDX SBOM.",
     "Linux local RC tooling pull request 14 was merged at commit 2f8fe0622bf13d5414701c12e25975b05ffffabe.",
-    "The user approved the MIT license; copyright identity is Enspire."
+    "The user approved the MIT license; copyright identity is Enspire.",
+    "The MIT installable rc.1 at e32c15d is reproducible, checksum-verified, SPDX-labeled, and passes extracted-binary diagnostics."
   ],
   "nextActions": [
-    "Verify MIT metadata and reproducible rc.1 artifacts, run all local gates, and publish the installable RC changes for review."
+    "Review and merge the MIT installable release-candidate pull request."
   ],
   "decisions": [
     "Use the Core harness profile only; no hooks, daemon, event journal, database, or client adapter.",
