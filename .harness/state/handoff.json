@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-15T20:01:01Z",
+  "updatedAt": "2026-07-15T20:13:00Z",
   "goal": "Implement safe official-client discovery and bounded process execution.",
   "scope": [
     "phase-1-client-discovery"
   ],
-  "status": "active",
+  "status": "ready_for_review",
   "git": {
     "branch": "feat/client-discovery",
-    "head": "73f24b65889f78b6e44bf77c53424ca896db55ee",
+    "head": "c506fcc8f17ceee7df1cb593f7d3cc719e32a08c",
     "worktree": "dirty"
   },
   "completed": [
@@ -20,7 +20,7 @@
     "The VPS agy binary was observed at /root/.local/bin/agy and reports version 1.1.2 from --version; no authentication state was accessed."
   ],
   "nextActions": [
-    "Implement the process runner and client discovery abstraction using fake executables before integrating the observed agy binary."
+    "Push the client discovery branch and open its pull request using the recorded local and agy 1.1.2 evidence."
   ],
   "decisions": [
     "Use the Core harness profile only; no hooks, daemon, event journal, database, or client adapter.",
@@ -40,6 +40,7 @@
       "cargo test --workspace --all-features: 3 tests passing",
       "cargo deny check: advisories, bans, licenses, and sources passing",
       "profile registry at 05dbd82: 14 tests passing, including lock contention, symlink refusal, 0600 permissions, schema rejection, and repeated round trips",
+      "client discovery at c506fcc: 20 tests passing plus installed agy 1.1.2 smoke test passing",
       "python3 scripts/check_dependencies.py: passing",
       "python3 scripts/check_no_secrets.py: passing"
     ],

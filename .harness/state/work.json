@@ -96,7 +96,23 @@
         "The installed agy executable is detected and version 1.1.2 is reported through the new abstraction without accessing authentication state."
       ],
       "blocker": null,
-      "verification": [],
+      "verification": [
+        {
+          "command": "python3 scripts/check.py",
+          "revision": "c506fcc8f17ceee7df1cb593f7d3cc719e32a08c",
+          "outcome": "passing; 20 tests and 1 expected ignored installed-client smoke test"
+        },
+        {
+          "command": "cargo deny check",
+          "revision": "c506fcc8f17ceee7df1cb593f7d3cc719e32a08c",
+          "outcome": "advisories, bans, licenses, and sources passing"
+        },
+        {
+          "command": "GEMINI_AUTH_TEST_AGY=/root/.local/bin/agy GEMINI_AUTH_TEST_AGY_VERSION=1.1.2 cargo test -p gemini-auth-process --test installed_client -- --ignored --exact discovers_and_probes_installed_agy_without_authentication",
+          "revision": "c506fcc8f17ceee7df1cb593f7d3cc719e32a08c",
+          "outcome": "passing; agy 1.1.2 discovered and probed without authentication access"
+        }
+      ],
       "completion": null
     }
   ]
