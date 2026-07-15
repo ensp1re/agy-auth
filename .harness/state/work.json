@@ -85,7 +85,7 @@
     {
       "id": "phase-1-client-discovery",
       "title": "Implement safe official-client discovery and process execution",
-      "status": "active",
+      "status": "passing",
       "source": "docs/10-delivery-roadmap.md",
       "plan": "docs/plans/phase-1-client-discovery.md",
       "acceptance": [
@@ -113,6 +113,27 @@
           "outcome": "passing; agy 1.1.2 discovered and probed without authentication access"
         }
       ],
+      "completion": {
+        "commit": "c6be00c4225b66900a2d0b725260c87b046b1da4",
+        "review": "https://github.com/ensp1re/gemini-auth/pull/3",
+        "completedAt": "2026-07-15T20:15:03Z"
+      }
+    },
+    {
+      "id": "phase-1-gemini-isolated-home",
+      "title": "Implement the capability-gated Gemini isolated-home adapter",
+      "status": "active",
+      "source": "docs/04-architecture.md",
+      "plan": "docs/plans/phase-1-gemini-isolated-home.md",
+      "acceptance": [
+        "The adapter discovers Gemini CLI through gemini-auth-process and exposes typed capabilities without reading client state.",
+        "Managed profile-home paths are derived from ProfileId under an explicit data root and cannot escape it.",
+        "Execution plans set only GEMINI_CLI_HOME and explicitly remove documented auth-conflicting variables from the child environment.",
+        "Production execution fails closed while credential isolation is unverified; synthetic tests can exercise an explicitly verified capability fixture.",
+        "Fake-client tests prove argv preservation, profile-home isolation, environment filtering, and absence of global home mutation."
+      ],
+      "blocker": null,
+      "verification": [],
       "completion": null
     }
   ]

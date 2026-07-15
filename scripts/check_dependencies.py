@@ -12,7 +12,7 @@ ALLOWED = {
     "gemini-auth-process": set(),
     "gemini-auth-app": {"gemini-auth-domain"},
     "gemini-auth-storage": {"gemini-auth-domain"},
-    "provider-gemini-cli": {"gemini-auth-domain"},
+    "provider-gemini-cli": {"gemini-auth-domain", "gemini-auth-process"},
     "provider-antigravity-cli": {"gemini-auth-domain"},
     "gemini-auth-cli": {"gemini-auth-app"},
     "gemini-auth-test-support": {"gemini-auth-domain"},

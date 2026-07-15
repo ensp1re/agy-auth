@@ -304,6 +304,7 @@ name = "provider-gemini-cli"
 version = "0.1.0"
 dependencies = [
  "gemini-auth-domain",
+ "gemini-auth-process",
 ]
 
 [[package]]
