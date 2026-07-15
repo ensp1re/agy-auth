@@ -133,7 +133,23 @@
         "Fake-client tests prove argv preservation, profile-home isolation, environment filtering, and absence of global home mutation."
       ],
       "blocker": null,
-      "verification": [],
+      "verification": [
+        {
+          "command": "python3 scripts/check.py",
+          "revision": "d08065fe43993bcffb3e4f6c200f915a4392107b",
+          "outcome": "passing; 24 tests with one expected ignored installed-agy smoke test"
+        },
+        {
+          "command": "cargo deny check",
+          "revision": "d08065fe43993bcffb3e4f6c200f915a4392107b",
+          "outcome": "advisories, bans, licenses, and sources passing"
+        },
+        {
+          "command": "real Gemini CLI isolation verification",
+          "revision": "d08065fe43993bcffb3e4f6c200f915a4392107b",
+          "outcome": "not run; Gemini CLI is not installed and production execution remains gated"
+        }
+      ],
       "completion": null
     }
   ]

@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-15T20:15:43Z",
+  "updatedAt": "2026-07-15T20:22:00Z",
   "goal": "Implement a capability-gated Gemini CLI isolated-home adapter without claiming unverified credential isolation.",
   "scope": [
     "phase-1-gemini-isolated-home"
   ],
-  "status": "active",
+  "status": "ready_for_review",
   "git": {
     "branch": "feat/gemini-isolated-home",
-    "head": "c6be00c4225b66900a2d0b725260c87b046b1da4",
+    "head": "d08065fe43993bcffb3e4f6c200f915a4392107b",
     "worktree": "dirty"
   },
   "completed": [
@@ -21,7 +21,7 @@
     "Client discovery pull request 3 was merged at commit c6be00c4225b66900a2d0b725260c87b046b1da4."
   ],
   "nextActions": [
-    "Implement the Gemini adapter capability gate and synthetic isolated-home execution plan without invoking a real login."
+    "Push the gated Gemini adapter branch and open its pull request; keep real isolation verification explicitly not run."
   ],
   "decisions": [
     "Use the Core harness profile only; no hooks, daemon, event journal, database, or client adapter.",
@@ -42,6 +42,7 @@
       "cargo deny check: advisories, bans, licenses, and sources passing",
       "profile registry at 05dbd82: 14 tests passing, including lock contention, symlink refusal, 0600 permissions, schema rejection, and repeated round trips",
       "client discovery at c506fcc: 20 tests passing plus installed agy 1.1.2 smoke test passing",
+      "gated Gemini adapter at d08065f: 24 tests passing; production execution refuses unverified isolation",
       "python3 scripts/check_dependencies.py: passing",
       "python3 scripts/check_no_secrets.py: passing"
     ],
