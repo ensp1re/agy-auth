@@ -1,0 +1,36 @@
+[workspace]
+resolver = "2"
+members = [
+  "crates/gemini-auth-app",
+  "crates/gemini-auth-cli",
+  "crates/gemini-auth-domain",
+  "crates/gemini-auth-storage",
+  "crates/gemini-auth-test-support",
+  "crates/provider-antigravity-cli",
+  "crates/provider-gemini-cli",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.88"
+publish = false
+repository = "https://github.com/ensp1re/gemini-auth"
+
+[workspace.dependencies]
+clap = { version = "4.5.41", features = ["derive"] }
+gemini-auth-app = { version = "=0.1.0", path = "crates/gemini-auth-app" }
+gemini-auth-domain = { version = "=0.1.0", path = "crates/gemini-auth-domain" }
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+missing_docs = "warn"
+
+[workspace.lints.clippy]
+all = { level = "deny", priority = -1 }
+pedantic = { level = "deny", priority = -1 }
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = "symbols"

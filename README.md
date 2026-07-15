@@ -28,7 +28,9 @@ The first Antigravity implementation supports only the verified file-backed cred
 
 ## Status
 
-This repository currently contains the research and implementation plan. No production code has been written yet.
+This repository contains the research, implementation plan, and compiling Phase 0 Rust workspace.
+The CLI currently exposes only its global help/version shell; no credential-management feature has
+been implemented yet.
 
 ## Documentation
 

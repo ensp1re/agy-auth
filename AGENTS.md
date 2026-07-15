@@ -23,8 +23,8 @@ architecture is in `docs/04-architecture.md`, with decisions in `docs/adr/`. Sec
   providers implement ports. Provider code must not mutate active credentials directly.
 - Use synthetic credential fixtures only. Never use realistic token prefixes or copied local state.
 - Prefer a small vertical change with its owning tests. Do not broaden the roadmap without approval.
-- Run `python3 scripts/harness/validate.py` for harness and policy checks. Once Rust exists, also run
-  the applicable Cargo checks documented in `docs/09-testing-strategy.md`.
+- Run `python3 scripts/check.py` for the complete local gate. Use
+  `python3 scripts/harness/validate.py` only for a narrow harness-state diagnosis.
 - Review the complete diff before committing. Do not bypass hooks or weaken a failing check.
 
 No client-specific adapter, hook, daemon, global configuration, or durable auto-memory is currently

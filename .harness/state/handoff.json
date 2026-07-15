@@ -1,22 +1,23 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-15T17:48:00Z",
+  "updatedAt": "2026-07-15T18:34:00Z",
   "goal": "Begin Phase 0 by creating the Rust workspace foundation and its delivery checks.",
   "scope": [
     "phase-0-repository-foundation"
   ],
   "status": "active",
   "git": {
-    "branch": "main",
-    "head": "633fd9dbade1228b0ad2c008f77211e91633a6fd",
+    "branch": "feat/phase-0-repository-foundation",
+    "head": "bef0e3f7f53cd7c546daa85bca4986962d404e26",
     "worktree": "dirty"
   },
   "completed": [
     "Approved product, stack, architecture, security boundaries, and roadmap are documented.",
-    "The Core project harness was designed around the existing authoritative documents."
+    "The Core project harness was designed around the existing authoritative documents.",
+    "The Phase 0 Rust workspace, crate boundaries, CLI shell, policies, and CI definition were implemented."
   ],
   "nextActions": [
-    "Create the Phase 0 Cargo workspace and enforce the documented crate dependency direction."
+    "Run the full gate after handoff reconciliation, then review, commit, push, and open the Phase 0 pull request."
   ],
   "decisions": [
     "Use the Core harness profile only; no hooks, daemon, event journal, database, or client adapter.",
@@ -31,11 +32,15 @@
       "python3 scripts/harness/context.py: state consistent",
       "build-agent-harness validate_harness.py --strict: 0 errors and 0 warnings",
       "build-agent-harness evaluate_context_budget.py: both budgets passing",
-      "python3 -m py_compile scripts/harness/context.py scripts/harness/validate.py: passing"
+      "python3 -m py_compile scripts/harness/context.py scripts/harness/validate.py: passing",
+      "cargo clippy --workspace --all-targets --all-features -- -D warnings: passing",
+      "cargo test --workspace --all-features: 3 tests passing",
+      "cargo deny check: advisories, bans, licenses, and sources passing",
+      "python3 scripts/check_dependencies.py: passing",
+      "python3 scripts/check_no_secrets.py: passing"
     ],
     "failed": [],
     "notRun": [
-      "Rust checks are not applicable until the Cargo workspace exists.",
       "Cross-client portability is untested; only the canonical AGENTS.md surface is configured."
     ]
   },
@@ -48,7 +53,18 @@
     ".harness/state/work.json",
     ".harness/state/handoff.json",
     "scripts/harness/context.py",
-    "scripts/harness/validate.py"
+    "scripts/harness/validate.py",
+    "Cargo.toml",
+    "Cargo.lock",
+    "rust-toolchain.toml",
+    "deny.toml",
+    "crates/",
+    "scripts/check.py",
+    "scripts/check_dependencies.py",
+    "scripts/check_no_secrets.py",
+    ".github/workflows/ci.yml",
+    "CONTRIBUTING.md",
+    "SECURITY.md"
   ],
   "doNotRepeat": [],
   "contextSources": [
