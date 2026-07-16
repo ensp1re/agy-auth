@@ -36,10 +36,9 @@ def main() -> int:
         if key in seen:
             raise SystemExit(f"duplicate compatibility entry: {key}")
         seen.add(key)
-        if entry["profileSwitching"] != "unsupported":
-            raise SystemExit("profile switching must remain unsupported without a superseding ADR")
-        if entry["authStateMutation"] != "disabled":
-            raise SystemExit("authentication mutation must remain disabled")
+        state = (entry["profileSwitching"], entry["authStateMutation"])
+        if state not in {("unsupported", "disabled"), ("verified", "verified")}:
+            raise SystemExit(f"invalid compatibility capability state: {state}")
         if not Path(entry["evidence"]).is_file():
             raise SystemExit(f"compatibility evidence is missing: {entry['evidence']}")
     print(f"Compatibility matrix: passing ({len(versions)} entry)")

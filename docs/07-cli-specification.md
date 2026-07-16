@@ -29,9 +29,10 @@ MVP-safe diagnostics include executable discovery/version, registry validity, lo
 permissions, interrupted project-owned transactions, and provider capability status. `--repair`
 must not alter Antigravity authentication state until a mutation contract is verified.
 
-The initial diagnostics slice reports `agy` discovery/version, non-secret registry health and profile
-count, `profileSwitching: false`, `authStateMutation: false`, and the stable reason
-`no_supported_antigravity_profile_contract`. JSON output uses `schemaVersion: 1` and never includes
+Diagnostics report `profileSwitching: false` and `authStateMutation: false` until public commands are
+enabled. For verified `agy 1.1.2` Linux builds the stable reason is
+`verified_contract_not_enabled`; unsupported or unverified combinations use
+`no_verified_antigravity_profile_contract`. JSON output uses `schemaVersion: 1` and never includes
 executable paths, registry paths, environment values, account identity, or client output other than
 the validated version line. Until safe repair actions exist, `--repair` is an explicit no-op.
 

@@ -269,7 +269,7 @@ fn render_human(report: &DoctorReport, repair: bool) {
     );
     println!("profile switching: unsupported");
     println!("authentication mutation: disabled");
-    println!("reason: no supported Antigravity profile contract is available");
+    println!("reason: {}", report.capabilities.reason);
     if repair {
         println!("repair: no safe repair actions are available");
     }

@@ -302,6 +302,12 @@ pub fn doctor(
     client: &impl DoctorClientProbe,
     registry: &impl DoctorRegistryProbe,
 ) -> DoctorReport {
+    let client = client.probe();
+    let reason = if cfg!(target_os = "linux") && client.version.as_deref() == Some("1.1.2") {
+        "verified_contract_not_enabled"
+    } else {
+        "no_verified_antigravity_profile_contract"
+    };
     DoctorReport {
         schema_version: DOCTOR_SCHEMA_VERSION,
         tool: ToolDiagnostic {
@@ -310,12 +316,12 @@ pub fn doctor(
             target: env!("AGY_AUTH_BUILD_TARGET"),
         },
         provider: "antigravity-cli",
-        client: client.probe(),
+        client,
         registry: registry.probe(),
         capabilities: CapabilityDiagnostic {
             profile_switching: false,
             auth_state_mutation: false,
-            reason: "no_supported_antigravity_profile_contract",
+            reason,
         },
     }
 }
@@ -369,6 +375,14 @@ mod tests {
         assert_eq!(report.exit_code(), 0);
         assert!(!report.capabilities.profile_switching);
         assert!(!report.capabilities.auth_state_mutation);
+        assert_eq!(
+            report.capabilities.reason,
+            if cfg!(target_os = "linux") {
+                "verified_contract_not_enabled"
+            } else {
+                "no_verified_antigravity_profile_contract"
+            }
+        );
         assert_eq!(report.client.version.as_deref(), Some("1.1.2"));
     }
 

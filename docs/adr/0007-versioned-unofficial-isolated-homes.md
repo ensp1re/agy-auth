@@ -1,6 +1,6 @@
 # ADR 0007: Permit Versioned Unofficial Isolated Homes
 
-- Status: Accepted; production capability remains gated
+- Status: Accepted; `agy 1.1.2` Linux SSH contract verified, public commands remain gated
 - Date: 2026-07-16
 - Supersedes: ADR 0006
 
@@ -33,17 +33,18 @@ homes receive distinct environment roots, inherited variables do not leak, unsaf
 closed, and shell metacharacters are never evaluated. It does not enable `add`, `use`, `exec`, or
 doctor capability claims.
 
-Real-client enablement requires a later reviewed experiment with two operator-controlled test
-accounts. The experiment may inspect and compare the client state necessary to establish isolation,
-including credential storage and private logs. Raw sensitive artifacts must remain outside Git and
-published evidence; the committed record contains only the derived contract and reproducible steps.
+Real-client verification requires a reviewed experiment with two operator-controlled accounts. The
+accounts may be enrolled through the official client, after which `agy-auth` may materialize only the
+reviewed versioned refresh-token envelope inside each owner-only profile home. The experiment may
+inspect and compare the client state necessary to establish isolation, including credential storage
+and private logs. Raw sensitive artifacts remain outside Git and published evidence.
 
 ## Enablement gate
 
 Linux isolated-home switching becomes `verified` only when all of the following are reproducible:
 
-1. two owner-only homes complete login through the official client without token handling by
-   `agy-auth`;
+1. two independently enrolled official-client accounts are materialized into distinct owner-only
+   profile homes through the reviewed opaque envelope;
 2. launching each home selects its expected dedicated account across process restart and token
    refresh;
 3. a clean third home does not silently reuse either identity;
@@ -51,7 +52,10 @@ Linux isolated-home switching becomes `verified` only when all of the following 
 5. upgrade or environment changes fail closed and mark evidence stale;
 6. teardown removes only project-owned test homes and leaves official default state untouched.
 
-Until then, `profileSwitching` remains false and `authStateMutation` remains false.
+The July 16, 2026 two-account experiment satisfies these gates for `agy 1.1.2` on Linux SSH. See
+[`linux-two-account-validation-2026-07-16.md`](../research/linux-two-account-validation-2026-07-16.md).
+Compatibility is now `verified`, but doctor capability booleans and public commands remain disabled
+until their production composition, recovery behavior, and user-facing contract are reviewed.
 
 ## Consequences
 
