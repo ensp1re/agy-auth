@@ -6,6 +6,9 @@ use std::path::{Component, Path, PathBuf};
 use thiserror::Error;
 use uuid::Uuid;
 
+#[cfg(feature = "experimental-profile-credentials")]
+use agy_auth_app::{CredentialFilePort, CredentialWorkflowError, OpaqueSecretBytes};
+
 /// Opaque credential material that cannot be formatted or serialized accidentally.
 ///
 /// The wrapper deliberately does not implement `Clone`, `Debug`, `Display`, `Serialize`, or
@@ -131,6 +134,34 @@ impl ProfileCredentialFiles {
         let after = file.metadata()?;
         validate_regular_file_metadata(&after)?;
         OpaqueCredentialBytes::new(value, maximum_bytes)
+    }
+}
+
+#[cfg(feature = "experimental-profile-credentials")]
+impl CredentialFilePort for ProfileCredentialFiles {
+    fn materialize(
+        &self,
+        relative_path: &Path,
+        envelope: &OpaqueSecretBytes,
+    ) -> Result<(), CredentialWorkflowError> {
+        let credential = OpaqueCredentialBytes::new(
+            envelope.expose_secret().to_vec(),
+            envelope.expose_secret().len(),
+        )
+        .map_err(|_| CredentialWorkflowError::CredentialStorageFailed)?;
+        Self::materialize(self, relative_path, &credential)
+            .map_err(|_| CredentialWorkflowError::CredentialStorageFailed)
+    }
+
+    fn read(
+        &self,
+        relative_path: &Path,
+        maximum_bytes: usize,
+    ) -> Result<OpaqueSecretBytes, CredentialWorkflowError> {
+        let credential = Self::read(self, relative_path, maximum_bytes)
+            .map_err(|_| CredentialWorkflowError::CredentialStorageFailed)?;
+        OpaqueSecretBytes::new(credential.into_secret_bytes(), maximum_bytes)
+            .map_err(|_| CredentialWorkflowError::CredentialStorageFailed)
     }
 }
 

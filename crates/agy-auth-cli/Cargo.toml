@@ -9,6 +9,11 @@ license.workspace = true
 
 [features]
 experimental-fake-client = []
+experimental-profile-credentials = [
+  "agy-auth-app/experimental-profile-credentials",
+  "agy-auth-storage/experimental-profile-credentials",
+  "provider-antigravity-cli/experimental-profile-credentials",
+]
 
 [[bin]]
 name = "agy-auth"

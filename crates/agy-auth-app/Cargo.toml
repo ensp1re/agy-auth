@@ -8,6 +8,9 @@ repository.workspace = true
 license.workspace = true
 build = "build.rs"
 
+[features]
+experimental-profile-credentials = []
+
 [dependencies]
 agy-auth-domain.workspace = true
 serde.workspace = true

@@ -11,13 +11,79 @@ use std::time::Duration;
 
 pub use credential_envelope::{
     ANTIGRAVITY_TOKEN_RELATIVE_PATH, ConsumerRefreshCredential, CredentialEnvelopeError,
-    build_consumer_token_envelope, extract_consumer_refresh_credential,
+    build_consumer_token_envelope, consumer_token_relative_path,
+    extract_consumer_refresh_credential,
+};
+
+#[cfg(feature = "experimental-profile-credentials")]
+use agy_auth_app::{
+    CredentialEnvelopePort, CredentialMaterializationPlan, CredentialWorkflowError,
+    OpaqueSecretBytes,
 };
 
 /// Identify the provider implemented by this adapter.
 #[must_use]
 pub const fn provider_kind() -> ProviderKind {
     ProviderKind::AntigravityCli
+}
+
+/// Experimental adapter connecting the verified `agy` envelope to the application workflow.
+#[cfg(feature = "experimental-profile-credentials")]
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct AntigravityCredentialEnvelope;
+
+#[cfg(feature = "experimental-profile-credentials")]
+impl CredentialEnvelopePort for AntigravityCredentialEnvelope {
+    fn relative_path(&self, client_version: &str) -> Result<PathBuf, CredentialWorkflowError> {
+        consumer_token_relative_path(client_version)
+            .map(PathBuf::from)
+            .map_err(map_credential_error)
+    }
+
+    fn build_plan(
+        &self,
+        client_version: &str,
+        refresh_credential: &OpaqueSecretBytes,
+    ) -> Result<CredentialMaterializationPlan, CredentialWorkflowError> {
+        let refresh = ConsumerRefreshCredential::new(refresh_credential.expose_secret().to_vec())
+            .map_err(map_credential_error)?;
+        let envelope = build_consumer_token_envelope(client_version, &refresh)
+            .map_err(map_credential_error)?;
+        Ok(CredentialMaterializationPlan {
+            relative_path: self.relative_path(client_version)?,
+            envelope: OpaqueSecretBytes::new(envelope, 16 * 1024)?,
+        })
+    }
+
+    fn extract_refresh(
+        &self,
+        client_version: &str,
+        rewritten_envelope: OpaqueSecretBytes,
+    ) -> Result<OpaqueSecretBytes, CredentialWorkflowError> {
+        let refresh = extract_consumer_refresh_credential(
+            client_version,
+            &rewritten_envelope.into_secret_bytes(),
+        )
+        .map_err(map_credential_error)?;
+        OpaqueSecretBytes::new(refresh.into_secret_bytes(), 8 * 1024)
+    }
+}
+
+#[cfg(feature = "experimental-profile-credentials")]
+fn map_credential_error(error: CredentialEnvelopeError) -> CredentialWorkflowError {
+    match error {
+        CredentialEnvelopeError::UnsupportedClientVersion => {
+            CredentialWorkflowError::UnsupportedClientVersion
+        }
+        CredentialEnvelopeError::InvalidRefreshCredential
+        | CredentialEnvelopeError::InvalidEnvelopeSize
+        | CredentialEnvelopeError::MalformedEnvelope
+        | CredentialEnvelopeError::UnsupportedEnvelope
+        | CredentialEnvelopeError::InvalidExpiry
+        | CredentialEnvelopeError::SerializationFailed => {
+            CredentialWorkflowError::InvalidCredentialEnvelope
+        }
+    }
 }
 
 /// Authentication-free Antigravity executable diagnostics.

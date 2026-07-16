@@ -13,6 +13,18 @@ const MAX_REFRESH_TOKEN_BYTES: usize = 8 * 1024;
 const PLACEHOLDER_ACCESS_TOKEN: &str = "agy-auth-expired-placeholder";
 const EXPIRED_AT: &str = "2000-01-01T00:00:00Z";
 
+/// Return the versioned home-relative consumer token destination.
+///
+/// # Errors
+///
+/// Returns an unsupported-version error when no envelope contract is approved.
+pub fn consumer_token_relative_path(
+    client_version: &str,
+) -> Result<&'static str, CredentialEnvelopeError> {
+    require_supported_version(client_version)?;
+    Ok(ANTIGRAVITY_TOKEN_RELATIVE_PATH)
+}
+
 /// A consumer refresh credential that cannot be formatted or serialized accidentally.
 ///
 /// This type deliberately does not implement `Clone`, `Debug`, `Display`, `Serialize`, or equality.

@@ -28,16 +28,16 @@
     },
     {
       "id": "phase-3-ssh-file-fallback-observation",
-      "title": "Implement protected profile credential materialization",
+      "title": "Connect provider envelopes to protected storage experimentally",
       "status": "active",
       "source": "docs/adr/0007-versioned-unofficial-isolated-homes.md",
       "plan": "docs/research/linux-ssh-token-injection-2026-07-16.md",
       "acceptance": [
-        "Opaque credential bytes are written only beneath a validated owner-only profile home.",
-        "Nested directories are owner-only and the final credential file is mode 0600 on Unix.",
-        "Writes use an exclusive same-directory temporary file, flush, atomic rename, directory sync, and post-write validation.",
-        "Bounded rereads reject links, hardlinks, unsafe ownership or permissions, non-files, and oversized content.",
-        "All tests use synthetic bytes and real profile commands remain capability-gated."
+        "The application owns opaque-secret, envelope, and credential-file ports without depending on infrastructure crates.",
+        "One workflow materializes a version-gated provider envelope through protected storage.",
+        "A second workflow rereads an official-client rewrite and extracts a possibly rotated refresh credential.",
+        "Provider and storage adapters implement the ports only under a non-default experimental feature.",
+        "All tests use synthetic bytes; default release builds and real commands remain unchanged."
       ],
       "blocker": null,
       "verification": [
@@ -46,7 +46,8 @@
         {"command": "30-second SSH/no-D-Bus and 20-second actual-SSH_TTY follow-ups", "revision": "fb27929fecda11ec3c953abb2a83c4b01a1cbb8b", "outcome": "inconclusive; no identity reuse and no login chooser in either run; timeout 124, 37 bounded entries, cleanup complete"},
         {"command": "isolated full-record and minimal refresh-token injection", "revision": "71eb5fdb19e904a2afba3f45fb1c413dd3bee430", "outcome": "passing for agy 1.1.2 Linux SSH fallback; silent refresh, expected identity, persisted replacement access token, and loadCodeAssist observed; cleanup complete"},
         {"command": "python3 scripts/check.py", "revision": "05824ed94f08e8ac6e9ecb7b672f6425f762ed98", "outcome": "passing; 47 tests including exact envelope serialization, rotated refresh extraction, version rejection, malformed input, and size bounds"},
-        {"command": "python3 scripts/check.py", "revision": "b6043255f6b867fdcc5dac38d41c59dcf475c386", "outcome": "passing; 50 tests including atomic replacement, mode 0600/0700 enforcement, bounded reread, and path/link/permission rejection"}
+        {"command": "python3 scripts/check.py", "revision": "b6043255f6b867fdcc5dac38d41c59dcf475c386", "outcome": "passing; 50 tests including atomic replacement, mode 0600/0700 enforcement, bounded reread, and path/link/permission rejection"},
+        {"command": "python3 scripts/check.py", "revision": "db451f3224973908abb39f8b51c0b0f86b9eaacc", "outcome": "passing; 54 tests including experimental application orchestration and provider-to-storage synthetic round trip"}
       ],
       "completion": null
     }
