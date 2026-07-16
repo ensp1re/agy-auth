@@ -136,7 +136,10 @@ official client continues to own login, token refresh, and backend traffic. The 
 file remains inside its mode-0700 isolated official-client home as approved by the storage contract;
 it is not exported into a separate plaintext vault.
 
-`switch <name>` is the convenient interactive alias for `exec <name>` with no child arguments.
+`switch <name>` atomically selects the credential used by subsequent plain `agy` launches and does
+not launch the client. `list` prefixes the selected profile with `->`; this is project-owned
+selection metadata and can become stale after direct `/logout`, login, or manual state replacement.
+`exec <name>` remains available for an isolated one-off launch.
 `hint <name> <masked-hint>` stores only a user-supplied masked value such as `a***@gmail.com`;
 `list` includes that hint so account names remain recognizable without printing full emails.
 

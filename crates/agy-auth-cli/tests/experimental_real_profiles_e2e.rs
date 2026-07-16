@@ -99,6 +99,44 @@ fn set_and_verify_masked_hint(binary: &str, data: &Path) {
     );
 }
 
+fn switch_and_verify_default(binary: &str, data: &Path, home: &Path, client: &Path) {
+    let switched = Command::new(binary)
+        .env("HOME", home)
+        .args(["--data-dir"])
+        .arg(data)
+        .args(["switch", "work", "--client"])
+        .arg(client)
+        .status()
+        .expect("switch default account");
+    assert!(switched.success());
+    let active: Value =
+        serde_json::from_slice(&fs::read(data.join("active.json")).expect("active selection"))
+            .expect("active JSON");
+    assert_eq!(active["profile"], "work");
+    let default_envelope: Value = serde_json::from_slice(
+        &fs::read(home.join(".gemini/antigravity-cli/antigravity-oauth-token"))
+            .expect("default envelope"),
+    )
+    .expect("default envelope JSON");
+    assert_eq!(
+        default_envelope["token"]["refresh_token"],
+        "synthetic-source-refresh"
+    );
+    assert_eq!(
+        default_envelope["token"]["access_token"],
+        "agy-auth-expired-placeholder"
+    );
+    let selected_listing = Command::new(binary)
+        .args(["--json", "--data-dir"])
+        .arg(data)
+        .arg("list")
+        .output()
+        .expect("list selected profile");
+    let selected: Value =
+        serde_json::from_slice(&selected_listing.stdout).expect("selected listing JSON");
+    assert_eq!(selected["profiles"][0]["selected"], true);
+}
+
 #[test]
 fn imports_secure_official_home_and_executes_direct_argv() {
     let root = fixture();
@@ -190,6 +228,8 @@ fn imports_secure_official_home_and_executes_direct_argv() {
         format!("{literal}|second|{}", managed_home.display())
     );
     assert!(!root.join("shell syntax is data").exists());
+
+    switch_and_verify_default(binary, &data, &source_home, &client);
 
     set_and_verify_masked_hint(binary, &data);
 

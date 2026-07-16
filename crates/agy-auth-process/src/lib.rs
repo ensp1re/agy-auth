@@ -493,11 +493,11 @@ fn stop_interactive_child(child: &mut Child) -> Result<(), ProcessError> {
     }
     #[cfg(unix)]
     {
-        signal_child(child, "INT")?;
+        signal_child(child, "TERM")?;
         if wait_for_child(child, Duration::from_secs(2))? {
             return Ok(());
         }
-        signal_child(child, "TERM")?;
+        signal_child(child, "INT")?;
         if wait_for_child(child, Duration::from_secs(1))? {
             return Ok(());
         }

@@ -35,6 +35,8 @@
       "acceptance": [
         "agy-auth add <name> captures the current same-user official agy account without staging files.",
         "agy-auth login <name> delegates enrollment to official agy in a new isolated managed home.",
+        "agy-auth switch <name> atomically selects the profile for subsequent plain agy launches without launching the client.",
+        "agy-auth list marks the project-selected profile without exposing credentials.",
         "Public exec and recover retain version, locking, refresh, and transaction safety gates.",
         "Default help and doctor accurately expose the verified production workflow.",
         "A real installed-client smoke passes using current operator-controlled data and removes disposable test state."

@@ -63,8 +63,8 @@ Choose the first verified option in this order:
 2. Official documented home/config override that isolates all credential and keyring lookups.
 3. Version-scoped, independently verified isolated environment that delegates login and refresh to
    the official client without reading or copying credential state.
-4. Verified file-backed activation using opaque bytes and a transactional engine, if separately
-   approved.
+4. Verified file-backed activation using opaque bytes and a transactional engine, as approved for
+   the Linux SSH contract by ADR 0008.
 5. Diagnostics-only refusal.
 
 Never infer support from filenames alone. A reverse-engineered behavior becomes a project contract
@@ -73,7 +73,7 @@ unsupported until deterministic, reversible behavior receives independent securi
 
 ## Transaction boundary
 
-If file-backed activation is approved later, use a provider lock, regular-file/link checks, owner-only
+File-backed activation uses regular-file/link checks, owner-only
 permissions, rollback copy, same-directory atomic replacement, reread verification, journaled state,
 and idempotent recovery. The provider supplies paths and opaque bytes; the transaction manager owns
 all mutation and rollback.

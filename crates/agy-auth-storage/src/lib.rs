@@ -1,5 +1,6 @@
 //! Storage adapters. This is the only crate permitted to persist opaque secrets.
 
+mod active_selection;
 mod credential_files;
 #[cfg(feature = "experimental-profile-credentials")]
 mod import_transaction;
@@ -8,6 +9,7 @@ mod registry;
 #[cfg(feature = "experimental-profile-credentials")]
 mod session_lock;
 
+pub use active_selection::{ActiveProfileStore, ActiveProfileStoreError};
 pub use credential_files::{
     CredentialFileError, OfficialCredentialSourceFiles, OpaqueCredentialBytes,
     ProfileCredentialFiles,

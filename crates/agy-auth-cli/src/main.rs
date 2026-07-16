@@ -17,8 +17,9 @@ use agy_auth_app::{ManagedProfileEnvironment, ProfileClientPort, add_profile, ex
 use agy_auth_storage::ManagedProfileHomes;
 #[cfg(feature = "profile-cli")]
 use agy_auth_storage::{
-    ImportTransactionJournal, ImportTransactionStage, OfficialCredentialSourceFiles,
-    ProfileCredentialFiles, ProfileSessionLock,
+    ActiveProfileStore, ImportTransactionJournal, ImportTransactionStage,
+    OfficialCredentialSourceFiles, OpaqueCredentialBytes, ProfileCredentialFiles,
+    ProfileSessionLock,
 };
 use agy_auth_storage::{RegistryCatalog, RegistryDoctorProbe};
 use clap::{Parser, Subcommand};
@@ -100,7 +101,7 @@ enum Commands {
         #[arg(long, value_name = "PATH")]
         client: Option<PathBuf>,
     },
-    /// Launch agy using a registered profile.
+    /// Select the account used by future plain agy launches.
     #[cfg(feature = "profile-cli")]
     Switch {
         /// Registered profile name.
@@ -208,9 +209,7 @@ fn main() {
         #[cfg(feature = "profile-cli")]
         Commands::Login { name, client } => run_login(&cli, name.as_deref(), client.as_deref()),
         #[cfg(feature = "profile-cli")]
-        Commands::Switch { name, client } => {
-            run_experimental_real_exec(&cli, name, client.as_deref(), &[])
-        }
+        Commands::Switch { name, client } => run_switch(&cli, name, client.as_deref()),
         #[cfg(feature = "profile-cli")]
         Commands::Hint { name, account_hint } => run_hint(&cli, name, account_hint),
         #[cfg(feature = "experimental-fake-client")]
@@ -570,6 +569,10 @@ fn run_recover(cli: &Cli) -> u8 {
 fn run_list(cli: &Cli) -> u8 {
     let result = (|| {
         let catalog = catalog_adapter(cli)?;
+        let selected = active_profile_store(cli)
+            .map_err(|_| ProfileWorkflowError::HomeUnavailable)?
+            .load()
+            .map_err(|_| ProfileWorkflowError::HomeUnavailable)?;
         let mut profiles = catalog
             .profiles()
             .map_err(|_| ProfileWorkflowError::CatalogReserveFailed)?;
@@ -583,6 +586,7 @@ fn run_list(cli: &Cli) -> u8 {
                         "status": profile.status.as_str(),
                         "clientVersion": profile.client_version_at_capture,
                         "accountHint": profile.account_hint.as_deref(),
+                        "selected": selected.as_deref() == Some(profile.name.as_str()),
                     })
                 })
                 .collect();
@@ -599,7 +603,12 @@ fn run_list(cli: &Cli) -> u8 {
         } else {
             for profile in profiles {
                 println!(
-                    "{}\t{}\t{}\t{}",
+                    "{} {}\t{}\t{}\t{}",
+                    if selected.as_deref() == Some(profile.name.as_str()) {
+                        "->"
+                    } else {
+                        "  "
+                    },
                     profile.name.as_str(),
                     profile.status.as_str(),
                     profile.client_version_at_capture.as_deref().unwrap_or("-"),
@@ -613,6 +622,109 @@ fn run_list(cli: &Cli) -> u8 {
         Ok(()) => 0,
         Err(ProfileWorkflowError::HomeUnavailable) => 8,
         Err(_) => 11,
+    }
+}
+
+#[cfg(feature = "profile-cli")]
+fn run_switch(cli: &Cli, name: &str, explicit_client: Option<&Path>) -> u8 {
+    let result = (|| {
+        let (_client, _search_path, client_version) = verified_client(explicit_client)?;
+        let (catalog, homes) =
+            experimental_adapters(cli).map_err(|_| RealProfileCliError::UnsafeStorage)?;
+        let target = catalog
+            .profile(name)
+            .map_err(|_| RealProfileCliError::UnsafeStorage)?
+            .ok_or(RealProfileCliError::ProfileConflict)?;
+        require_ready_profile(&target).map_err(|_| RealProfileCliError::ProfileConflict)?;
+        if target.client_version_at_capture.as_deref() != Some(client_version.as_str()) {
+            return Err(RealProfileCliError::UnsupportedClient);
+        }
+        let home = std::env::var_os("HOME")
+            .map(PathBuf::from)
+            .ok_or(RealProfileCliError::UnsafeStorage)?;
+        let official = OfficialCredentialSourceFiles::new(home)
+            .map_err(|_| RealProfileCliError::UnsafeStorage)?;
+        let provider = AntigravityCredentialEnvelope;
+        let active = active_profile_store(cli).map_err(|_| RealProfileCliError::UnsafeStorage)?;
+        let rollback = official
+            .read(Path::new(ANTIGRAVITY_TOKEN_RELATIVE_PATH), 16 * 1024)
+            .map_err(|_| RealProfileCliError::UnsafeStorage)?;
+
+        if let Some(previous_name) = active
+            .load()
+            .map_err(|_| RealProfileCliError::UnsafeStorage)?
+            .filter(|previous| previous != name)
+        {
+            let previous = catalog
+                .profile(&previous_name)
+                .map_err(|_| RealProfileCliError::UnsafeStorage)?
+                .ok_or(RealProfileCliError::ProfileConflict)?;
+            require_ready_profile(&previous).map_err(|_| RealProfileCliError::ProfileConflict)?;
+            let current = official
+                .read(Path::new(ANTIGRAVITY_TOKEN_RELATIVE_PATH), 16 * 1024)
+                .map_err(|_| RealProfileCliError::UnsafeStorage)?;
+            let refresh = provider
+                .extract_refresh(
+                    &client_version,
+                    OpaqueSecretBytes::new(current.into_secret_bytes(), 16 * 1024)
+                        .map_err(map_credential_error)?,
+                )
+                .map_err(map_credential_error)?;
+            let previous_environment = homes
+                .prepare(previous.id)
+                .map_err(|_| RealProfileCliError::UnsafeStorage)?;
+            let previous_files = ProfileCredentialFiles::new(previous_environment.home)
+                .map_err(|_| RealProfileCliError::UnsafeStorage)?;
+            let plan = provider
+                .build_plan(&client_version, &refresh)
+                .map_err(map_credential_error)?;
+            CredentialFilePort::materialize(&previous_files, &plan.relative_path, &plan.envelope)
+                .map_err(map_credential_error)?;
+        }
+
+        let target_environment = homes
+            .prepare(target.id)
+            .map_err(|_| RealProfileCliError::UnsafeStorage)?;
+        let target_files = ProfileCredentialFiles::new(target_environment.home)
+            .map_err(|_| RealProfileCliError::UnsafeStorage)?;
+        let stored = CredentialFilePort::read(
+            &target_files,
+            Path::new(ANTIGRAVITY_TOKEN_RELATIVE_PATH),
+            16 * 1024,
+        )
+        .map_err(map_credential_error)?;
+        let refresh = provider
+            .extract_refresh(&client_version, stored)
+            .map_err(map_credential_error)?;
+        let plan = provider
+            .build_plan(&client_version, &refresh)
+            .map_err(map_credential_error)?;
+        let envelope = OpaqueCredentialBytes::new(plan.envelope.into_secret_bytes(), 16 * 1024)
+            .map_err(|_| RealProfileCliError::UnsafeStorage)?;
+        official
+            .materialize(&plan.relative_path, &envelope)
+            .map_err(|_| RealProfileCliError::UnsafeStorage)?;
+        if active.save(name).is_err() {
+            official
+                .materialize(&plan.relative_path, &rollback)
+                .map_err(|_| RealProfileCliError::UnsafeStorage)?;
+            return Err(RealProfileCliError::UnsafeStorage);
+        }
+        Ok(())
+    })();
+    match result {
+        Ok(()) => {
+            if cli.json {
+                println!(
+                    "{}",
+                    serde_json::json!({"schemaVersion": 1, "profile": name, "selected": true})
+                );
+            } else {
+                println!("Switched to {name}. Run `agy` to start.");
+            }
+            0
+        }
+        Err(error) => render_real_error(error),
     }
 }
 
@@ -766,6 +878,12 @@ fn experimental_data_root(cli: &Cli) -> Result<PathBuf, ProfileWorkflowError> {
         .clone()
         .or_else(default_data_dir)
         .ok_or(ProfileWorkflowError::HomeUnavailable)
+}
+
+fn active_profile_store(cli: &Cli) -> Result<ActiveProfileStore, ProfileWorkflowError> {
+    let root = experimental_data_root(cli)?;
+    ActiveProfileStore::new(root.join("active.json"))
+        .map_err(|_| ProfileWorkflowError::HomeUnavailable)
 }
 
 #[cfg(feature = "experimental-fake-client")]

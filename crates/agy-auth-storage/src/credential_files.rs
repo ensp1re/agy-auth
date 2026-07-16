@@ -107,6 +107,36 @@ impl OfficialCredentialSourceFiles {
         validate_regular_file_metadata(&file.metadata()?)?;
         OpaqueCredentialBytes::new(value, maximum_bytes)
     }
+
+    /// Atomically replace one credential file in the same-user official home.
+    ///
+    /// Parent directories may be readable but must not be writable by group or other users. The
+    /// destination must already be a secure owner-only regular file.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for unsafe paths, ancestors, destination metadata, or replacement failure.
+    pub fn materialize(
+        &self,
+        relative_path: &Path,
+        credential: &OpaqueCredentialBytes,
+    ) -> Result<(), CredentialFileError> {
+        validate_relative_path(relative_path)?;
+        validate_trusted_source_directory(&self.official_home)?;
+        let destination = self.official_home.join(relative_path);
+        validate_trusted_source_ancestors(&self.official_home, &destination)?;
+        validate_secure_regular_file(&destination)?;
+        let parent = destination
+            .parent()
+            .ok_or(CredentialFileError::InvalidRelativePath)?;
+        let temporary = parent.join(format!(".agy-auth-{}.tmp", Uuid::new_v4()));
+        let result = write_and_replace(&temporary, &destination, credential.expose(), parent);
+        if result.is_err() {
+            let _ = fs::remove_file(&temporary);
+        }
+        result?;
+        validate_secure_regular_file(&destination).map(|_| ())
+    }
 }
 
 impl ProfileCredentialFiles {
