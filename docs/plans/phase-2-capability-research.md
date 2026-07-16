@@ -10,10 +10,10 @@ during research.
 
 - Start with official documentation plus `agy --version`, top-level help, and subcommand help.
 - Do not launch an interactive session merely to enumerate state.
-- Do not inspect keyring entries, credential files, OAuth URLs, logs, conversations, or environment
-  dumps on an existing account.
-- Any later storage observation requires a dedicated test account, explicit approval, and a record
-  containing only non-secret metadata.
+- With explicit operator authorization, inspect keyring entries, credential files, OAuth flows,
+  logs, process state, environment behavior, and network metadata on controlled accounts as needed.
+- Sensitive captures remain local and outside Git. Durable records describe the derived storage or
+  protocol contract without embedding reusable credentials or private conversation content.
 - Treat filenames and implementation observations as compatibility evidence, never as a supported
   contract by themselves.
 

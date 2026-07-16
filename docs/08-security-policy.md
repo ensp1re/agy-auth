@@ -45,8 +45,10 @@ Using multiple accounts for legitimate identity separation is different from swi
 - Environment allowlist for child modifications.
 - Isolated-home launch clears inherited environment state before applying reviewed HOME, XDG, PATH,
   locale, and terminal variables.
-- Reverse-engineering evidence may guide black-box tests but does not authorize reading, hashing,
-  copying, diffing, or retaining credential contents or private client logs.
+- Explicitly authorized reverse engineering may read, hash, copy, diff, and temporarily retain
+  credential state, client logs, OAuth material, and network observations on operator-controlled
+  systems. Store captures with owner-only permissions, minimize their lifetime, and keep them out of
+  Git, public reports, fixtures, and routine diagnostic output.
 
 ## Supply-chain controls
 
@@ -67,9 +69,11 @@ Before public release add `SECURITY.md` with:
 - 90-day coordinated disclosure target;
 - explicit classification of credential disclosure, permission bypass, symlink overwrite, rollback failure, and secret logging as high/critical issues.
 
-## Redaction contract
+## Output and publication contract
 
-Redaction is preventive, not regex cleanup after serialization.
+Routine product output remains redacted by default. Research commands and operator-directed
+investigations may handle raw values locally; publication and repository persistence are separate
+decisions and require sanitization.
 
 Allowed diagnostic fields:
 
@@ -81,7 +85,7 @@ Allowed diagnostic fields:
 - paths only with home username replaced;
 - byte length and SHA-256 fingerprint prefix of opaque state.
 
-Forbidden fields:
+Fields forbidden from commits, public reports, and routine diagnostics:
 
 - secret bytes or substrings;
 - authorization URL query parameters;
@@ -89,7 +93,7 @@ Forbidden fields:
 - OAuth authorization code/state/verifier;
 - full email;
 - complete environment dump;
-- official-client stdout/stderr when it may contain login URLs, unless streamed directly and not retained.
+- official-client stdout/stderr when it contains authentication or private session material.
 
 ## Security review gates
 

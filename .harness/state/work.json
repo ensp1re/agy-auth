@@ -28,20 +28,22 @@
     },
     {
       "id": "phase-3-ssh-file-fallback-observation",
-      "title": "Observe disposable SSH file-fallback identity behavior",
+      "title": "Verify SSH file-fallback credential injection contract",
       "status": "active",
       "source": "docs/adr/0007-versioned-unofficial-isolated-homes.md",
-      "plan": "docs/research/linux-ssh-file-fallback-observation-2026-07-16.md",
+      "plan": "docs/research/linux-ssh-token-injection-2026-07-16.md",
       "acceptance": [
-        "A fresh non-root home uses env -i, a dedicated work/runtime boundary, synthetic SSH marker, and no D-Bus variables.",
-        "No terminal input, login/logout command, model prompt, credential access, or raw output retention occurs.",
-        "Only identity/login booleans, bounded entry counts, exit status, and cleanup evidence are recorded.",
+        "A fresh home uses env -i, a dedicated work boundary, synthetic SSH marker, and no D-Bus variables.",
+        "A copied expired credential record authenticates without browser login and without modifying default state.",
+        "A minimal record with a valid refresh token and invalid expired access token refreshes successfully.",
         "Any result remains capability-gated until dedicated-account login, restart, refresh, concurrency, and teardown pass."
       ],
       "blocker": null,
       "verification": [
         {"command": "bounded disposable non-root pseudo-terminal observation", "revision": "3dffadce450b7f025549ddc09c355a5d29c9d9c3", "outcome": "inconclusive but materially different; no existing identity and no login screen observed before timeout; no input sent"},
-        {"command": "post-observation cleanup audit", "revision": "3dffadce450b7f025549ddc09c355a5d29c9d9c3", "outcome": "passing; user, home, runtime, copied binary, transcript, and client processes absent"}
+        {"command": "post-observation cleanup audit", "revision": "3dffadce450b7f025549ddc09c355a5d29c9d9c3", "outcome": "passing; user, home, runtime, copied binary, transcript, and client processes absent"},
+        {"command": "30-second SSH/no-D-Bus and 20-second actual-SSH_TTY follow-ups", "revision": "fb27929fecda11ec3c953abb2a83c4b01a1cbb8b", "outcome": "inconclusive; no identity reuse and no login chooser in either run; timeout 124, 37 bounded entries, cleanup complete"},
+        {"command": "isolated full-record and minimal refresh-token injection", "revision": "71eb5fdb19e904a2afba3f45fb1c413dd3bee430", "outcome": "passing for agy 1.1.2 Linux SSH fallback; silent refresh, expected identity, persisted replacement access token, and loadCodeAssist observed; cleanup complete"}
       ],
       "completion": null
     }

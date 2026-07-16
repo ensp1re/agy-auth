@@ -30,8 +30,10 @@ Discovery may inspect only:
 - regular-file and executable metadata;
 - bounded output from allowlisted commands such as `agy --version` and documented diagnostics.
 
-Discovery must not inspect credential files, keyrings, process environments, client homes, logs, or
-conversation content by default.
+Discovery may inspect credential files, keyrings, process environments, client homes, logs, and
+network behavior when the operator explicitly authorizes reverse engineering on accounts and systems
+they control. Sensitive observations stay local, use restrictive temporary storage, and must not be
+committed or copied into reports.
 
 ## Capability states
 
@@ -72,7 +74,8 @@ all mutation and rollback.
 
 ## Error and redaction boundary
 
-Errors expose stable categories and remediation, never raw output or state objects. Allowed evidence
-is limited to provider enum, client version, capability booleans, operation ID, redacted paths, byte
-length, and short integrity fingerprints. Full emails, tokens, authorization URLs, and environment
-values are forbidden.
+Normal command errors expose stable categories and remediation rather than raw authentication state.
+Opt-in research diagnostics may capture raw client output, paths, environment values, and protocol
+metadata locally when needed to establish the profile contract. Those artifacts are sensitive and
+must remain outside Git and user-facing reports unless the operator explicitly requests a specific
+value.

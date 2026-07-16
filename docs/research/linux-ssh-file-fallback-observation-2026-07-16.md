@@ -49,3 +49,21 @@ Repeat the same SSH/no-D-Bus boundary with a human at the terminal and a dedicat
 long enough to identify the official login chooser, stop if any existing identity appears, and let
 the account owner complete login only after a separate explicit approval. Record no raw output,
 email, OAuth URL/code, token, log, or model interaction.
+
+## Login-chooser follow-up
+
+After review and merge of the initial observation, the product owner authorized continuation. The
+same disposable non-root, cleared-environment, SSH/no-D-Bus boundary ran for 30 seconds with no input.
+It again displayed neither an existing identity nor a recognizable login/authentication chooser.
+The timeout exited `124`, the home entry count remained 37 at the same bounded depth, and no client
+process remained after cleanup.
+
+A final materially different 20-second run set `SSH_TTY` to the actual disposable pseudo-terminal in
+addition to the synthetic loopback `SSH_CONNECTION`. Its result was identical: no identity, login
+text, or chooser; timeout exit `124`; 37 bounded home entries; zero remaining client processes.
+
+Both raw transcripts were deleted before cleanup, and each disposable user, home, runtime directory,
+working directory, and copied binary was removed and confirmed absent. These runs strengthen the
+finding that identity reuse is absent under this boundary, but they also show that the client does
+not reach a usable login state. Do not proceed to dedicated-account login until a secret-safe startup
+diagnostic identifies the blocked subsystem without reading credentials or private logs.
