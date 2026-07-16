@@ -305,6 +305,10 @@ dependencies = [
  "agy-auth-app",
  "agy-auth-domain",
  "agy-auth-process",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "time",
 ]
 
 [[package]]

@@ -1,11 +1,18 @@
 //! Capability-gated Antigravity CLI adapter boundary.
 
+mod credential_envelope;
+
 use agy_auth_app::{ClientDiagnostic, DoctorClientProbe};
 use agy_auth_domain::ProviderKind;
 use agy_auth_process::{DiscoveryError, OfficialClient, ProcessError, discover_client};
 use std::ffi::OsString;
 use std::path::PathBuf;
 use std::time::Duration;
+
+pub use credential_envelope::{
+    ANTIGRAVITY_TOKEN_RELATIVE_PATH, ConsumerRefreshCredential, CredentialEnvelopeError,
+    build_consumer_token_envelope, extract_consumer_refresh_credential,
+};
 
 /// Identify the provider implemented by this adapter.
 #[must_use]

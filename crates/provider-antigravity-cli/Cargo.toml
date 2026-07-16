@@ -11,6 +11,10 @@ license.workspace = true
 agy-auth-app.workspace = true
 agy-auth-domain.workspace = true
 agy-auth-process.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+time.workspace = true
 
 [lints]
 workspace = true
