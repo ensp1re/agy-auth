@@ -162,6 +162,18 @@ pub enum ProfileStatus {
     Unavailable,
 }
 
+impl ProfileStatus {
+    /// Stable non-secret CLI representation.
+    #[must_use]
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Ready => "ready",
+            Self::Pending => "pending",
+            Self::Unavailable => "unavailable",
+        }
+    }
+}
+
 /// Non-secret profile metadata.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Profile {

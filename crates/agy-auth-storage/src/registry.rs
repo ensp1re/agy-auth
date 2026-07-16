@@ -58,6 +58,17 @@ impl RegistryCatalog {
             .map(|registry| registry.find_by_name(&name).cloned())
     }
 
+    /// Load all non-secret profile metadata in stable registry order.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the registry cannot be safely loaded.
+    pub fn profiles(&self) -> Result<Vec<Profile>, RegistryStoreError> {
+        self.registry
+            .load()
+            .map(|registry| registry.profiles().to_vec())
+    }
+
     /// Load one profile by identifier.
     ///
     /// # Errors

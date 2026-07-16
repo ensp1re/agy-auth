@@ -111,6 +111,21 @@ fn imports_secure_official_home_and_executes_direct_argv() {
 
     create_and_recover_conflicting_import(binary, &data, &source_home, &client);
 
+    let listed = Command::new(binary)
+        .args(["--json", "--data-dir"])
+        .arg(&data)
+        .arg("list")
+        .output()
+        .expect("list profiles");
+    assert!(listed.status.success());
+    let listing: Value = serde_json::from_slice(&listed.stdout).expect("parse listing");
+    assert_eq!(listing["schemaVersion"], 1);
+    assert_eq!(listing["profiles"][0]["name"], "work");
+    assert_eq!(listing["profiles"][0]["status"], "ready");
+    assert_eq!(listing["profiles"][0]["clientVersion"], "1.1.3");
+    assert!(listing["profiles"][0].get("id").is_none());
+    assert!(listing["profiles"][0].get("storage").is_none());
+
     let registry: Value =
         serde_json::from_slice(&fs::read(data.join("registry.json")).expect("read registry"))
             .expect("parse registry");
