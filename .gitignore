@@ -6,6 +6,7 @@
 /.agy-auth/
 /tmp/
 /coverage/
+/node_modules/
 *.profraw
 *.lcov
 __pycache__/
