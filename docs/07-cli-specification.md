@@ -112,3 +112,7 @@ The non-default Cargo feature `experimental-fake-client` exposes hidden `experim
 `experimental-exec` commands for end-to-end orchestration tests. They use an in-process fake only;
 they cannot accept an executable path or launch real `agy`. Release builds omit this feature and
 remain diagnostics-only.
+
+The separate non-default feature `experimental-profile-credentials` compiles only the internal
+application/provider/storage credential workflow and synthetic end-to-end tests. It adds no CLI
+command, accepts no credential argument, and cannot launch `agy`. Release builds omit this feature.

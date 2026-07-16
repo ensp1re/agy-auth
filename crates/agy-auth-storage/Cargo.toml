@@ -7,6 +7,9 @@ publish.workspace = true
 repository.workspace = true
 license.workspace = true
 
+[features]
+experimental-profile-credentials = ["agy-auth-app/experimental-profile-credentials"]
+
 [dependencies]
 fs2.workspace = true
 libc.workspace = true

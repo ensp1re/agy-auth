@@ -1,5 +1,8 @@
 //! Application-service boundary for use-case orchestration.
 
+#[cfg(feature = "experimental-profile-credentials")]
+mod credential_workflow;
+
 use agy_auth_domain::{
     Profile, ProfileId, ProfileName, ProfileStatus, ProviderKind as DomainProviderKind,
     StorageLocator,
@@ -9,6 +12,12 @@ use std::ffi::OsString;
 use std::path::PathBuf;
 
 pub use agy_auth_domain::{ErrorCode, ProviderKind};
+#[cfg(feature = "experimental-profile-credentials")]
+pub use credential_workflow::{
+    CredentialEnvelopePort, CredentialFilePort, CredentialMaterializationPlan,
+    CredentialWorkflowError, OpaqueSecretBytes, capture_refreshed_profile_credential,
+    materialize_profile_credential,
+};
 
 /// Stable diagnostics schema version.
 pub const DOCTOR_SCHEMA_VERSION: u32 = 1;

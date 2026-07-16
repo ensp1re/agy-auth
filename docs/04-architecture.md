@@ -20,6 +20,8 @@ silently mutate authentication state.
 - safe executable discovery;
 - direct argv execution with bounded output and timeout;
 - installed `agy 1.1.2` version probe;
+- non-default experimental workflow connecting the versioned consumer envelope to protected
+  profile-home materialization and refreshed-token extraction;
 - capability gates that keep unverified auth-state behavior disabled.
 
 ## Antigravity provider discovery
