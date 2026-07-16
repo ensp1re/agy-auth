@@ -103,6 +103,75 @@ impl AntigravityInteractiveSession {
             InteractiveCompletion::Exited(_) => Err(CredentialWorkflowError::ClientExecutionFailed),
         }
     }
+
+    /// Read the official client's bounded local login log and return only a masked account hint.
+    ///
+    /// Full account identity is held only in temporary memory and is never returned to callers.
+    #[must_use]
+    pub fn masked_account_hint(&self) -> Option<String> {
+        let directory = self.environment.home().join(".gemini/antigravity-cli/log");
+        let mut paths = std::fs::read_dir(directory)
+            .ok()?
+            .filter_map(Result::ok)
+            .map(|entry| entry.path())
+            .collect::<Vec<_>>();
+        paths.sort();
+        for path in paths.into_iter().rev().take(32) {
+            let Ok(metadata) = std::fs::symlink_metadata(&path) else {
+                continue;
+            };
+            if metadata.file_type().is_symlink()
+                || !metadata.is_file()
+                || metadata.len() > 2 * 1024 * 1024
+            {
+                continue;
+            }
+            let Ok(bytes) = std::fs::read(path) else {
+                continue;
+            };
+            if let Some(hint) = masked_hint_from_log(&bytes) {
+                return Some(hint);
+            }
+        }
+        None
+    }
+}
+
+#[cfg(feature = "experimental-profile-credentials")]
+fn masked_hint_from_log(bytes: &[u8]) -> Option<String> {
+    const MARKERS: [&[u8]; 2] = [
+        b"applyAuthResult: email='",
+        b"OAuth: authenticated successfully as ",
+    ];
+    for marker in MARKERS {
+        let Some(position) = bytes
+            .windows(marker.len())
+            .rposition(|window| window == marker)
+        else {
+            continue;
+        };
+        let start = position + marker.len();
+        let candidate = bytes[start..]
+            .iter()
+            .take_while(|byte| !byte.is_ascii_whitespace() && **byte != b'\'')
+            .copied()
+            .collect::<Vec<_>>();
+        let value = std::str::from_utf8(&candidate).ok()?;
+        let (local, domain) = value.split_once('@')?;
+        if local.is_empty()
+            || domain.is_empty()
+            || !domain.contains('.')
+            || value.len() > 254
+            || !value
+                .bytes()
+                .all(|byte| byte.is_ascii_alphanumeric() || b"._%+-@".contains(&byte))
+        {
+            continue;
+        }
+        let visible = local.chars().take(3).collect::<String>();
+        return Some(format!("{visible}***@{domain}"));
+    }
+    None
 }
 
 #[cfg(feature = "experimental-profile-credentials")]

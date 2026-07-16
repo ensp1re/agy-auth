@@ -142,6 +142,8 @@ selection metadata and can become stale after direct `/logout`, login, or manual
 `exec <name>` remains available for an isolated one-off launch.
 `hint <name> <masked-hint>` stores only a user-supplied masked value such as `a***@gmail.com`;
 `list` includes that hint so account names remain recognizable without printing full emails.
+Delegated login may populate the same masked field from the official client's bounded successful
+login log under ADR 0009; the full identity is discarded immediately and never enters the registry.
 
 Import creates a non-secret durable marker
 before registry reservation and advances it after reservation, credential materialization, and the

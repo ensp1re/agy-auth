@@ -223,6 +223,12 @@ pub struct IsolatedClientEnvironment {
 }
 
 impl IsolatedClientEnvironment {
+    /// Return the validated isolated home directory.
+    #[must_use]
+    pub fn home(&self) -> &Path {
+        &self.home
+    }
+
     /// Validate the two isolation roots and construct a deterministic child environment.
     ///
     /// # Errors

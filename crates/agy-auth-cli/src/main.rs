@@ -461,6 +461,7 @@ fn run_login(cli: &Cli, requested_name: Option<&str>, explicit_client: Option<&P
         client
             .enroll_until_credential()
             .map_err(|_| RealProfileCliError::LoginFailed)?;
+        let account_hint = client.masked_account_hint();
         let files = ProfileCredentialFiles::new(&environment.home)
             .map_err(|_| RealProfileCliError::UnsafeStorage)?;
         files
@@ -482,6 +483,11 @@ fn run_login(cli: &Cli, requested_name: Option<&str>, explicit_client: Option<&P
         catalog
             .mark_ready(profile.id, &client_version)
             .map_err(|_| RealProfileCliError::Internal)?;
+        if let Some(account_hint) = account_hint {
+            catalog
+                .set_account_hint(profile.id, Some(account_hint))
+                .map_err(|_| RealProfileCliError::Internal)?;
+        }
         transaction
             .advance(ImportTransactionStage::Ready)
             .map_err(|_| RealProfileCliError::UnsafeStorage)?;

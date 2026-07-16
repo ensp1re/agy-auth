@@ -22,7 +22,7 @@ fn login_delegates_to_client_and_registers_resulting_profile() {
     let client = root.join("agy");
     fs::write(
         &client,
-        b"#!/bin/sh\nif [ \"${1-}\" = \"--version\" ]; then printf '1.1.3\\n'; exit 0; fi\numask 022\nmkdir -p \"$HOME/.gemini/antigravity-cli/cache\"\nprintf '%s' '{\"auth_method\":\"consumer\",\"token\":{\"access_token\":\"synthetic-login-access\",\"token_type\":\"Bearer\",\"refresh_token\":\"synthetic-login-refresh\",\"expiry\":\"2030-01-02T03:04:05Z\"}}' > \"$HOME/.gemini/antigravity-cli/antigravity-oauth-token\"\nchmod 600 \"$HOME/.gemini/antigravity-cli/antigravity-oauth-token\"\nsleep 1\nprintf '%s' '{\"consumerOnboardingComplete\":true,\"enterpriseOnboardingComplete\":false,\"onboardingComplete\":true}' > \"$HOME/.gemini/antigravity-cli/cache/onboarding.json\"\nsleep 2\ntouch \"$HOME/unwanted-next-action\"\n",
+        b"#!/bin/sh\nif [ \"${1-}\" = \"--version\" ]; then printf '1.1.3\\n'; exit 0; fi\numask 022\nmkdir -p \"$HOME/.gemini/antigravity-cli/cache\" \"$HOME/.gemini/antigravity-cli/log\"\nprintf '%s' \"applyAuthResult: email='synthetic-user@example.invalid'\" > \"$HOME/.gemini/antigravity-cli/log/cli-test.log\"\nprintf '%s' '{\"auth_method\":\"consumer\",\"token\":{\"access_token\":\"synthetic-login-access\",\"token_type\":\"Bearer\",\"refresh_token\":\"synthetic-login-refresh\",\"expiry\":\"2030-01-02T03:04:05Z\"}}' > \"$HOME/.gemini/antigravity-cli/antigravity-oauth-token\"\nchmod 600 \"$HOME/.gemini/antigravity-cli/antigravity-oauth-token\"\nsleep 1\nprintf '%s' '{\"consumerOnboardingComplete\":true,\"enterpriseOnboardingComplete\":false,\"onboardingComplete\":true}' > \"$HOME/.gemini/antigravity-cli/cache/onboarding.json\"\nsleep 2\ntouch \"$HOME/unwanted-next-action\"\n",
     )
     .expect("client");
     fs::set_permissions(&client, fs::Permissions::from_mode(0o700)).expect("executable");
@@ -42,6 +42,10 @@ fn login_delegates_to_client_and_registers_resulting_profile() {
     assert_eq!(registry["profiles"][0]["name"], "profile1");
     assert_eq!(registry["profiles"][0]["status"], "ready");
     assert_eq!(registry["profiles"][0]["clientVersionAtCapture"], "1.1.3");
+    assert_eq!(
+        registry["profiles"][0]["accountHint"],
+        "syn***@example.invalid"
+    );
     assert_eq!(
         fs::read_dir(data.join("transactions"))
             .expect("transactions")
