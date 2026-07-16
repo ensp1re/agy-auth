@@ -24,6 +24,8 @@ jobs:
           components: rustfmt, clippy
       - name: Run project checks
         run: python3 scripts/check.py
+      - name: Build release CLI
+        run: cargo build --locked --release -p agy-auth-cli
 
   dependency-policy:
     name: Dependency policy

@@ -513,6 +513,7 @@ fn stop_interactive_child(child: &mut Child) -> Result<(), ProcessError> {
     Ok(())
 }
 
+#[cfg(unix)]
 fn wait_for_child(child: &mut Child, timeout: Duration) -> Result<bool, ProcessError> {
     let deadline = Instant::now() + timeout;
     while Instant::now() < deadline {

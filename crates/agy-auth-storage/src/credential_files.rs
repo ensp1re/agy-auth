@@ -449,7 +449,9 @@ fn validate_owner_and_mode(
     metadata: &fs::Metadata,
     forbidden_mode: u32,
 ) -> Result<(), CredentialFileError> {
-    use std::os::unix::fs::{MetadataExt, PermissionsExt};
+    #[cfg(target_os = "linux")]
+    use std::os::unix::fs::MetadataExt;
+    use std::os::unix::fs::PermissionsExt;
 
     if metadata.permissions().mode() & forbidden_mode != 0 {
         return Err(CredentialFileError::UnsafePermissions);

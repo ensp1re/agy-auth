@@ -251,7 +251,9 @@ fn inspect_data_root(path: &Path) -> Result<FilesystemDiagnostic, &'static str> 
 fn unix_directory_security(
     metadata: &fs::Metadata,
 ) -> Result<(Option<bool>, Option<bool>), &'static str> {
-    use std::os::unix::fs::{MetadataExt, PermissionsExt};
+    #[cfg(target_os = "linux")]
+    use std::os::unix::fs::MetadataExt;
+    use std::os::unix::fs::PermissionsExt;
 
     let permissions_secure = metadata.permissions().mode().trailing_zeros() >= 6;
     if !permissions_secure {
