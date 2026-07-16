@@ -119,7 +119,8 @@ end-to-end tests. It adds no CLI command by itself. The default `profile-cli` fe
 adapters into the production command surface. The legacy `experimental-real-profile-cli` feature is
 an alias for `profile-cli`.
 
-The default CLI exposes `add`, `login`, `list`, `exec`, and `recover`. `add <name>` captures the
+The default CLI exposes `add`, `login`, `list`, `switch`, `exec`, `hint`, and `recover`.
+`add <name>` captures the
 account already logged into the caller's official `agy` home; `--from-home` selects another
 same-user official home. `login <name>` launches official `agy` in a newly managed isolated home so
 another account can be enrolled without logging out the default home. Enrollment watches only the
@@ -133,6 +134,10 @@ Execution uses direct argv, the isolated SSH environment, and an exclusive profi
 official client continues to own login, token refresh, and backend traffic. The mode-0600 credential
 file remains inside its mode-0700 isolated official-client home as approved by the storage contract;
 it is not exported into a separate plaintext vault.
+
+`switch <name>` is the convenient interactive alias for `exec <name>` with no child arguments.
+`hint <name> <masked-hint>` stores only a user-supplied masked value such as `a***@gmail.com`;
+`list` includes that hint so account names remain recognizable without printing full emails.
 
 Import creates a non-secret durable marker
 before registry reservation and advances it after reservation, credential materialization, and the

@@ -100,6 +100,23 @@ enum Commands {
         #[arg(long, value_name = "PATH")]
         client: Option<PathBuf>,
     },
+    /// Launch agy using a registered profile.
+    #[cfg(feature = "profile-cli")]
+    Switch {
+        /// Registered profile name.
+        name: String,
+        /// Use an explicit Antigravity CLI executable.
+        #[arg(long, value_name = "PATH")]
+        client: Option<PathBuf>,
+    },
+    /// Set a masked account hint used by list output.
+    #[cfg(feature = "profile-cli")]
+    Hint {
+        /// Registered profile name.
+        name: String,
+        /// Masked hint such as a***@gmail.com.
+        account_hint: String,
+    },
     /// Exercise profile-add orchestration with an in-process fake client.
     #[cfg(feature = "experimental-fake-client")]
     #[command(hide = true)]
@@ -185,6 +202,12 @@ fn main() {
         } => run_add(&cli, name, from_home.as_deref(), client.as_deref()),
         #[cfg(feature = "profile-cli")]
         Commands::Login { name, client } => run_login(&cli, name, client.as_deref()),
+        #[cfg(feature = "profile-cli")]
+        Commands::Switch { name, client } => {
+            run_experimental_real_exec(&cli, name, client.as_deref(), &[])
+        }
+        #[cfg(feature = "profile-cli")]
+        Commands::Hint { name, account_hint } => run_hint(&cli, name, account_hint),
         #[cfg(feature = "experimental-fake-client")]
         Commands::ExperimentalAdd { name } => run_experimental_add(&cli, name),
         #[cfg(feature = "experimental-fake-client")]
@@ -517,6 +540,7 @@ fn run_list(cli: &Cli) -> u8 {
                         "name": profile.name.as_str(),
                         "status": profile.status.as_str(),
                         "clientVersion": profile.client_version_at_capture,
+                        "accountHint": profile.account_hint.as_deref(),
                     })
                 })
                 .collect();
@@ -533,10 +557,11 @@ fn run_list(cli: &Cli) -> u8 {
         } else {
             for profile in profiles {
                 println!(
-                    "{}\t{}\t{}",
+                    "{}\t{}\t{}\t{}",
                     profile.name.as_str(),
                     profile.status.as_str(),
-                    profile.client_version_at_capture.as_deref().unwrap_or("-")
+                    profile.client_version_at_capture.as_deref().unwrap_or("-"),
+                    profile.account_hint.as_deref().unwrap_or("-")
                 );
             }
         }
@@ -546,6 +571,41 @@ fn run_list(cli: &Cli) -> u8 {
         Ok(()) => 0,
         Err(ProfileWorkflowError::HomeUnavailable) => 8,
         Err(_) => 11,
+    }
+}
+
+#[cfg(feature = "profile-cli")]
+fn run_hint(cli: &Cli, name: &str, account_hint: &str) -> u8 {
+    let result = (|| {
+        if !account_hint.contains('*') || !account_hint.contains('@') {
+            return Err(RealProfileCliError::ProfileConflict);
+        }
+        let catalog = catalog_adapter(cli).map_err(|_| RealProfileCliError::UnsafeStorage)?;
+        let profile = catalog
+            .profile(name)
+            .map_err(|_| RealProfileCliError::UnsafeStorage)?
+            .ok_or(RealProfileCliError::ProfileConflict)?;
+        catalog
+            .set_account_hint(profile.id, Some(account_hint.to_owned()))
+            .map_err(|_| RealProfileCliError::ProfileConflict)
+    })();
+    match result {
+        Ok(()) => {
+            if cli.json {
+                println!(
+                    "{}",
+                    serde_json::json!({
+                        "schemaVersion": 1,
+                        "profile": name,
+                        "accountHint": account_hint,
+                    })
+                );
+            } else {
+                println!("account hint updated: {name}");
+            }
+            0
+        }
+        Err(error) => render_real_error(error),
     }
 }
 

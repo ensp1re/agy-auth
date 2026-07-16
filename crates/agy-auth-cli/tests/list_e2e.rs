@@ -59,7 +59,7 @@ fn lists_only_stable_non_secret_profile_metadata() {
     assert_eq!(document["profiles"][0]["clientVersion"], "1.1.3");
     assert!(document["profiles"][0].get("id").is_none());
     assert!(document["profiles"][0].get("storage").is_none());
-    assert!(document["profiles"][0].get("accountHint").is_none());
+    assert!(document["profiles"][0]["accountHint"].is_null());
 
     fs::remove_dir_all(root).expect("cleanup");
 }

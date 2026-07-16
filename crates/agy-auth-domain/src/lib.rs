@@ -328,6 +328,36 @@ impl Registry {
         Ok(())
     }
 
+    /// Set or clear a privacy-preserving masked account hint.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the profile is absent, the hint is unmasked, or the timestamp is
+    /// invalid.
+    pub fn set_account_hint(
+        &mut self,
+        profile_id: ProfileId,
+        account_hint: Option<String>,
+        updated_at: OffsetDateTime,
+    ) -> Result<(), DomainError> {
+        let profile = self
+            .profiles
+            .iter_mut()
+            .find(|profile| profile.id == profile_id)
+            .ok_or(DomainError::ProfileNotFound)?;
+        if updated_at < profile.created_at {
+            return Err(DomainError::InvalidTimestampOrder);
+        }
+        let previous = profile.account_hint.take();
+        profile.account_hint = account_hint;
+        if let Err(error) = profile.validate() {
+            profile.account_hint = previous;
+            return Err(error);
+        }
+        profile.updated_at = updated_at;
+        Ok(())
+    }
+
     /// Recheck every registry invariant.
     ///
     /// # Errors

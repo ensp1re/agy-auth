@@ -96,6 +96,21 @@ impl RegistryCatalog {
         self.registry
             .update(move |registry| registry.remove_pending(profile_id))
     }
+
+    /// Set a masked account hint for one registered profile.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the profile is missing, the hint is not masked, or persistence fails.
+    pub fn set_account_hint(
+        &self,
+        profile_id: ProfileId,
+        account_hint: Option<String>,
+    ) -> Result<(), RegistryStoreError> {
+        self.registry.update(move |registry| {
+            registry.set_account_hint(profile_id, account_hint, OffsetDateTime::now_utc())
+        })
+    }
 }
 
 impl ProfileCatalogPort for RegistryCatalog {

@@ -77,6 +77,28 @@ fn create_and_recover_conflicting_import(
     );
 }
 
+fn set_and_verify_masked_hint(binary: &str, data: &Path) {
+    let hinted = Command::new(binary)
+        .args(["--data-dir"])
+        .arg(data)
+        .args(["hint", "work", "w***@example.invalid"])
+        .status()
+        .expect("set hint");
+    assert!(hinted.success());
+    let hinted_listing = Command::new(binary)
+        .args(["--json", "--data-dir"])
+        .arg(data)
+        .arg("list")
+        .output()
+        .expect("list hinted profile");
+    let hinted_document: Value =
+        serde_json::from_slice(&hinted_listing.stdout).expect("parse hinted listing");
+    assert_eq!(
+        hinted_document["profiles"][0]["accountHint"],
+        "w***@example.invalid"
+    );
+}
+
 #[test]
 fn imports_secure_official_home_and_executes_direct_argv() {
     let root = fixture();
@@ -123,6 +145,7 @@ fn imports_secure_official_home_and_executes_direct_argv() {
     assert_eq!(listing["profiles"][0]["name"], "work");
     assert_eq!(listing["profiles"][0]["status"], "ready");
     assert_eq!(listing["profiles"][0]["clientVersion"], "1.1.3");
+    assert!(listing["profiles"][0]["accountHint"].is_null());
     assert!(listing["profiles"][0].get("id").is_none());
     assert!(listing["profiles"][0].get("storage").is_none());
 
@@ -167,6 +190,8 @@ fn imports_secure_official_home_and_executes_direct_argv() {
         format!("{literal}|second|{}", managed_home.display())
     );
     assert!(!root.join("shell syntax is data").exists());
+
+    set_and_verify_masked_hint(binary, &data);
 
     write_file(
         &client,
