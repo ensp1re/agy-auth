@@ -265,7 +265,7 @@ fn verified_client(
 ) -> Result<(Option<PathBuf>, OsString, String), RealProfileCliError> {
     let platform_verified = cfg!(target_os = "linux")
         || (cfg!(target_os = "macos")
-            && std::env::var_os("AGY_AUTH_EXPERIMENTAL_MACOS_KEYCHAIN").as_deref()
+            && std::env::var_os("AGY_AUTH_MACOS_KEYCHAIN").as_deref()
                 == Some(std::ffi::OsStr::new("1")));
     if !platform_verified {
         return Err(RealProfileCliError::UnsupportedClient);

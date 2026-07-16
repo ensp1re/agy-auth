@@ -2,7 +2,7 @@
 
 ## Status
 
-Implementation candidate awaiting two-account black-box validation.
+macOS Keychain candidate awaiting two-account black-box validation.
 
 ## Scope
 
@@ -38,7 +38,7 @@ evidence only; they do not replace this project's black-box gates.
 Run a locally built candidate with:
 
 ```bash
-export AGY_AUTH_EXPERIMENTAL_MACOS_KEYCHAIN=1
+export AGY_AUTH_MACOS_KEYCHAIN=1
 ```
 
 The contract may be promoted only after all of these pass:
