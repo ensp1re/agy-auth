@@ -1,18 +1,39 @@
 #![doc = "Command-line entry point for agy-auth."]
 
-use agy_auth_app::{DoctorRegistryProbe, DoctorReport, RegistryDiagnostic, doctor};
-#[cfg(feature = "experimental-fake-client")]
+#[cfg(feature = "experimental-real-profile-cli")]
 use agy_auth_app::{
-    ManagedProfileEnvironment, ProfileClientPort, ProfileWorkflowError, add_profile, exec_profile,
-    new_pending_profile,
+    CredentialEnvelopePort, CredentialFilePort, CredentialSessionPorts, CredentialWorkflowError,
+    OpaqueSecretBytes, ProfileCatalogPort, require_ready_profile, run_profile_credential_session,
 };
-use agy_auth_storage::RegistryDoctorProbe;
+use agy_auth_app::{
+    DoctorClientProbe, DoctorRegistryProbe, DoctorReport, RegistryDiagnostic, doctor,
+};
 #[cfg(feature = "experimental-fake-client")]
+use agy_auth_app::{ManagedProfileEnvironment, ProfileClientPort, add_profile, exec_profile};
+#[cfg(any(
+    feature = "experimental-fake-client",
+    feature = "experimental-real-profile-cli"
+))]
+use agy_auth_app::{ProfileWorkflowError, new_pending_profile};
+use agy_auth_storage::RegistryDoctorProbe;
+#[cfg(any(
+    feature = "experimental-fake-client",
+    feature = "experimental-real-profile-cli"
+))]
 use agy_auth_storage::{ManagedProfileHomes, RegistryCatalog};
+#[cfg(feature = "experimental-real-profile-cli")]
+use agy_auth_storage::{ProfileCredentialFiles, ProfileSessionLock};
 use clap::{Parser, Subcommand};
 use provider_antigravity_cli::AntigravityDoctorProbe;
+#[cfg(feature = "experimental-real-profile-cli")]
+use provider_antigravity_cli::{
+    ANTIGRAVITY_TOKEN_RELATIVE_PATH, AntigravityCredentialEnvelope, AntigravityInteractiveSession,
+};
 use std::path::{Path, PathBuf};
-#[cfg(feature = "experimental-fake-client")]
+#[cfg(any(
+    feature = "experimental-fake-client",
+    feature = "experimental-real-profile-cli"
+))]
 use std::{ffi::OsString, path::Path as StdPath};
 
 /// Capability-gated local profile management for Google Antigravity CLI.
@@ -80,6 +101,32 @@ enum Commands {
         #[arg(last = true)]
         arguments: Vec<OsString>,
     },
+    /// Import a profile from a secure official agy home.
+    #[cfg(feature = "experimental-real-profile-cli")]
+    #[command(hide = true)]
+    ExperimentalImport {
+        /// Non-secret profile name.
+        name: String,
+        /// Absolute owner-only home containing an official agy credential file.
+        #[arg(long, value_name = "PATH")]
+        from_home: PathBuf,
+        /// Use an explicit Antigravity CLI executable.
+        #[arg(long, value_name = "PATH")]
+        client: Option<PathBuf>,
+    },
+    /// Execute real agy through a managed credential-backed profile.
+    #[cfg(feature = "experimental-real-profile-cli")]
+    #[command(hide = true)]
+    ExperimentalRealExec {
+        /// Registered profile name.
+        name: String,
+        /// Use an explicit Antigravity CLI executable.
+        #[arg(long, value_name = "PATH")]
+        client: Option<PathBuf>,
+        /// Literal arguments passed directly to agy.
+        #[arg(last = true)]
+        arguments: Vec<OsString>,
+    },
 }
 
 enum RegistryProbe {
@@ -116,8 +163,190 @@ fn main() {
             fake_exit,
             arguments,
         } => run_experimental_exec(&cli, name, *fake_exit, arguments),
+        #[cfg(feature = "experimental-real-profile-cli")]
+        Commands::ExperimentalImport {
+            name,
+            from_home,
+            client,
+        } => run_experimental_import(&cli, name, from_home, client.as_deref()),
+        #[cfg(feature = "experimental-real-profile-cli")]
+        Commands::ExperimentalRealExec {
+            name,
+            client,
+            arguments,
+        } => run_experimental_real_exec(&cli, name, client.as_deref(), arguments),
     };
     std::process::exit(exit_code.into());
+}
+
+#[cfg(feature = "experimental-real-profile-cli")]
+const VERIFIED_CLIENT_VERSION: &str = "1.1.2";
+
+#[cfg(feature = "experimental-real-profile-cli")]
+fn verified_client(
+    explicit_client: Option<&Path>,
+) -> Result<(Option<PathBuf>, OsString), RealProfileCliError> {
+    if !cfg!(target_os = "linux") {
+        return Err(RealProfileCliError::UnsupportedClient);
+    }
+    let search_path = std::env::var_os("PATH").ok_or(RealProfileCliError::ClientUnavailable)?;
+    let explicit_client = explicit_client.map(Path::to_owned);
+    let diagnostic =
+        AntigravityDoctorProbe::new(explicit_client.clone(), Some(search_path.clone())).probe();
+    if !diagnostic.found {
+        return Err(RealProfileCliError::ClientUnavailable);
+    }
+    if diagnostic.version.as_deref() != Some(VERIFIED_CLIENT_VERSION) {
+        return Err(RealProfileCliError::UnsupportedClient);
+    }
+    Ok((explicit_client, search_path))
+}
+
+#[cfg(feature = "experimental-real-profile-cli")]
+#[derive(Clone, Copy)]
+enum RealProfileCliError {
+    ProfileConflict,
+    ClientUnavailable,
+    UnsupportedClient,
+    UnsafeStorage,
+    SessionBusy,
+    ClientExecution,
+    Internal,
+}
+
+#[cfg(feature = "experimental-real-profile-cli")]
+fn real_error_code(error: RealProfileCliError) -> u8 {
+    match error {
+        RealProfileCliError::ProfileConflict => 3,
+        RealProfileCliError::ClientUnavailable => 4,
+        RealProfileCliError::UnsupportedClient => 5,
+        RealProfileCliError::UnsafeStorage => 8,
+        RealProfileCliError::SessionBusy => 9,
+        RealProfileCliError::ClientExecution | RealProfileCliError::Internal => 11,
+    }
+}
+
+#[cfg(feature = "experimental-real-profile-cli")]
+fn map_credential_error(error: CredentialWorkflowError) -> RealProfileCliError {
+    match error {
+        CredentialWorkflowError::UnsupportedClientVersion => RealProfileCliError::UnsupportedClient,
+        CredentialWorkflowError::CredentialStorageFailed => RealProfileCliError::UnsafeStorage,
+        CredentialWorkflowError::SessionBusy => RealProfileCliError::SessionBusy,
+        CredentialWorkflowError::ClientExecutionFailed => RealProfileCliError::ClientExecution,
+        CredentialWorkflowError::InvalidSecretSize
+        | CredentialWorkflowError::InvalidCredentialEnvelope => RealProfileCliError::Internal,
+    }
+}
+
+#[cfg(feature = "experimental-real-profile-cli")]
+fn run_experimental_import(
+    cli: &Cli,
+    name: &str,
+    from_home: &Path,
+    explicit_client: Option<&Path>,
+) -> u8 {
+    let result = (|| {
+        let _ = verified_client(explicit_client)?;
+        let profile =
+            new_pending_profile(name).map_err(|_| RealProfileCliError::ProfileConflict)?;
+        let (catalog, homes) =
+            experimental_adapters(cli).map_err(|_| RealProfileCliError::UnsafeStorage)?;
+        let source = ProfileCredentialFiles::new(from_home)
+            .map_err(|_| RealProfileCliError::UnsafeStorage)?;
+        let source_envelope = source
+            .read(Path::new(ANTIGRAVITY_TOKEN_RELATIVE_PATH), 16 * 1024)
+            .map_err(|_| RealProfileCliError::UnsafeStorage)?;
+        let provider = AntigravityCredentialEnvelope;
+        let refresh = provider
+            .extract_refresh(
+                VERIFIED_CLIENT_VERSION,
+                OpaqueSecretBytes::new(source_envelope.into_secret_bytes(), 16 * 1024)
+                    .map_err(map_credential_error)?,
+            )
+            .map_err(map_credential_error)?;
+
+        catalog
+            .reserve(&profile)
+            .map_err(|_| RealProfileCliError::ProfileConflict)?;
+        let environment = homes
+            .prepare(profile.id)
+            .map_err(|_| RealProfileCliError::UnsafeStorage)?;
+        let target = ProfileCredentialFiles::new(&environment.home)
+            .map_err(|_| RealProfileCliError::UnsafeStorage)?;
+        agy_auth_app::materialize_profile_credential(
+            VERIFIED_CLIENT_VERSION,
+            &refresh,
+            &provider,
+            &target,
+        )
+        .map_err(map_credential_error)?;
+        catalog
+            .mark_ready(profile.id, VERIFIED_CLIENT_VERSION)
+            .map_err(|_| RealProfileCliError::Internal)
+    })();
+    result.map_or_else(real_error_code, |()| 0)
+}
+
+#[cfg(feature = "experimental-real-profile-cli")]
+fn run_experimental_real_exec(
+    cli: &Cli,
+    name: &str,
+    explicit_client: Option<&Path>,
+    arguments: &[OsString],
+) -> u8 {
+    let result = (|| {
+        let (explicit_client, search_path) = verified_client(explicit_client)?;
+        let (catalog, homes) =
+            experimental_adapters(cli).map_err(|_| RealProfileCliError::UnsafeStorage)?;
+        let profile = catalog
+            .profile(name)
+            .map_err(|_| RealProfileCliError::UnsafeStorage)?
+            .ok_or(RealProfileCliError::ProfileConflict)?;
+        require_ready_profile(&profile).map_err(|_| RealProfileCliError::ProfileConflict)?;
+        let environment = homes
+            .prepare(profile.id)
+            .map_err(|_| RealProfileCliError::UnsafeStorage)?;
+        let files = ProfileCredentialFiles::new(&environment.home)
+            .map_err(|_| RealProfileCliError::UnsafeStorage)?;
+        let provider = AntigravityCredentialEnvelope;
+        let stored = CredentialFilePort::read(
+            &files,
+            Path::new(ANTIGRAVITY_TOKEN_RELATIVE_PATH),
+            16 * 1024,
+        )
+        .map_err(map_credential_error)?;
+        let refresh = provider
+            .extract_refresh(VERIFIED_CLIENT_VERSION, stored)
+            .map_err(map_credential_error)?;
+        let client = AntigravityInteractiveSession::new(
+            explicit_client.as_deref(),
+            search_path,
+            &environment,
+            std::env::var("TERM").ok().as_deref(),
+        )
+        .map_err(map_credential_error)?;
+        let lock = ProfileSessionLock::new(&environment.runtime_directory)
+            .map_err(|_| RealProfileCliError::UnsafeStorage)?;
+        let ports = CredentialSessionPorts {
+            envelope: &provider,
+            files: &files,
+            client: &client,
+            lock: &lock,
+        };
+        run_profile_credential_session(
+            VERIFIED_CLIENT_VERSION,
+            &refresh,
+            arguments,
+            &ports,
+            16 * 1024,
+        )
+        .map(|outcome| outcome.exit_code)
+        .map_err(map_credential_error)
+    })();
+    match result {
+        Ok(code) => u8::try_from(code).unwrap_or(11),
+        Err(error) => real_error_code(error),
+    }
 }
 
 #[cfg(feature = "experimental-fake-client")]
@@ -143,7 +372,10 @@ impl ProfileClientPort for InProcessFakeClient {
     }
 }
 
-#[cfg(feature = "experimental-fake-client")]
+#[cfg(any(
+    feature = "experimental-fake-client",
+    feature = "experimental-real-profile-cli"
+))]
 fn experimental_adapters(
     cli: &Cli,
 ) -> Result<(RegistryCatalog, ManagedProfileHomes), ProfileWorkflowError> {

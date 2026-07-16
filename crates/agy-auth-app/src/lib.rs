@@ -194,6 +194,19 @@ pub fn exec_profile(
     client.execute(&environment, arguments)
 }
 
+/// Validate that profile metadata is ready for official-client execution.
+///
+/// # Errors
+///
+/// Returns [`ProfileWorkflowError::ProfileNotReady`] for pending or otherwise unavailable profiles.
+pub fn require_ready_profile(profile: &Profile) -> Result<(), ProfileWorkflowError> {
+    if profile.status == ProfileStatus::Ready {
+        Ok(())
+    } else {
+        Err(ProfileWorkflowError::ProfileNotReady)
+    }
+}
+
 /// Reproducible build identity without builder paths or environment values.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
