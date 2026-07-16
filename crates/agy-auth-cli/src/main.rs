@@ -755,7 +755,7 @@ fn render_interactive_list(
     selected_index: usize,
     redraw: bool,
 ) -> io::Result<()> {
-    let line_count = u16::try_from(entries.len().saturating_add(2)).unwrap_or(u16::MAX);
+    let line_count = u16::try_from(entries.len().saturating_add(3)).unwrap_or(u16::MAX);
     if redraw {
         execute!(stdout, cursor::MoveUp(line_count))?;
     } else {
@@ -766,10 +766,7 @@ fn render_interactive_list(
         cursor::MoveToColumn(0),
         terminal::Clear(ClearType::CurrentLine)
     )?;
-    write!(
-        stdout,
-        "Select an account  ↑/↓ move · Enter switch · Esc/q/Ctrl+C exit\r\n"
-    )?;
+    write!(stdout, "Select an account  ↑/↓ move · Enter switch\r\n")?;
     execute!(stdout, terminal::Clear(ClearType::CurrentLine))?;
     write!(
         stdout,
@@ -793,6 +790,12 @@ fn render_interactive_list(
             entry.activity
         )?;
     }
+    execute!(
+        stdout,
+        cursor::MoveToColumn(0),
+        terminal::Clear(ClearType::CurrentLine)
+    )?;
+    write!(stdout, "Esc/q/Ctrl+C exit\r\n")?;
     stdout.flush()
 }
 
