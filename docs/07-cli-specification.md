@@ -29,9 +29,9 @@ MVP-safe diagnostics include executable discovery/version, registry validity, lo
 permissions, interrupted project-owned transactions, and provider capability status. `--repair`
 must not alter Antigravity authentication state until a mutation contract is verified.
 
-Diagnostics report `profileSwitching: false` and `authStateMutation: false` until a default
-credential-at-rest design is approved. Verified `agy 1.1.2` and `1.1.3` Linux builds use
-`verified_contract_not_enabled`; unsupported or unverified combinations use
+Diagnostics report `profileSwitching: true` and `authStateMutation: true` for verified
+`agy 1.1.2` and `1.1.3` Linux builds. Their stable reason is `verified_contract_enabled`;
+unsupported or unverified combinations use
 `no_verified_antigravity_profile_contract`. JSON output uses `schemaVersion: 1` and never includes
 executable paths, registry paths, environment values, account identity, or client output other than
 the validated version line. Until safe repair actions exist, `--repair` is an explicit no-op.
@@ -54,7 +54,7 @@ selected, verified-active, unknown, stale, and unsupported states without guessi
 ### `add`
 
 ```text
-agy-auth add <name> [--client <path>]
+agy-auth add [name] [--client <path>]
 ```
 
 Enabled only after a verified strategy delegates login to official `agy` under an isolated or
@@ -107,29 +107,50 @@ For `exec`, child exit codes take precedence; launcher failures use 125–127 wh
 
 `quota`, `rotate`, `proxy`, `serve`, automatic fallback, and backend protocol commands.
 
-## Compile-time fake-client gate
+## Compile-time feature gates
 
 The non-default Cargo feature `experimental-fake-client` exposes hidden `experimental-add` and
 `experimental-exec` commands for end-to-end orchestration tests. They use an in-process fake only;
-they cannot accept an executable path or launch real `agy`. Release builds omit this feature and
-remain diagnostics-only.
+they cannot accept an executable path or launch real `agy`. Release builds omit this feature.
 
 The separate non-default feature `experimental-profile-credentials` compiles only the internal
 application/provider/storage credential workflow, the real interactive client adapter, and synthetic
-end-to-end tests. It adds no CLI command or credential argument, so the shipped binary has no path
-that can invoke the adapter. Experimental sessions require an exclusive profile-runtime lease.
-Release builds omit this feature.
+end-to-end tests. It adds no CLI command by itself. The default `profile-cli` feature composes those
+adapters into the production command surface. The legacy `experimental-real-profile-cli` feature is
+an alias for `profile-cli`.
 
-The default CLI build exposes secret-safe `list`. The non-default
-`experimental-real-profile-cli` feature retains hidden `experimental-import`,
-`experimental-real-exec`, and `experimental-recover`. They are restricted to the verified
+The default CLI exposes `add`, `login`, `list`, `switch`, `exec`, `hint`, and `recover`.
+`add [name]` captures the
+account already logged into the caller's official `agy` home; `--from-home` selects another
+same-user official home. `login [name]` launches official `agy` in a newly managed isolated home so
+another account can be enrolled without logging out the default home. Enrollment waits for both the
+verified credential and official consumer-onboarding completion marker, then gracefully interrupts
+the client before workspace/project prompts, validates the envelope, commits the profile, and prints
+the next switch command. An omitted name selects the first unused `profileN`. These commands are
+restricted to the verified
 `agy 1.1.2` or `1.1.3` Linux contract. Import reads a bounded secure official-client envelope,
 extracts only its refresh credential, and materializes a minimal envelope in an owner-only managed
 profile home.
 Execution uses direct argv, the isolated SSH environment, and an exclusive profile lock; the
-official client continues to own token refresh and backend traffic. Default release builds omit
-these mutation commands because the approved storage contract does not offer plaintext mode-0600
-refresh credentials by default.
+official client continues to own login, token refresh, and backend traffic. The mode-0600 credential
+file remains inside its mode-0700 isolated official-client home as approved by the storage contract;
+it is not exported into a separate plaintext vault.
+
+On an interactive terminal, `list` opens a selector where Up/Down moves, Enter switches, and
+Escape, q/Q, Ctrl+C, Ctrl+D, Backspace, or Left Arrow exits without switching. `list --plain`,
+`list --json`, and redirected output retain deterministic
+non-interactive output. The selector redraws only its own inline rows and must not clear the
+surrounding terminal history. Both views show `NAME`, masked `ACCOUNT`, `VERSION`, and
+`LAST ACTIVITY`; activity updates after successful login, switch, or profile execution.
+
+`switch <name>` atomically selects the credential used by subsequent plain `agy` launches and does
+not launch the client. `list` prefixes the selected profile with `->`; this is project-owned
+selection metadata and can become stale after direct `/logout`, login, or manual state replacement.
+`exec <name>` remains available for an isolated one-off launch.
+`hint <name> <masked-hint>` stores only a user-supplied masked value such as `a***@gmail.com`;
+`list` includes that hint so account names remain recognizable without printing full emails.
+Delegated login may populate the same masked field from the official client's bounded successful
+login log under ADR 0009; the full identity is discarded immediately and never enters the registry.
 
 Import creates a non-secret durable marker
 before registry reservation and advances it after reservation, credential materialization, and the

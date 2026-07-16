@@ -5,7 +5,10 @@ mod credential_envelope;
 use agy_auth_app::{ClientDiagnostic, DoctorClientProbe};
 use agy_auth_domain::ProviderKind;
 #[cfg(feature = "experimental-profile-credentials")]
-use agy_auth_process::{DiscoveredClient, IsolatedClientEnvironment, run_interactive_isolated};
+use agy_auth_process::{
+    DiscoveredClient, InteractiveCompletion, IsolatedClientEnvironment, run_interactive_isolated,
+    run_interactive_isolated_until,
+};
 use agy_auth_process::{DiscoveryError, OfficialClient, ProcessError, discover_client};
 use std::ffi::OsString;
 use std::path::PathBuf;
@@ -79,6 +82,122 @@ impl AntigravityInteractiveSession {
             environment: isolated,
         })
     }
+
+    /// Run official `agy` until credentials and consumer onboarding are complete.
+    ///
+    /// # Errors
+    ///
+    /// Returns a stable workflow error when enrollment exits early, times out, or cannot be
+    /// monitored safely.
+    pub fn enroll_until_credential(&self) -> Result<(), CredentialWorkflowError> {
+        match run_interactive_isolated_until(
+            self.client.executable(),
+            std::iter::empty::<&str>(),
+            &self.environment,
+            Duration::from_secs(15 * 60),
+            enrollment_complete,
+        )
+        .map_err(|_| CredentialWorkflowError::ClientExecutionFailed)?
+        {
+            InteractiveCompletion::Completed => Ok(()),
+            InteractiveCompletion::Exited(_) => Err(CredentialWorkflowError::ClientExecutionFailed),
+        }
+    }
+
+    /// Read the official client's bounded local login log and return only a masked account hint.
+    ///
+    /// Full account identity is held only in temporary memory and is never returned to callers.
+    #[must_use]
+    pub fn masked_account_hint(&self) -> Option<String> {
+        let directory = self.environment.home().join(".gemini/antigravity-cli/log");
+        let mut paths = std::fs::read_dir(directory)
+            .ok()?
+            .filter_map(Result::ok)
+            .map(|entry| entry.path())
+            .collect::<Vec<_>>();
+        paths.sort();
+        for path in paths.into_iter().rev().take(32) {
+            let Ok(metadata) = std::fs::symlink_metadata(&path) else {
+                continue;
+            };
+            if metadata.file_type().is_symlink()
+                || !metadata.is_file()
+                || metadata.len() > 2 * 1024 * 1024
+            {
+                continue;
+            }
+            let Ok(bytes) = std::fs::read(path) else {
+                continue;
+            };
+            if let Some(hint) = masked_hint_from_log(&bytes) {
+                return Some(hint);
+            }
+        }
+        None
+    }
+}
+
+#[cfg(feature = "experimental-profile-credentials")]
+fn masked_hint_from_log(bytes: &[u8]) -> Option<String> {
+    const MARKERS: [&[u8]; 2] = [
+        b"applyAuthResult: email='",
+        b"OAuth: authenticated successfully as ",
+    ];
+    for marker in MARKERS {
+        let Some(position) = bytes
+            .windows(marker.len())
+            .rposition(|window| window == marker)
+        else {
+            continue;
+        };
+        let start = position + marker.len();
+        let candidate = bytes[start..]
+            .iter()
+            .take_while(|byte| !byte.is_ascii_whitespace() && **byte != b'\'')
+            .copied()
+            .collect::<Vec<_>>();
+        let value = std::str::from_utf8(&candidate).ok()?;
+        let (local, domain) = value.split_once('@')?;
+        if local.is_empty()
+            || domain.is_empty()
+            || !domain.contains('.')
+            || value.len() > 254
+            || !value
+                .bytes()
+                .all(|byte| byte.is_ascii_alphanumeric() || b"._%+-@".contains(&byte))
+        {
+            continue;
+        }
+        let visible = local.chars().take(3).collect::<String>();
+        return Some(format!("{visible}***@{domain}"));
+    }
+    None
+}
+
+#[cfg(feature = "experimental-profile-credentials")]
+fn enrollment_complete(home: &std::path::Path) -> bool {
+    let token = home.join(ANTIGRAVITY_TOKEN_RELATIVE_PATH);
+    let Ok(metadata) = std::fs::symlink_metadata(token) else {
+        return false;
+    };
+    if metadata.file_type().is_symlink() || !metadata.is_file() || metadata.len() == 0 {
+        return false;
+    }
+    let onboarding = home.join(".gemini/antigravity-cli/cache/onboarding.json");
+    let Ok(metadata) = std::fs::symlink_metadata(&onboarding) else {
+        return false;
+    };
+    if metadata.file_type().is_symlink() || !metadata.is_file() || metadata.len() > 4096 {
+        return false;
+    }
+    let Ok(bytes) = std::fs::read(onboarding) else {
+        return false;
+    };
+    let Ok(value) = serde_json::from_slice::<serde_json::Value>(&bytes) else {
+        return false;
+    };
+    value["consumerOnboardingComplete"].as_bool() == Some(true)
+        && value["onboardingComplete"].as_bool() == Some(true)
 }
 
 #[cfg(feature = "experimental-profile-credentials")]

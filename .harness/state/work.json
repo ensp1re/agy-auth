@@ -5,48 +5,47 @@
   "retention": "Keep the active item and at most two recently passing items; durable outcomes belong in specifications, ADRs, commits, and reviews.",
   "items": [
     {
-      "id": "phase-3-real-two-profile-cli-integration",
-      "title": "Validate real import and exec with two enrolled agy accounts",
-      "status": "passing",
-      "source": "docs/adr/0007-versioned-unofficial-isolated-homes.md",
-      "plan": "docs/07-cli-specification.md",
-      "acceptance": ["Two real profiles import, execute concurrently, remain distinct, and clean up safely."],
-      "blocker": null,
-      "verification": [
-        {"command": "agy 1.1.3 two-account gates and experimental CLI integration", "revision": "34c1c3863db88d0350cc9206a597c975716fadc1", "outcome": "passing; distinct identities, forced refresh, clean-third non-reuse, and cleanup"}
-      ],
-      "completion": {"commit": "34c1c3863db88d0350cc9206a597c975716fadc1", "review": "https://github.com/ensp1re/agy-auth/pull/31", "completedAt": "2026-07-16T11:52:27Z"}
-    },
-    {
       "id": "phase-3-import-transaction-recovery",
-      "title": "Journal and recover interrupted experimental profile imports",
+      "title": "Journal and recover interrupted profile imports",
       "status": "passing",
       "source": "docs/04-architecture.md",
       "plan": "docs/09-testing-strategy.md",
       "acceptance": ["Interrupted imports recover idempotently without removing ready profiles."],
       "blocker": null,
-      "verification": [
-        {"command": "python3 scripts/check.py", "revision": "7c4176af510f8b3c1453b4dfab8587c1028634d4", "outcome": "passing; 64 automated tests plus all repository gates"}
-      ],
+      "verification": [{"command": "python3 scripts/check.py", "revision": "b136c182e998c859decb48c7eca2bbbbd512962f", "outcome": "passing; 64 automated tests"}],
       "completion": {"commit": "b136c182e998c859decb48c7eca2bbbbd512962f", "review": "https://github.com/ensp1re/agy-auth/pull/32", "completedAt": "2026-07-16T12:04:44Z"}
     },
     {
       "id": "phase-3-public-profile-list",
-      "title": "Promote secret-safe profile listing while preserving mutation gates",
-      "status": "active",
+      "title": "Promote secret-safe profile listing",
+      "status": "passing",
       "source": "docs/07-cli-specification.md",
       "plan": "docs/10-delivery-roadmap.md",
+      "acceptance": ["Default builds expose deterministic secret-safe profile listing."],
+      "blocker": null,
+      "verification": [{"command": "python3 scripts/check.py", "revision": "24ec034fde45cfbc3f54c97d5f8c92c324565e56", "outcome": "passing; 65 automated tests"}],
+      "completion": {"commit": "e90aa59596436d0016d52f06c6967e8fc6362e0f", "review": "https://github.com/ensp1re/agy-auth/pull/33", "completedAt": "2026-07-16T12:15:10Z"}
+    },
+    {
+      "id": "phase-3-production-profile-workflow",
+      "title": "Deliver direct add, delegated login, list, exec, and recovery workflow",
+      "status": "active",
+      "source": "docs/07-cli-specification.md",
+      "plan": "docs/06-credential-storage.md",
       "acceptance": [
-        "Default builds expose public list without compiling credential mutation adapters.",
-        "List emits deterministic secret-safe human and JSON metadata.",
-        "Doctor continues to report mutation disabled.",
-        "Experimental import, exec, and recover remain non-default pending an approved at-rest protection design."
+        "agy-auth add <name> captures the current same-user official agy account without staging files.",
+        "agy-auth login <name> delegates enrollment to official agy in a new isolated managed home.",
+        "agy-auth switch <name> atomically selects the profile for subsequent plain agy launches without launching the client.",
+        "agy-auth list marks the project-selected profile without exposing credentials.",
+        "Public exec and recover retain version, locking, refresh, and transaction safety gates.",
+        "Default help and doctor accurately expose the verified production workflow.",
+        "A real installed-client smoke passes using current operator-controlled data and removes disposable test state."
       ],
       "blocker": null,
       "verification": [
-        {"command": "python3 scripts/check.py", "revision": "worktree", "outcome": "passing; 65 automated tests plus dependency, compatibility, release, secret, and harness gates"},
-        {"command": "default agy-auth --help", "revision": "worktree", "outcome": "passing; only doctor and list are public"},
-        {"command": "installed agy 1.1.3 two-profile public-path feasibility smoke", "revision": "worktree", "outcome": "passing technically; all disposable state removed, mutation promotion withheld for credential-at-rest policy"}
+        {"command": "python3 scripts/check.py", "revision": "worktree", "outcome": "passing; 66 automated tests plus dependency, compatibility, release, secret, and harness gates"},
+        {"command": "real agy 1.1.3 direct add/list/exec smoke", "revision": "worktree", "outcome": "passing against current operator account; disposable state removed"},
+        {"command": "synthetic delegated login E2E", "revision": "worktree", "outcome": "passing; official client created credential state and profile committed ready"}
       ],
       "completion": null
     }

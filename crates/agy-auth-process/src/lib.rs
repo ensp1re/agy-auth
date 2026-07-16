@@ -200,6 +200,15 @@ pub struct ProcessOutput {
     pub stderr_truncated: bool,
 }
 
+/// Outcome of an interactive enrollment process watched for provider-defined completion.
+#[derive(Debug)]
+pub enum InteractiveCompletion {
+    /// The completion condition became stable and the client was terminated gracefully.
+    Completed,
+    /// The client exited before the completion condition became true.
+    Exited(ExitStatus),
+}
+
 /// Explicit, minimal environment for launching a client inside a managed profile home.
 ///
 /// Every path must name an existing absolute directory. On Unix, group or other permission bits
@@ -214,6 +223,12 @@ pub struct IsolatedClientEnvironment {
 }
 
 impl IsolatedClientEnvironment {
+    /// Return the validated isolated home directory.
+    #[must_use]
+    pub fn home(&self) -> &Path {
+        &self.home
+    }
+
     /// Validate the two isolation roots and construct a deterministic child environment.
     ///
     /// # Errors
@@ -421,6 +436,105 @@ where
         }
     }
     unreachable!("interactive spawn loop returns on every final attempt")
+}
+
+/// Run an interactive client in its isolated home until a completion condition becomes stable.
+///
+/// The provider-owned callback receives the isolated home and must return true only after all
+/// required enrollment state is complete. The child is then interrupted gracefully so terminal
+/// applications can restore the caller's screen before forced termination is attempted.
+///
+/// # Errors
+///
+/// Returns an error for spawn, wait, signal, or timeout failures.
+pub fn run_interactive_isolated_until<I, S, F>(
+    executable: &Path,
+    arguments: I,
+    environment: &IsolatedClientEnvironment,
+    timeout: Duration,
+    mut completed: F,
+) -> Result<InteractiveCompletion, ProcessError>
+where
+    I: IntoIterator<Item = S>,
+    S: AsRef<OsStr>,
+    F: FnMut(&Path) -> bool,
+{
+    let arguments = arguments
+        .into_iter()
+        .map(|argument| argument.as_ref().to_owned())
+        .collect::<Vec<OsString>>();
+    let mut command = Command::new(executable);
+    command
+        .args(&arguments)
+        .current_dir(&environment.home)
+        .stdin(Stdio::inherit())
+        .stdout(Stdio::inherit())
+        .stderr(Stdio::inherit());
+    environment.apply(&mut command);
+    let mut child = command.spawn()?;
+    let deadline = Instant::now() + timeout;
+    loop {
+        if completed(&environment.home) {
+            thread::sleep(Duration::from_millis(150));
+            if completed(&environment.home) {
+                stop_interactive_child(&mut child)?;
+                return Ok(InteractiveCompletion::Completed);
+            }
+        }
+        if let Some(status) = child.try_wait()? {
+            return Ok(InteractiveCompletion::Exited(status));
+        }
+        if Instant::now() >= deadline {
+            child.kill()?;
+            let _ = child.wait();
+            return Err(ProcessError::TimedOut);
+        }
+        thread::sleep(Duration::from_millis(50));
+    }
+}
+
+fn stop_interactive_child(child: &mut Child) -> Result<(), ProcessError> {
+    if child.try_wait()?.is_some() {
+        return Ok(());
+    }
+    #[cfg(unix)]
+    {
+        signal_child(child, "TERM")?;
+        if wait_for_child(child, Duration::from_secs(2))? {
+            return Ok(());
+        }
+        signal_child(child, "INT")?;
+        if wait_for_child(child, Duration::from_secs(1))? {
+            return Ok(());
+        }
+    }
+    child.kill()?;
+    let _ = child.wait();
+    Ok(())
+}
+
+fn wait_for_child(child: &mut Child, timeout: Duration) -> Result<bool, ProcessError> {
+    let deadline = Instant::now() + timeout;
+    while Instant::now() < deadline {
+        if child.try_wait()?.is_some() {
+            return Ok(true);
+        }
+        thread::sleep(Duration::from_millis(25));
+    }
+    Ok(false)
+}
+
+#[cfg(unix)]
+fn signal_child(child: &Child, signal: &str) -> Result<(), ProcessError> {
+    let status = Command::new("/bin/kill")
+        .arg(format!("-{signal}"))
+        .arg(child.id().to_string())
+        .status()?;
+    if status.success() {
+        Ok(())
+    } else {
+        Err(io::Error::other("failed to signal interactive child").into())
+    }
 }
 
 fn spawn_bounded(executable: &Path, arguments: &[OsString]) -> io::Result<Child> {

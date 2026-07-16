@@ -47,6 +47,98 @@ pub struct ProfileCredentialFiles {
     profile_home: PathBuf,
 }
 
+/// Read-only adapter for an official client home whose intermediate directories may be readable
+/// but are never writable by group or other users.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct OfficialCredentialSourceFiles {
+    official_home: PathBuf,
+}
+
+impl OfficialCredentialSourceFiles {
+    /// Bind to an absolute same-user official home.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for relative, linked, foreign-owned, or group/other-writable homes.
+    pub fn new(official_home: impl Into<PathBuf>) -> Result<Self, CredentialFileError> {
+        let official_home = official_home.into();
+        if !official_home.is_absolute() {
+            return Err(CredentialFileError::InvalidProfileHome);
+        }
+        validate_trusted_source_directory(&official_home)?;
+        Ok(Self { official_home })
+    }
+
+    /// Read one bounded owner-only credential file without following links.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for unsafe ancestors, file metadata, size, or filesystem operations.
+    pub fn read(
+        &self,
+        relative_path: &Path,
+        maximum_bytes: usize,
+    ) -> Result<OpaqueCredentialBytes, CredentialFileError> {
+        if maximum_bytes == 0 {
+            return Err(CredentialFileError::InvalidCredentialSize);
+        }
+        validate_relative_path(relative_path)?;
+        validate_trusted_source_directory(&self.official_home)?;
+        let path = self.official_home.join(relative_path);
+        validate_trusted_source_ancestors(&self.official_home, &path)?;
+        let metadata = validate_secure_regular_file(&path)?;
+        let length =
+            usize::try_from(metadata.len()).map_err(|_| CredentialFileError::CredentialTooLarge)?;
+        if length == 0 || length > maximum_bytes {
+            return Err(CredentialFileError::CredentialTooLarge);
+        }
+        let mut file = open_read_no_follow(&path)?;
+        let mut value = Vec::with_capacity(length);
+        Read::by_ref(&mut file)
+            .take(
+                u64::try_from(maximum_bytes)
+                    .unwrap_or(u64::MAX)
+                    .saturating_add(1),
+            )
+            .read_to_end(&mut value)?;
+        if value.len() > maximum_bytes {
+            return Err(CredentialFileError::CredentialTooLarge);
+        }
+        validate_regular_file_metadata(&file.metadata()?)?;
+        OpaqueCredentialBytes::new(value, maximum_bytes)
+    }
+
+    /// Atomically replace one credential file in the same-user official home.
+    ///
+    /// Parent directories may be readable but must not be writable by group or other users. The
+    /// destination must already be a secure owner-only regular file.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for unsafe paths, ancestors, destination metadata, or replacement failure.
+    pub fn materialize(
+        &self,
+        relative_path: &Path,
+        credential: &OpaqueCredentialBytes,
+    ) -> Result<(), CredentialFileError> {
+        validate_relative_path(relative_path)?;
+        validate_trusted_source_directory(&self.official_home)?;
+        let destination = self.official_home.join(relative_path);
+        validate_trusted_source_ancestors(&self.official_home, &destination)?;
+        validate_secure_regular_file(&destination)?;
+        let parent = destination
+            .parent()
+            .ok_or(CredentialFileError::InvalidRelativePath)?;
+        let temporary = parent.join(format!(".agy-auth-{}.tmp", Uuid::new_v4()));
+        let result = write_and_replace(&temporary, &destination, credential.expose(), parent);
+        if result.is_err() {
+            let _ = fs::remove_file(&temporary);
+        }
+        result?;
+        validate_secure_regular_file(&destination).map(|_| ())
+    }
+}
+
 impl ProfileCredentialFiles {
     /// Bind the adapter to an absolute owner-only profile home.
     ///
@@ -61,6 +153,47 @@ impl ProfileCredentialFiles {
         }
         validate_secure_directory(&profile_home)?;
         Ok(Self { profile_home })
+    }
+
+    /// Restrict existing credential ancestor directories to owner-only access.
+    ///
+    /// This is intended for a freshly prepared managed home after the official client creates its
+    /// own state directories. Links, foreign ownership, non-directories, and paths outside the
+    /// managed home remain rejected.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the relative path or any existing ancestor is unsafe.
+    pub fn harden_credential_ancestors(
+        &self,
+        relative_path: &Path,
+    ) -> Result<(), CredentialFileError> {
+        validate_relative_path(relative_path)?;
+        validate_secure_directory(&self.profile_home)?;
+        let parent = self
+            .profile_home
+            .join(relative_path)
+            .parent()
+            .ok_or(CredentialFileError::InvalidRelativePath)?
+            .to_path_buf();
+        let relative = parent
+            .strip_prefix(&self.profile_home)
+            .map_err(|_| CredentialFileError::InvalidRelativePath)?;
+        let mut current = self.profile_home.clone();
+        for component in relative.components() {
+            let Component::Normal(value) = component else {
+                return Err(CredentialFileError::InvalidRelativePath);
+            };
+            current.push(value);
+            validate_trusted_source_directory(&current)?;
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::PermissionsExt;
+                fs::set_permissions(&current, fs::Permissions::from_mode(0o700))?;
+            }
+            validate_secure_directory(&current)?;
+        }
+        Ok(())
     }
 
     /// Atomically write opaque bytes at a safe home-relative path.
@@ -231,6 +364,28 @@ fn validate_secure_ancestors(
     Ok(())
 }
 
+fn validate_trusted_source_ancestors(
+    official_home: &Path,
+    target: &Path,
+) -> Result<(), CredentialFileError> {
+    let parent = target
+        .parent()
+        .ok_or(CredentialFileError::InvalidRelativePath)?;
+    let relative = parent
+        .strip_prefix(official_home)
+        .map_err(|_| CredentialFileError::InvalidRelativePath)?;
+    let mut current = official_home.to_path_buf();
+    validate_trusted_source_directory(&current)?;
+    for component in relative.components() {
+        let Component::Normal(value) = component else {
+            return Err(CredentialFileError::InvalidRelativePath);
+        };
+        current.push(value);
+        validate_trusted_source_directory(&current)?;
+    }
+    Ok(())
+}
+
 fn validate_existing_destination(path: &Path) -> Result<(), CredentialFileError> {
     match fs::symlink_metadata(path) {
         Ok(_) => {
@@ -263,6 +418,15 @@ fn validate_secure_directory(path: &Path) -> Result<fs::Metadata, CredentialFile
         return Err(CredentialFileError::UnsafeFileType);
     }
     validate_owner_and_mode(&metadata, 0o077)?;
+    Ok(metadata)
+}
+
+fn validate_trusted_source_directory(path: &Path) -> Result<fs::Metadata, CredentialFileError> {
+    let metadata = fs::symlink_metadata(path)?;
+    if metadata.file_type().is_symlink() || !metadata.is_dir() {
+        return Err(CredentialFileError::UnsafeFileType);
+    }
+    validate_owner_and_mode(&metadata, 0o022)?;
     Ok(metadata)
 }
 
@@ -414,7 +578,10 @@ pub enum CredentialFileError {
 
 #[cfg(all(test, unix))]
 mod tests {
-    use super::{CredentialFileError, OpaqueCredentialBytes, ProfileCredentialFiles};
+    use super::{
+        CredentialFileError, OfficialCredentialSourceFiles, OpaqueCredentialBytes,
+        ProfileCredentialFiles,
+    };
     use std::fs;
     use std::os::unix::fs::{PermissionsExt, symlink};
     use std::path::{Path, PathBuf};
@@ -493,6 +660,43 @@ mod tests {
             .count();
         assert_eq!(temporary_count, 0);
         remove(&home);
+    }
+
+    #[test]
+    fn official_source_allows_readable_but_not_writable_ancestors() {
+        let home = fixture();
+        let gemini = home.join(".gemini");
+        let provider = gemini.join("antigravity-cli");
+        fs::create_dir(&gemini).expect("gemini");
+        fs::create_dir(&provider).expect("provider");
+        fs::set_permissions(&gemini, fs::Permissions::from_mode(0o755)).expect("readable gemini");
+        fs::set_permissions(&provider, fs::Permissions::from_mode(0o755))
+            .expect("readable provider");
+        let token = provider.join("antigravity-oauth-token");
+        fs::write(&token, b"synthetic-official-envelope").expect("token");
+        fs::set_permissions(&token, fs::Permissions::from_mode(0o600)).expect("secure token");
+
+        let source = OfficialCredentialSourceFiles::new(&home).expect("source");
+        assert_eq!(
+            source
+                .read(
+                    Path::new(".gemini/antigravity-cli/antigravity-oauth-token"),
+                    4096
+                )
+                .expect("read")
+                .into_secret_bytes(),
+            b"synthetic-official-envelope"
+        );
+
+        fs::set_permissions(&gemini, fs::Permissions::from_mode(0o775)).expect("writable gemini");
+        assert!(matches!(
+            source.read(
+                Path::new(".gemini/antigravity-cli/antigravity-oauth-token"),
+                4096
+            ),
+            Err(CredentialFileError::UnsafePermissions)
+        ));
+        fs::remove_dir_all(home).expect("cleanup");
     }
 
     #[test]

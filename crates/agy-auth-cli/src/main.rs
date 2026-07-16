@@ -1,14 +1,11 @@
 #![doc = "Command-line entry point for agy-auth."]
 
-#[cfg(feature = "experimental-real-profile-cli")]
+#[cfg(feature = "profile-cli")]
 use agy_auth_app::DoctorClientProbe;
 use agy_auth_app::ProfileWorkflowError;
-#[cfg(any(
-    feature = "experimental-fake-client",
-    feature = "experimental-real-profile-cli"
-))]
+#[cfg(any(feature = "experimental-fake-client", feature = "profile-cli"))]
 use agy_auth_app::new_pending_profile;
-#[cfg(feature = "experimental-real-profile-cli")]
+#[cfg(feature = "profile-cli")]
 use agy_auth_app::{
     CredentialEnvelopePort, CredentialFilePort, CredentialSessionPorts, CredentialWorkflowError,
     OpaqueSecretBytes, ProfileCatalogPort, require_ready_profile, run_profile_credential_session,
@@ -16,29 +13,35 @@ use agy_auth_app::{
 use agy_auth_app::{DoctorRegistryProbe, DoctorReport, RegistryDiagnostic, doctor};
 #[cfg(feature = "experimental-fake-client")]
 use agy_auth_app::{ManagedProfileEnvironment, ProfileClientPort, add_profile, exec_profile};
-#[cfg(any(
-    feature = "experimental-fake-client",
-    feature = "experimental-real-profile-cli"
-))]
+use agy_auth_storage::ActiveProfileStore;
+#[cfg(any(feature = "experimental-fake-client", feature = "profile-cli"))]
 use agy_auth_storage::ManagedProfileHomes;
-#[cfg(feature = "experimental-real-profile-cli")]
+#[cfg(feature = "profile-cli")]
 use agy_auth_storage::{
-    ImportTransactionJournal, ImportTransactionStage, ProfileCredentialFiles, ProfileSessionLock,
+    ImportTransactionJournal, ImportTransactionStage, OfficialCredentialSourceFiles,
+    OpaqueCredentialBytes, ProfileCredentialFiles, ProfileSessionLock,
 };
 use agy_auth_storage::{RegistryCatalog, RegistryDoctorProbe};
 use clap::{Parser, Subcommand};
+#[cfg(feature = "profile-cli")]
+use crossterm::{
+    cursor, event,
+    event::{Event, KeyCode, KeyEventKind, KeyModifiers},
+    execute,
+    terminal::{self, ClearType},
+};
 use provider_antigravity_cli::AntigravityDoctorProbe;
-#[cfg(feature = "experimental-real-profile-cli")]
+#[cfg(feature = "profile-cli")]
 use provider_antigravity_cli::{
     ANTIGRAVITY_TOKEN_RELATIVE_PATH, AntigravityCredentialEnvelope, AntigravityInteractiveSession,
 };
-#[cfg(any(
-    feature = "experimental-fake-client",
-    feature = "experimental-real-profile-cli"
-))]
+#[cfg(any(feature = "experimental-fake-client", feature = "profile-cli"))]
 use std::ffi::OsString;
+#[cfg(feature = "profile-cli")]
+use std::io::{self, IsTerminal, Write};
 use std::path::Path as StdPath;
 use std::path::{Path, PathBuf};
+use time::OffsetDateTime;
 
 /// Capability-gated local profile management for Google Antigravity CLI.
 #[derive(Debug, Parser)]
@@ -85,8 +88,50 @@ enum Commands {
         #[arg(long, value_name = "PATH")]
         client: Option<PathBuf>,
     },
-    /// List registered profiles without reading authentication state.
-    List,
+    /// List profiles or select one interactively on a terminal.
+    List {
+        /// Disable the interactive selector.
+        #[arg(long)]
+        plain: bool,
+    },
+    /// Save the account currently logged into the official agy home.
+    #[cfg(feature = "profile-cli")]
+    Add {
+        /// Non-secret profile name; omitted names are generated automatically.
+        name: Option<String>,
+        /// Read from an alternate official agy home.
+        #[arg(long, value_name = "PATH")]
+        from_home: Option<PathBuf>,
+        /// Use an explicit Antigravity CLI executable.
+        #[arg(long, value_name = "PATH")]
+        client: Option<PathBuf>,
+    },
+    /// Enroll another account through official agy in a new isolated home.
+    #[cfg(feature = "profile-cli")]
+    Login {
+        /// Non-secret profile name; omitted names are generated automatically.
+        name: Option<String>,
+        /// Use an explicit Antigravity CLI executable.
+        #[arg(long, value_name = "PATH")]
+        client: Option<PathBuf>,
+    },
+    /// Select the account used by future plain agy launches.
+    #[cfg(feature = "profile-cli")]
+    Switch {
+        /// Registered profile name.
+        name: String,
+        /// Use an explicit Antigravity CLI executable.
+        #[arg(long, value_name = "PATH")]
+        client: Option<PathBuf>,
+    },
+    /// Set a masked account hint used by list output.
+    #[cfg(feature = "profile-cli")]
+    Hint {
+        /// Registered profile name.
+        name: String,
+        /// Masked hint such as a***@gmail.com.
+        account_hint: String,
+    },
     /// Exercise profile-add orchestration with an in-process fake client.
     #[cfg(feature = "experimental-fake-client")]
     #[command(hide = true)]
@@ -108,7 +153,7 @@ enum Commands {
         arguments: Vec<OsString>,
     },
     /// Import a profile from a secure official agy home.
-    #[cfg(feature = "experimental-real-profile-cli")]
+    #[cfg(feature = "profile-cli")]
     #[command(hide = true)]
     ExperimentalImport {
         /// Non-secret profile name.
@@ -121,9 +166,8 @@ enum Commands {
         client: Option<PathBuf>,
     },
     /// Execute agy through a managed credential-backed profile.
-    #[cfg(feature = "experimental-real-profile-cli")]
-    #[command(hide = true)]
-    ExperimentalRealExec {
+    #[cfg(feature = "profile-cli")]
+    Exec {
         /// Registered profile name.
         name: String,
         /// Use an explicit Antigravity CLI executable.
@@ -134,9 +178,8 @@ enum Commands {
         arguments: Vec<OsString>,
     },
     /// Recover interrupted profile imports.
-    #[cfg(feature = "experimental-real-profile-cli")]
-    #[command(hide = true)]
-    ExperimentalRecover,
+    #[cfg(feature = "profile-cli")]
+    Recover,
 }
 
 enum RegistryProbe {
@@ -165,7 +208,24 @@ fn main() {
     let cli = Cli::parse();
     let exit_code = match &cli.command {
         Commands::Doctor { repair, client } => run_doctor(&cli, client.clone(), *repair),
-        Commands::List => run_list(&cli),
+        Commands::List { plain } => run_list(&cli, *plain),
+        #[cfg(feature = "profile-cli")]
+        Commands::Add {
+            name,
+            from_home,
+            client,
+        } => run_add(
+            &cli,
+            name.as_deref(),
+            from_home.as_deref(),
+            client.as_deref(),
+        ),
+        #[cfg(feature = "profile-cli")]
+        Commands::Login { name, client } => run_login(&cli, name.as_deref(), client.as_deref()),
+        #[cfg(feature = "profile-cli")]
+        Commands::Switch { name, client } => run_switch(&cli, name, client.as_deref()),
+        #[cfg(feature = "profile-cli")]
+        Commands::Hint { name, account_hint } => run_hint(&cli, name, account_hint),
         #[cfg(feature = "experimental-fake-client")]
         Commands::ExperimentalAdd { name } => run_experimental_add(&cli, name),
         #[cfg(feature = "experimental-fake-client")]
@@ -174,28 +234,28 @@ fn main() {
             fake_exit,
             arguments,
         } => run_experimental_exec(&cli, name, *fake_exit, arguments),
-        #[cfg(feature = "experimental-real-profile-cli")]
+        #[cfg(feature = "profile-cli")]
         Commands::ExperimentalImport {
             name,
             from_home,
             client,
         } => run_experimental_import(&cli, name, from_home, client.as_deref()),
-        #[cfg(feature = "experimental-real-profile-cli")]
-        Commands::ExperimentalRealExec {
+        #[cfg(feature = "profile-cli")]
+        Commands::Exec {
             name,
             client,
             arguments,
         } => run_experimental_real_exec(&cli, name, client.as_deref(), arguments),
-        #[cfg(feature = "experimental-real-profile-cli")]
-        Commands::ExperimentalRecover => run_recover(&cli),
+        #[cfg(feature = "profile-cli")]
+        Commands::Recover => run_recover(&cli),
     };
     std::process::exit(exit_code.into());
 }
 
-#[cfg(feature = "experimental-real-profile-cli")]
+#[cfg(feature = "profile-cli")]
 const VERIFIED_CLIENT_VERSIONS: [&str; 2] = ["1.1.2", "1.1.3"];
 
-#[cfg(feature = "experimental-real-profile-cli")]
+#[cfg(feature = "profile-cli")]
 fn verified_client(
     explicit_client: Option<&Path>,
 ) -> Result<(Option<PathBuf>, OsString, String), RealProfileCliError> {
@@ -216,7 +276,7 @@ fn verified_client(
     Ok((explicit_client, search_path, version))
 }
 
-#[cfg(feature = "experimental-real-profile-cli")]
+#[cfg(feature = "profile-cli")]
 #[derive(Clone, Copy)]
 enum RealProfileCliError {
     ProfileConflict,
@@ -225,10 +285,11 @@ enum RealProfileCliError {
     UnsafeStorage,
     SessionBusy,
     ClientExecution,
+    LoginFailed,
     Internal,
 }
 
-#[cfg(feature = "experimental-real-profile-cli")]
+#[cfg(feature = "profile-cli")]
 fn real_error_code(error: RealProfileCliError) -> u8 {
     match error {
         RealProfileCliError::ProfileConflict => 3,
@@ -236,11 +297,34 @@ fn real_error_code(error: RealProfileCliError) -> u8 {
         RealProfileCliError::UnsupportedClient => 5,
         RealProfileCliError::UnsafeStorage => 8,
         RealProfileCliError::SessionBusy => 9,
+        RealProfileCliError::LoginFailed => 6,
         RealProfileCliError::ClientExecution | RealProfileCliError::Internal => 11,
     }
 }
 
-#[cfg(feature = "experimental-real-profile-cli")]
+#[cfg(feature = "profile-cli")]
+fn real_error_message(error: RealProfileCliError) -> &'static str {
+    match error {
+        RealProfileCliError::ProfileConflict => "profile name is missing, pending, or already used",
+        RealProfileCliError::ClientUnavailable => "official agy client is unavailable",
+        RealProfileCliError::UnsupportedClient => {
+            "installed agy version or platform is not verified for profile switching"
+        }
+        RealProfileCliError::UnsafeStorage => "profile storage or source permissions are unsafe",
+        RealProfileCliError::SessionBusy => "profile is already running",
+        RealProfileCliError::ClientExecution => "official agy client could not be executed",
+        RealProfileCliError::LoginFailed => "official agy login did not complete successfully",
+        RealProfileCliError::Internal => "profile operation failed an internal invariant",
+    }
+}
+
+#[cfg(feature = "profile-cli")]
+fn render_real_error(error: RealProfileCliError) -> u8 {
+    eprintln!("agy-auth: {}", real_error_message(error));
+    real_error_code(error)
+}
+
+#[cfg(feature = "profile-cli")]
 fn map_credential_error(error: CredentialWorkflowError) -> RealProfileCliError {
     match error {
         CredentialWorkflowError::UnsupportedClientVersion => RealProfileCliError::UnsupportedClient,
@@ -252,7 +336,7 @@ fn map_credential_error(error: CredentialWorkflowError) -> RealProfileCliError {
     }
 }
 
-#[cfg(feature = "experimental-real-profile-cli")]
+#[cfg(feature = "profile-cli")]
 fn run_experimental_import(
     cli: &Cli,
     name: &str,
@@ -271,7 +355,7 @@ fn run_experimental_import(
         let mut transaction = journal
             .begin(profile.id)
             .map_err(|_| RealProfileCliError::UnsafeStorage)?;
-        let source = ProfileCredentialFiles::new(from_home)
+        let source = OfficialCredentialSourceFiles::new(from_home)
             .map_err(|_| RealProfileCliError::UnsafeStorage)?;
         let source_envelope = source
             .read(Path::new(ANTIGRAVITY_TOKEN_RELATIVE_PATH), 16 * 1024)
@@ -311,10 +395,167 @@ fn run_experimental_import(
             .complete()
             .map_err(|_| RealProfileCliError::UnsafeStorage)
     })();
-    result.map_or_else(real_error_code, |()| 0)
+    match result {
+        Ok(()) => {
+            if cli.json {
+                println!(
+                    "{}",
+                    serde_json::json!({
+                        "schemaVersion": 1,
+                        "profile": name,
+                        "status": "ready",
+                    })
+                );
+            } else {
+                println!("profile saved: {name}");
+            }
+            0
+        }
+        Err(error) => render_real_error(error),
+    }
 }
 
-#[cfg(feature = "experimental-real-profile-cli")]
+#[cfg(feature = "profile-cli")]
+fn run_add(
+    cli: &Cli,
+    name: Option<&str>,
+    from_home: Option<&Path>,
+    explicit_client: Option<&Path>,
+) -> u8 {
+    let Some(home) = from_home
+        .map(Path::to_owned)
+        .or_else(|| std::env::var_os("HOME").map(PathBuf::from))
+    else {
+        return render_real_error(RealProfileCliError::UnsafeStorage);
+    };
+    let name = match resolve_profile_name(cli, name) {
+        Ok(name) => name,
+        Err(error) => return render_real_error(error),
+    };
+    run_experimental_import(cli, &name, &home, explicit_client)
+}
+
+#[cfg(feature = "profile-cli")]
+fn run_login(cli: &Cli, requested_name: Option<&str>, explicit_client: Option<&Path>) -> u8 {
+    if cli.non_interactive {
+        return render_real_error(RealProfileCliError::LoginFailed);
+    }
+    let name = match resolve_profile_name(cli, requested_name) {
+        Ok(name) => name,
+        Err(error) => return render_real_error(error),
+    };
+    let result = (|| {
+        let (explicit_client, search_path, client_version) = verified_client(explicit_client)?;
+        let profile =
+            new_pending_profile(&name).map_err(|_| RealProfileCliError::ProfileConflict)?;
+        let (catalog, homes) =
+            experimental_adapters(cli).map_err(|_| RealProfileCliError::UnsafeStorage)?;
+        let root = experimental_data_root(cli).map_err(|_| RealProfileCliError::UnsafeStorage)?;
+        let journal =
+            ImportTransactionJournal::new(root).map_err(|_| RealProfileCliError::UnsafeStorage)?;
+        let mut transaction = journal
+            .begin(profile.id)
+            .map_err(|_| RealProfileCliError::UnsafeStorage)?;
+        catalog
+            .reserve(&profile)
+            .map_err(|_| RealProfileCliError::ProfileConflict)?;
+        transaction
+            .advance(ImportTransactionStage::Reserved)
+            .map_err(|_| RealProfileCliError::UnsafeStorage)?;
+        let environment = homes
+            .prepare(profile.id)
+            .map_err(|_| RealProfileCliError::UnsafeStorage)?;
+        let client = AntigravityInteractiveSession::new(
+            explicit_client.as_deref(),
+            search_path,
+            &environment,
+            std::env::var("TERM").ok().as_deref(),
+        )
+        .map_err(map_credential_error)?;
+        client
+            .enroll_until_credential()
+            .map_err(|_| RealProfileCliError::LoginFailed)?;
+        let account_hint = client.masked_account_hint();
+        let files = ProfileCredentialFiles::new(&environment.home)
+            .map_err(|_| RealProfileCliError::UnsafeStorage)?;
+        files
+            .harden_credential_ancestors(Path::new(ANTIGRAVITY_TOKEN_RELATIVE_PATH))
+            .map_err(|_| RealProfileCliError::UnsafeStorage)?;
+        let provider = AntigravityCredentialEnvelope;
+        let stored = CredentialFilePort::read(
+            &files,
+            Path::new(ANTIGRAVITY_TOKEN_RELATIVE_PATH),
+            16 * 1024,
+        )
+        .map_err(map_credential_error)?;
+        provider
+            .extract_refresh(&client_version, stored)
+            .map_err(map_credential_error)?;
+        transaction
+            .advance(ImportTransactionStage::Materialized)
+            .map_err(|_| RealProfileCliError::UnsafeStorage)?;
+        catalog
+            .mark_ready(profile.id, &client_version)
+            .map_err(|_| RealProfileCliError::Internal)?;
+        if let Some(account_hint) = account_hint {
+            catalog
+                .set_account_hint(profile.id, Some(account_hint))
+                .map_err(|_| RealProfileCliError::Internal)?;
+        }
+        catalog
+            .mark_activity(profile.id)
+            .map_err(|_| RealProfileCliError::Internal)?;
+        transaction
+            .advance(ImportTransactionStage::Ready)
+            .map_err(|_| RealProfileCliError::UnsafeStorage)?;
+        transaction
+            .complete()
+            .map_err(|_| RealProfileCliError::UnsafeStorage)
+    })();
+    match result {
+        Ok(()) => {
+            if cli.json {
+                println!(
+                    "{}",
+                    serde_json::json!({
+                        "schemaVersion": 1,
+                        "profile": &name,
+                        "status": "ready",
+                    })
+                );
+            } else {
+                println!("Successfully logged in: {name}");
+                println!("Switch anytime: agy-auth switch {name}");
+                println!("Help: agy-auth --help");
+            }
+            0
+        }
+        Err(error) => render_real_error(error),
+    }
+}
+
+#[cfg(feature = "profile-cli")]
+fn resolve_profile_name(cli: &Cli, requested: Option<&str>) -> Result<String, RealProfileCliError> {
+    if let Some(name) = requested {
+        return Ok(name.to_owned());
+    }
+    let catalog = catalog_adapter(cli).map_err(|_| RealProfileCliError::UnsafeStorage)?;
+    let profiles = catalog
+        .profiles()
+        .map_err(|_| RealProfileCliError::UnsafeStorage)?;
+    for number in 1_u64.. {
+        let candidate = format!("profile{number}");
+        if profiles
+            .iter()
+            .all(|profile| profile.name.as_str() != candidate)
+        {
+            return Ok(candidate);
+        }
+    }
+    unreachable!("u64 profile namespace cannot be exhausted")
+}
+
+#[cfg(feature = "profile-cli")]
 fn run_recover(cli: &Cli) -> u8 {
     let result = (|| {
         let (catalog, homes) =
@@ -325,16 +566,64 @@ fn run_recover(cli: &Cli) -> u8 {
             .recover(&catalog, &homes)
             .map_err(|_| RealProfileCliError::UnsafeStorage)
     })();
-    result.map_or_else(real_error_code, |_| 0)
+    match result {
+        Ok(report) => {
+            if cli.json {
+                println!(
+                    "{}",
+                    serde_json::json!({
+                        "schemaVersion": 1,
+                        "rolledBack": report.rolled_back,
+                        "completed": report.completed,
+                    })
+                );
+            } else {
+                println!(
+                    "recovery complete: {} rolled back, {} completed",
+                    report.rolled_back, report.completed
+                );
+            }
+            0
+        }
+        Err(error) => render_real_error(error),
+    }
 }
 
-fn run_list(cli: &Cli) -> u8 {
+struct ListEntry {
+    name: String,
+    version: String,
+    hint: String,
+    activity: String,
+    selected: bool,
+}
+
+fn run_list(cli: &Cli, plain: bool) -> u8 {
     let result = (|| {
         let catalog = catalog_adapter(cli)?;
+        let selected = active_profile_store(cli)
+            .map_err(|_| ProfileWorkflowError::HomeUnavailable)?
+            .load()
+            .map_err(|_| ProfileWorkflowError::HomeUnavailable)?;
         let mut profiles = catalog
             .profiles()
             .map_err(|_| ProfileWorkflowError::CatalogReserveFailed)?;
         profiles.sort_by(|left, right| left.name.as_str().cmp(right.name.as_str()));
+        let entries = profiles
+            .iter()
+            .map(|profile| ListEntry {
+                name: profile.name.as_str().to_owned(),
+                version: profile
+                    .client_version_at_capture
+                    .clone()
+                    .unwrap_or_else(|| "-".to_owned()),
+                hint: profile
+                    .account_hint
+                    .clone()
+                    .unwrap_or_else(|| "-".to_owned()),
+                activity: format_activity(profile.last_activity_at),
+                selected: selected.as_deref() == Some(profile.name.as_str()),
+            })
+            .collect::<Vec<_>>();
         if cli.json {
             let values: Vec<_> = profiles
                 .iter()
@@ -343,6 +632,11 @@ fn run_list(cli: &Cli) -> u8 {
                         "name": profile.name.as_str(),
                         "status": profile.status.as_str(),
                         "clientVersion": profile.client_version_at_capture,
+                        "accountHint": profile.account_hint.as_deref(),
+                        "selected": selected.as_deref() == Some(profile.name.as_str()),
+                        "lastActivityAt": profile
+                            .last_activity_at
+                            .map(time::OffsetDateTime::unix_timestamp),
                     })
                 })
                 .collect();
@@ -354,28 +648,330 @@ fn run_list(cli: &Cli) -> u8 {
                 }))
                 .map_err(|_| ProfileWorkflowError::CatalogReserveFailed)?
             );
-        } else if profiles.is_empty() {
+        } else if entries.is_empty() {
             println!("no profiles");
+        } else if cfg!(feature = "profile-cli")
+            && !plain
+            && stdin_is_terminal()
+            && stdout_is_terminal()
+        {
+            #[cfg(feature = "profile-cli")]
+            return Ok(Some(run_interactive_list(cli, &entries)));
         } else {
-            for profile in profiles {
+            println!("   NAME\tACCOUNT\tVERSION\tLAST ACTIVITY");
+            for entry in entries {
                 println!(
-                    "{}\t{}\t{}",
-                    profile.name.as_str(),
-                    profile.status.as_str(),
-                    profile.client_version_at_capture.as_deref().unwrap_or("-")
+                    "{} {}\t{}\t{}\t{}",
+                    if entry.selected { "->" } else { "  " },
+                    entry.name,
+                    entry.hint,
+                    entry.version,
+                    entry.activity
                 );
             }
         }
-        Ok(())
+        Ok(None)
     })();
     match result {
-        Ok(()) => 0,
+        Ok(Some(code)) => code,
+        Ok(None) => 0,
         Err(ProfileWorkflowError::HomeUnavailable) => 8,
         Err(_) => 11,
     }
 }
 
-#[cfg(feature = "experimental-real-profile-cli")]
+fn format_activity(activity: Option<OffsetDateTime>) -> String {
+    let Some(activity) = activity else {
+        return "-".to_owned();
+    };
+    let seconds = (OffsetDateTime::now_utc() - activity)
+        .whole_seconds()
+        .max(0);
+    match seconds {
+        0..=59 => "Now".to_owned(),
+        60..=3_599 => format!("{}m ago", seconds / 60),
+        3_600..=86_399 => format!("{}h ago", seconds / 3_600),
+        _ => format!("{}d ago", seconds / 86_400),
+    }
+}
+
+#[cfg(feature = "profile-cli")]
+fn run_interactive_list(cli: &Cli, entries: &[ListEntry]) -> u8 {
+    let mut selected_index = entries.iter().position(|entry| entry.selected).unwrap_or(0);
+    if terminal::enable_raw_mode().is_err() {
+        return 11;
+    }
+    let _guard = RawModeGuard;
+    let mut stdout = io::stdout();
+    let mut rendered = false;
+    loop {
+        if render_interactive_list(&mut stdout, entries, selected_index, rendered).is_err() {
+            return 11;
+        }
+        rendered = true;
+        let Ok(current_event) = event::read() else {
+            return 11;
+        };
+        let Event::Key(key) = current_event else {
+            continue;
+        };
+        if key.kind != KeyEventKind::Press {
+            continue;
+        }
+        match key.code {
+            KeyCode::Up => {
+                selected_index = selected_index
+                    .checked_sub(1)
+                    .unwrap_or(entries.len().saturating_sub(1));
+            }
+            KeyCode::Down => selected_index = (selected_index + 1) % entries.len(),
+            KeyCode::Enter => {
+                let name = entries[selected_index].name.clone();
+                let _ = terminal::disable_raw_mode();
+                let _ = execute!(stdout, cursor::Show);
+                let _ = write!(stdout, "\r\n");
+                let _ = stdout.flush();
+                return run_switch(cli, &name, None);
+            }
+            KeyCode::Char('c' | 'd') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                let _ = write!(stdout, "\r\n");
+                let _ = stdout.flush();
+                return 0;
+            }
+            KeyCode::Esc | KeyCode::Left | KeyCode::Backspace | KeyCode::Char('q' | 'Q') => {
+                let _ = write!(stdout, "\r\n");
+                let _ = stdout.flush();
+                return 0;
+            }
+            _ => {}
+        }
+    }
+}
+
+#[cfg(feature = "profile-cli")]
+fn render_interactive_list(
+    stdout: &mut io::Stdout,
+    entries: &[ListEntry],
+    selected_index: usize,
+    redraw: bool,
+) -> io::Result<()> {
+    let line_count = u16::try_from(entries.len().saturating_add(3)).unwrap_or(u16::MAX);
+    if redraw {
+        execute!(stdout, cursor::MoveUp(line_count))?;
+    } else {
+        execute!(stdout, cursor::Hide)?;
+    }
+    execute!(
+        stdout,
+        cursor::MoveToColumn(0),
+        terminal::Clear(ClearType::CurrentLine)
+    )?;
+    write!(stdout, "Select an account  ↑/↓ move · Enter switch\r\n")?;
+    execute!(stdout, terminal::Clear(ClearType::CurrentLine))?;
+    write!(
+        stdout,
+        "  {:<10} {:<24} {:<8} LAST ACTIVITY\r\n",
+        "NAME", "ACCOUNT", "VERSION"
+    )?;
+    for (index, entry) in entries.iter().enumerate() {
+        execute!(
+            stdout,
+            cursor::MoveToColumn(0),
+            terminal::Clear(ClearType::CurrentLine)
+        )?;
+        write!(
+            stdout,
+            "{} {} {:<10} {:<24} {:<8} {}\r\n",
+            if index == selected_index { ">" } else { " " },
+            if entry.selected { "●" } else { " " },
+            entry.name,
+            entry.hint,
+            entry.version,
+            entry.activity
+        )?;
+    }
+    execute!(
+        stdout,
+        cursor::MoveToColumn(0),
+        terminal::Clear(ClearType::CurrentLine)
+    )?;
+    write!(stdout, "Esc/q/Ctrl+C exit\r\n")?;
+    stdout.flush()
+}
+
+#[cfg(feature = "profile-cli")]
+struct RawModeGuard;
+
+#[cfg(feature = "profile-cli")]
+impl Drop for RawModeGuard {
+    fn drop(&mut self) {
+        let _ = terminal::disable_raw_mode();
+        let _ = execute!(io::stdout(), cursor::Show);
+    }
+}
+
+#[cfg(feature = "profile-cli")]
+fn stdin_is_terminal() -> bool {
+    io::stdin().is_terminal()
+}
+
+#[cfg(not(feature = "profile-cli"))]
+const fn stdin_is_terminal() -> bool {
+    false
+}
+
+#[cfg(feature = "profile-cli")]
+fn stdout_is_terminal() -> bool {
+    io::stdout().is_terminal()
+}
+
+#[cfg(not(feature = "profile-cli"))]
+const fn stdout_is_terminal() -> bool {
+    false
+}
+
+#[cfg(feature = "profile-cli")]
+fn run_switch(cli: &Cli, name: &str, explicit_client: Option<&Path>) -> u8 {
+    let result = (|| {
+        let (_client, _search_path, client_version) = verified_client(explicit_client)?;
+        let (catalog, homes) =
+            experimental_adapters(cli).map_err(|_| RealProfileCliError::UnsafeStorage)?;
+        let target = catalog
+            .profile(name)
+            .map_err(|_| RealProfileCliError::UnsafeStorage)?
+            .ok_or(RealProfileCliError::ProfileConflict)?;
+        require_ready_profile(&target).map_err(|_| RealProfileCliError::ProfileConflict)?;
+        if target.client_version_at_capture.as_deref() != Some(client_version.as_str()) {
+            return Err(RealProfileCliError::UnsupportedClient);
+        }
+        let home = std::env::var_os("HOME")
+            .map(PathBuf::from)
+            .ok_or(RealProfileCliError::UnsafeStorage)?;
+        let official = OfficialCredentialSourceFiles::new(home)
+            .map_err(|_| RealProfileCliError::UnsafeStorage)?;
+        let provider = AntigravityCredentialEnvelope;
+        let active = active_profile_store(cli).map_err(|_| RealProfileCliError::UnsafeStorage)?;
+        let rollback = official
+            .read(Path::new(ANTIGRAVITY_TOKEN_RELATIVE_PATH), 16 * 1024)
+            .map_err(|_| RealProfileCliError::UnsafeStorage)?;
+
+        if let Some(previous_name) = active
+            .load()
+            .map_err(|_| RealProfileCliError::UnsafeStorage)?
+            .filter(|previous| previous != name)
+        {
+            let previous = catalog
+                .profile(&previous_name)
+                .map_err(|_| RealProfileCliError::UnsafeStorage)?
+                .ok_or(RealProfileCliError::ProfileConflict)?;
+            require_ready_profile(&previous).map_err(|_| RealProfileCliError::ProfileConflict)?;
+            let current = official
+                .read(Path::new(ANTIGRAVITY_TOKEN_RELATIVE_PATH), 16 * 1024)
+                .map_err(|_| RealProfileCliError::UnsafeStorage)?;
+            let refresh = provider
+                .extract_refresh(
+                    &client_version,
+                    OpaqueSecretBytes::new(current.into_secret_bytes(), 16 * 1024)
+                        .map_err(map_credential_error)?,
+                )
+                .map_err(map_credential_error)?;
+            let previous_environment = homes
+                .prepare(previous.id)
+                .map_err(|_| RealProfileCliError::UnsafeStorage)?;
+            let previous_files = ProfileCredentialFiles::new(previous_environment.home)
+                .map_err(|_| RealProfileCliError::UnsafeStorage)?;
+            let plan = provider
+                .build_plan(&client_version, &refresh)
+                .map_err(map_credential_error)?;
+            CredentialFilePort::materialize(&previous_files, &plan.relative_path, &plan.envelope)
+                .map_err(map_credential_error)?;
+        }
+
+        let target_environment = homes
+            .prepare(target.id)
+            .map_err(|_| RealProfileCliError::UnsafeStorage)?;
+        let target_files = ProfileCredentialFiles::new(target_environment.home)
+            .map_err(|_| RealProfileCliError::UnsafeStorage)?;
+        let stored = CredentialFilePort::read(
+            &target_files,
+            Path::new(ANTIGRAVITY_TOKEN_RELATIVE_PATH),
+            16 * 1024,
+        )
+        .map_err(map_credential_error)?;
+        let refresh = provider
+            .extract_refresh(&client_version, stored)
+            .map_err(map_credential_error)?;
+        let plan = provider
+            .build_plan(&client_version, &refresh)
+            .map_err(map_credential_error)?;
+        let envelope = OpaqueCredentialBytes::new(plan.envelope.into_secret_bytes(), 16 * 1024)
+            .map_err(|_| RealProfileCliError::UnsafeStorage)?;
+        official
+            .materialize(&plan.relative_path, &envelope)
+            .map_err(|_| RealProfileCliError::UnsafeStorage)?;
+        if active.save(name).is_err() {
+            official
+                .materialize(&plan.relative_path, &rollback)
+                .map_err(|_| RealProfileCliError::UnsafeStorage)?;
+            return Err(RealProfileCliError::UnsafeStorage);
+        }
+        catalog
+            .mark_activity(target.id)
+            .map_err(|_| RealProfileCliError::Internal)?;
+        Ok(())
+    })();
+    match result {
+        Ok(()) => {
+            if cli.json {
+                println!(
+                    "{}",
+                    serde_json::json!({"schemaVersion": 1, "profile": name, "selected": true})
+                );
+            } else {
+                println!("Switched to {name}. Run `agy` to start.");
+            }
+            0
+        }
+        Err(error) => render_real_error(error),
+    }
+}
+
+#[cfg(feature = "profile-cli")]
+fn run_hint(cli: &Cli, name: &str, account_hint: &str) -> u8 {
+    let result = (|| {
+        if !account_hint.contains('*') || !account_hint.contains('@') {
+            return Err(RealProfileCliError::ProfileConflict);
+        }
+        let catalog = catalog_adapter(cli).map_err(|_| RealProfileCliError::UnsafeStorage)?;
+        let profile = catalog
+            .profile(name)
+            .map_err(|_| RealProfileCliError::UnsafeStorage)?
+            .ok_or(RealProfileCliError::ProfileConflict)?;
+        catalog
+            .set_account_hint(profile.id, Some(account_hint.to_owned()))
+            .map_err(|_| RealProfileCliError::ProfileConflict)
+    })();
+    match result {
+        Ok(()) => {
+            if cli.json {
+                println!(
+                    "{}",
+                    serde_json::json!({
+                        "schemaVersion": 1,
+                        "profile": name,
+                        "accountHint": account_hint,
+                    })
+                );
+            } else {
+                println!("account hint updated: {name}");
+            }
+            0
+        }
+        Err(error) => render_real_error(error),
+    }
+}
+
+#[cfg(feature = "profile-cli")]
 fn run_experimental_real_exec(
     cli: &Cli,
     name: &str,
@@ -424,13 +1020,17 @@ fn run_experimental_real_exec(
             client: &client,
             lock: &lock,
         };
-        run_profile_credential_session(&client_version, &refresh, arguments, &ports, 16 * 1024)
-            .map(|outcome| outcome.exit_code)
-            .map_err(map_credential_error)
+        let outcome =
+            run_profile_credential_session(&client_version, &refresh, arguments, &ports, 16 * 1024)
+                .map_err(map_credential_error)?;
+        catalog
+            .mark_activity(profile.id)
+            .map_err(|_| RealProfileCliError::Internal)?;
+        Ok(outcome.exit_code)
     })();
     match result {
         Ok(code) => u8::try_from(code).unwrap_or(11),
-        Err(error) => real_error_code(error),
+        Err(error) => render_real_error(error),
     }
 }
 
@@ -457,10 +1057,7 @@ impl ProfileClientPort for InProcessFakeClient {
     }
 }
 
-#[cfg(any(
-    feature = "experimental-fake-client",
-    feature = "experimental-real-profile-cli"
-))]
+#[cfg(any(feature = "experimental-fake-client", feature = "profile-cli"))]
 fn experimental_adapters(
     cli: &Cli,
 ) -> Result<(RegistryCatalog, ManagedProfileHomes), ProfileWorkflowError> {
@@ -493,6 +1090,12 @@ fn experimental_data_root(cli: &Cli) -> Result<PathBuf, ProfileWorkflowError> {
         .clone()
         .or_else(default_data_dir)
         .ok_or(ProfileWorkflowError::HomeUnavailable)
+}
+
+fn active_profile_store(cli: &Cli) -> Result<ActiveProfileStore, ProfileWorkflowError> {
+    let root = experimental_data_root(cli)?;
+    ActiveProfileStore::new(root.join("active.json"))
+        .map_err(|_| ProfileWorkflowError::HomeUnavailable)
 }
 
 #[cfg(feature = "experimental-fake-client")]

@@ -1,6 +1,10 @@
 # Open Questions and Research Backlog
 
-## Must resolve before real profile mutation
+## Resolved for Linux SSH 1.1.2 and 1.1.3
+
+The isolated-home and default-token activation contracts are approved by ADRs 0007 and 0008.
+
+## Remaining compatibility research
 
 1. Which minimal cleared environment makes Linux SSH homes independent for `agy 1.1.2`?
 2. Which paths and keyring entries contain authentication state on Linux, macOS, Windows, and SSH?

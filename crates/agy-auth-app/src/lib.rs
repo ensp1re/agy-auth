@@ -89,6 +89,7 @@ pub fn new_pending_profile(name: &str) -> Result<Profile, ProfileWorkflowError> 
         account_hint: None,
         created_at: now,
         updated_at: now,
+        last_activity_at: None,
         client_version_at_capture: None,
         schema_fingerprint: None,
         status: ProfileStatus::Pending,
@@ -316,10 +317,10 @@ pub fn doctor(
     registry: &impl DoctorRegistryProbe,
 ) -> DoctorReport {
     let client = client.probe();
-    let reason = if cfg!(target_os = "linux")
-        && matches!(client.version.as_deref(), Some("1.1.2" | "1.1.3"))
-    {
-        "verified_contract_not_enabled"
+    let verified =
+        cfg!(target_os = "linux") && matches!(client.version.as_deref(), Some("1.1.2" | "1.1.3"));
+    let reason = if verified {
+        "verified_contract_enabled"
     } else {
         "no_verified_antigravity_profile_contract"
     };
@@ -334,8 +335,8 @@ pub fn doctor(
         client,
         registry: registry.probe(),
         capabilities: CapabilityDiagnostic {
-            profile_switching: false,
-            auth_state_mutation: false,
+            profile_switching: verified,
+            auth_state_mutation: verified,
             reason,
         },
     }
@@ -388,12 +389,18 @@ mod tests {
     fn report_is_explicitly_diagnostics_only() {
         let report = doctor(&Client, &Registry);
         assert_eq!(report.exit_code(), 0);
-        assert!(!report.capabilities.profile_switching);
-        assert!(!report.capabilities.auth_state_mutation);
+        assert_eq!(
+            report.capabilities.profile_switching,
+            cfg!(target_os = "linux")
+        );
+        assert_eq!(
+            report.capabilities.auth_state_mutation,
+            cfg!(target_os = "linux")
+        );
         assert_eq!(
             report.capabilities.reason,
             if cfg!(target_os = "linux") {
-                "verified_contract_not_enabled"
+                "verified_contract_enabled"
             } else {
                 "no_verified_antigravity_profile_contract"
             }
@@ -432,6 +439,7 @@ mod tests {
             account_hint: None,
             created_at: now,
             updated_at: now,
+            last_activity_at: None,
             client_version_at_capture: None,
             schema_fingerprint: None,
             status,

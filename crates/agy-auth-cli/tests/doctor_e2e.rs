@@ -69,12 +69,18 @@ fn json_contract_is_versioned_and_diagnostics_only() {
     );
     assert_eq!(report["client"]["version"], "1.1.2");
     assert_eq!(report["registry"]["dataDirectoryState"], "absent");
-    assert_eq!(report["capabilities"]["profileSwitching"], false);
-    assert_eq!(report["capabilities"]["authStateMutation"], false);
+    assert_eq!(
+        report["capabilities"]["profileSwitching"],
+        cfg!(target_os = "linux")
+    );
+    assert_eq!(
+        report["capabilities"]["authStateMutation"],
+        cfg!(target_os = "linux")
+    );
     assert_eq!(
         report["capabilities"]["reason"],
         if cfg!(target_os = "linux") {
-            "verified_contract_not_enabled"
+            "verified_contract_enabled"
         } else {
             "no_verified_antigravity_profile_contract"
         }
@@ -92,10 +98,18 @@ fn human_output_explains_unsupported_switching() {
     assert!(output.status.success());
     let stdout = String::from_utf8(output.stdout).expect("UTF-8 output");
     assert!(stdout.contains("client: agy 1.1.2"));
-    assert!(stdout.contains("profile switching: unsupported"));
-    assert!(stdout.contains("authentication mutation: disabled"));
     assert!(stdout.contains(if cfg!(target_os = "linux") {
-        "reason: verified_contract_not_enabled"
+        "profile switching: supported"
+    } else {
+        "profile switching: unsupported"
+    }));
+    assert!(stdout.contains(if cfg!(target_os = "linux") {
+        "authentication mutation: enabled"
+    } else {
+        "authentication mutation: disabled"
+    }));
+    assert!(stdout.contains(if cfg!(target_os = "linux") {
+        "reason: verified_contract_enabled"
     } else {
         "reason: no_verified_antigravity_profile_contract"
     }));

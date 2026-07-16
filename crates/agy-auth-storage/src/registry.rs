@@ -96,6 +96,31 @@ impl RegistryCatalog {
         self.registry
             .update(move |registry| registry.remove_pending(profile_id))
     }
+
+    /// Set a masked account hint for one registered profile.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the profile is missing, the hint is not masked, or persistence fails.
+    pub fn set_account_hint(
+        &self,
+        profile_id: ProfileId,
+        account_hint: Option<String>,
+    ) -> Result<(), RegistryStoreError> {
+        self.registry.update(move |registry| {
+            registry.set_account_hint(profile_id, account_hint, OffsetDateTime::now_utc())
+        })
+    }
+
+    /// Record successful login, switch, or execution activity.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the profile is missing/not ready or persistence fails.
+    pub fn mark_activity(&self, profile_id: ProfileId) -> Result<(), RegistryStoreError> {
+        self.registry
+            .update(move |registry| registry.mark_activity(profile_id, OffsetDateTime::now_utc()))
+    }
 }
 
 impl ProfileCatalogPort for RegistryCatalog {
@@ -506,6 +531,8 @@ struct ProfileDocument {
     account_hint: Option<String>,
     created_at: String,
     updated_at: String,
+    #[serde(default)]
+    last_activity_at: Option<String>,
     client_version_at_capture: Option<String>,
     schema_fingerprint: Option<String>,
     status: StatusDocument,
@@ -530,6 +557,10 @@ impl ProfileDocument {
             account_hint: profile.account_hint.clone(),
             created_at: profile.created_at.format(&Rfc3339)?,
             updated_at: profile.updated_at.format(&Rfc3339)?,
+            last_activity_at: profile
+                .last_activity_at
+                .map(|activity| activity.format(&Rfc3339))
+                .transpose()?,
             client_version_at_capture: profile.client_version_at_capture.clone(),
             schema_fingerprint: profile.schema_fingerprint.clone(),
             status: profile.status.into(),
@@ -553,6 +584,10 @@ impl ProfileDocument {
             account_hint: self.account_hint,
             created_at: OffsetDateTime::parse(&self.created_at, &Rfc3339)?,
             updated_at: OffsetDateTime::parse(&self.updated_at, &Rfc3339)?,
+            last_activity_at: self
+                .last_activity_at
+                .map(|activity| OffsetDateTime::parse(&activity, &Rfc3339))
+                .transpose()?,
             client_version_at_capture: self.client_version_at_capture,
             schema_fingerprint: self.schema_fingerprint,
             status: self.status.into(),
@@ -689,6 +724,7 @@ mod tests {
             account_hint: Some("t***@example.invalid".to_owned()),
             created_at: now,
             updated_at: now,
+            last_activity_at: None,
             client_version_at_capture: Some("TEST_CLIENT_VERSION".to_owned()),
             schema_fingerprint: Some("TEST_SCHEMA_FINGERPRINT".to_owned()),
             status: ProfileStatus::Ready,
