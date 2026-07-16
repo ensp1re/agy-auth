@@ -1,0 +1,5 @@
+#!/usr/bin/env sh
+set -eu
+
+printf '%s\n' "husky: building agy-auth release binary before commit"
+cargo build --locked --release -p agy-auth-cli

@@ -14,6 +14,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Allowed post-release maintenance commits while still requiring the published tag to remain in
   main's history.
 
+### Added
+
+- Repository-local Husky pre-commit hook that requires a successful locked release build before
+  every commit.
+
 ## [0.2.0-rc.2] - 2026-07-16
 
 ### Fixed

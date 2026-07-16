@@ -51,6 +51,7 @@ issue, test, commit, pull request, or CI log.
 
 - Git
 - Python 3
+- Node.js 18+ and npm for repository-local Husky hooks
 - Rust toolchain pinned by [`rust-toolchain.toml`](rust-toolchain.toml)
 - Linux for the currently verified profile workflow
 - Optional official `agy` installation for explicitly gated local integration tests
@@ -60,9 +61,19 @@ Clone and verify the repository:
 ```bash
 git clone https://github.com/ensp1re/agy-auth.git
 cd agy-auth
+npm install
 python3 scripts/harness/context.py
 python3 scripts/check.py
 ```
+
+`npm install` runs Husky's `prepare` script and configures the repository-local pre-commit hook. The
+hook blocks commits unless this command succeeds:
+
+```bash
+cargo build --locked --release -p agy-auth-cli
+```
+
+Do not bypass the hook with `--no-verify`. Run the failing build directly and fix its error.
 
 Do not run integration tests against real credentials unless the test explicitly documents that
 requirement and you control every account and system involved.

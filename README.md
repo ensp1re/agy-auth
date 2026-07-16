@@ -217,6 +217,15 @@ Please read [SECURITY.md](SECURITY.md) before reporting a vulnerability.
 
 ## Development
 
+Install repository tooling once to enable the Husky pre-commit hook:
+
+```bash
+npm install
+```
+
+The hook requires Node.js 18+ and blocks commits unless the locked release binary builds
+successfully.
+
 Run the complete local gate:
 
 ```bash

@@ -1,0 +1,16 @@
+{
+  "name": "agy-auth-repository",
+  "version": "0.2.0-rc.2",
+  "private": true,
+  "description": "Repository tooling for agy-auth",
+  "scripts": {
+    "build": "cargo build --locked --release -p agy-auth-cli",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "husky": "9.1.7"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
