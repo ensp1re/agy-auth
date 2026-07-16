@@ -7,7 +7,7 @@ use agy_auth_domain::ProviderKind;
 #[cfg(feature = "experimental-profile-credentials")]
 use agy_auth_process::{
     DiscoveredClient, InteractiveCompletion, IsolatedClientEnvironment, run_interactive_isolated,
-    run_interactive_isolated_until_file,
+    run_interactive_isolated_until,
 };
 use agy_auth_process::{DiscoveryError, OfficialClient, ProcessError, discover_client};
 use std::ffi::OsString;
@@ -83,26 +83,52 @@ impl AntigravityInteractiveSession {
         })
     }
 
-    /// Run official `agy` until it persists the verified credential path.
+    /// Run official `agy` until credentials and consumer onboarding are complete.
     ///
     /// # Errors
     ///
     /// Returns a stable workflow error when enrollment exits early, times out, or cannot be
     /// monitored safely.
     pub fn enroll_until_credential(&self) -> Result<(), CredentialWorkflowError> {
-        match run_interactive_isolated_until_file(
+        match run_interactive_isolated_until(
             self.client.executable(),
             std::iter::empty::<&str>(),
             &self.environment,
-            std::path::Path::new(ANTIGRAVITY_TOKEN_RELATIVE_PATH),
             Duration::from_secs(15 * 60),
+            enrollment_complete,
         )
         .map_err(|_| CredentialWorkflowError::ClientExecutionFailed)?
         {
-            InteractiveCompletion::FileCreated => Ok(()),
+            InteractiveCompletion::Completed => Ok(()),
             InteractiveCompletion::Exited(_) => Err(CredentialWorkflowError::ClientExecutionFailed),
         }
     }
+}
+
+#[cfg(feature = "experimental-profile-credentials")]
+fn enrollment_complete(home: &std::path::Path) -> bool {
+    let token = home.join(ANTIGRAVITY_TOKEN_RELATIVE_PATH);
+    let Ok(metadata) = std::fs::symlink_metadata(token) else {
+        return false;
+    };
+    if metadata.file_type().is_symlink() || !metadata.is_file() || metadata.len() == 0 {
+        return false;
+    }
+    let onboarding = home.join(".gemini/antigravity-cli/cache/onboarding.json");
+    let Ok(metadata) = std::fs::symlink_metadata(&onboarding) else {
+        return false;
+    };
+    if metadata.file_type().is_symlink() || !metadata.is_file() || metadata.len() > 4096 {
+        return false;
+    }
+    let Ok(bytes) = std::fs::read(onboarding) else {
+        return false;
+    };
+    let Ok(value) = serde_json::from_slice::<serde_json::Value>(&bytes) else {
+        return false;
+    };
+    value["consumerOnboardingComplete"].as_bool() == Some(true)
+        && value["onboardingComplete"].as_bool() == Some(true)
 }
 
 #[cfg(feature = "experimental-profile-credentials")]

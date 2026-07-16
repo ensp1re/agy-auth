@@ -125,6 +125,47 @@ impl ProfileCredentialFiles {
         Ok(Self { profile_home })
     }
 
+    /// Restrict existing credential ancestor directories to owner-only access.
+    ///
+    /// This is intended for a freshly prepared managed home after the official client creates its
+    /// own state directories. Links, foreign ownership, non-directories, and paths outside the
+    /// managed home remain rejected.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the relative path or any existing ancestor is unsafe.
+    pub fn harden_credential_ancestors(
+        &self,
+        relative_path: &Path,
+    ) -> Result<(), CredentialFileError> {
+        validate_relative_path(relative_path)?;
+        validate_secure_directory(&self.profile_home)?;
+        let parent = self
+            .profile_home
+            .join(relative_path)
+            .parent()
+            .ok_or(CredentialFileError::InvalidRelativePath)?
+            .to_path_buf();
+        let relative = parent
+            .strip_prefix(&self.profile_home)
+            .map_err(|_| CredentialFileError::InvalidRelativePath)?;
+        let mut current = self.profile_home.clone();
+        for component in relative.components() {
+            let Component::Normal(value) = component else {
+                return Err(CredentialFileError::InvalidRelativePath);
+            };
+            current.push(value);
+            validate_trusted_source_directory(&current)?;
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::PermissionsExt;
+                fs::set_permissions(&current, fs::Permissions::from_mode(0o700))?;
+            }
+            validate_secure_directory(&current)?;
+        }
+        Ok(())
+    }
+
     /// Atomically write opaque bytes at a safe home-relative path.
     ///
     /// Parent directories are created owner-only. The destination is never truncated in place.

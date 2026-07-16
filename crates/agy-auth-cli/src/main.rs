@@ -82,8 +82,8 @@ enum Commands {
     /// Save the account currently logged into the official agy home.
     #[cfg(feature = "profile-cli")]
     Add {
-        /// Non-secret profile name.
-        name: String,
+        /// Non-secret profile name; omitted names are generated automatically.
+        name: Option<String>,
         /// Read from an alternate official agy home.
         #[arg(long, value_name = "PATH")]
         from_home: Option<PathBuf>,
@@ -94,8 +94,8 @@ enum Commands {
     /// Enroll another account through official agy in a new isolated home.
     #[cfg(feature = "profile-cli")]
     Login {
-        /// Non-secret profile name.
-        name: String,
+        /// Non-secret profile name; omitted names are generated automatically.
+        name: Option<String>,
         /// Use an explicit Antigravity CLI executable.
         #[arg(long, value_name = "PATH")]
         client: Option<PathBuf>,
@@ -199,9 +199,14 @@ fn main() {
             name,
             from_home,
             client,
-        } => run_add(&cli, name, from_home.as_deref(), client.as_deref()),
+        } => run_add(
+            &cli,
+            name.as_deref(),
+            from_home.as_deref(),
+            client.as_deref(),
+        ),
         #[cfg(feature = "profile-cli")]
-        Commands::Login { name, client } => run_login(&cli, name, client.as_deref()),
+        Commands::Login { name, client } => run_login(&cli, name.as_deref(), client.as_deref()),
         #[cfg(feature = "profile-cli")]
         Commands::Switch { name, client } => {
             run_experimental_real_exec(&cli, name, client.as_deref(), &[])
@@ -398,25 +403,38 @@ fn run_experimental_import(
 }
 
 #[cfg(feature = "profile-cli")]
-fn run_add(cli: &Cli, name: &str, from_home: Option<&Path>, explicit_client: Option<&Path>) -> u8 {
+fn run_add(
+    cli: &Cli,
+    name: Option<&str>,
+    from_home: Option<&Path>,
+    explicit_client: Option<&Path>,
+) -> u8 {
     let Some(home) = from_home
         .map(Path::to_owned)
         .or_else(|| std::env::var_os("HOME").map(PathBuf::from))
     else {
         return render_real_error(RealProfileCliError::UnsafeStorage);
     };
-    run_experimental_import(cli, name, &home, explicit_client)
+    let name = match resolve_profile_name(cli, name) {
+        Ok(name) => name,
+        Err(error) => return render_real_error(error),
+    };
+    run_experimental_import(cli, &name, &home, explicit_client)
 }
 
 #[cfg(feature = "profile-cli")]
-fn run_login(cli: &Cli, name: &str, explicit_client: Option<&Path>) -> u8 {
+fn run_login(cli: &Cli, requested_name: Option<&str>, explicit_client: Option<&Path>) -> u8 {
     if cli.non_interactive {
         return render_real_error(RealProfileCliError::LoginFailed);
     }
+    let name = match resolve_profile_name(cli, requested_name) {
+        Ok(name) => name,
+        Err(error) => return render_real_error(error),
+    };
     let result = (|| {
         let (explicit_client, search_path, client_version) = verified_client(explicit_client)?;
         let profile =
-            new_pending_profile(name).map_err(|_| RealProfileCliError::ProfileConflict)?;
+            new_pending_profile(&name).map_err(|_| RealProfileCliError::ProfileConflict)?;
         let (catalog, homes) =
             experimental_adapters(cli).map_err(|_| RealProfileCliError::UnsafeStorage)?;
         let root = experimental_data_root(cli).map_err(|_| RealProfileCliError::UnsafeStorage)?;
@@ -445,6 +463,9 @@ fn run_login(cli: &Cli, name: &str, explicit_client: Option<&Path>) -> u8 {
             .enroll_until_credential()
             .map_err(|_| RealProfileCliError::LoginFailed)?;
         let files = ProfileCredentialFiles::new(&environment.home)
+            .map_err(|_| RealProfileCliError::UnsafeStorage)?;
+        files
+            .harden_credential_ancestors(Path::new(ANTIGRAVITY_TOKEN_RELATIVE_PATH))
             .map_err(|_| RealProfileCliError::UnsafeStorage)?;
         let provider = AntigravityCredentialEnvelope;
         let stored = CredentialFilePort::read(
@@ -476,19 +497,40 @@ fn run_login(cli: &Cli, name: &str, explicit_client: Option<&Path>) -> u8 {
                     "{}",
                     serde_json::json!({
                         "schemaVersion": 1,
-                        "profile": name,
+                        "profile": &name,
                         "status": "ready",
                     })
                 );
             } else {
                 println!("Successfully logged in: {name}");
-                println!("Run: agy-auth exec {name}");
+                println!("Switch anytime: agy-auth switch {name}");
                 println!("Help: agy-auth --help");
             }
             0
         }
         Err(error) => render_real_error(error),
     }
+}
+
+#[cfg(feature = "profile-cli")]
+fn resolve_profile_name(cli: &Cli, requested: Option<&str>) -> Result<String, RealProfileCliError> {
+    if let Some(name) = requested {
+        return Ok(name.to_owned());
+    }
+    let catalog = catalog_adapter(cli).map_err(|_| RealProfileCliError::UnsafeStorage)?;
+    let profiles = catalog
+        .profiles()
+        .map_err(|_| RealProfileCliError::UnsafeStorage)?;
+    for number in 1_u64.. {
+        let candidate = format!("profile{number}");
+        if profiles
+            .iter()
+            .all(|profile| profile.name.as_str() != candidate)
+        {
+            return Ok(candidate);
+        }
+    }
+    unreachable!("u64 profile namespace cannot be exhausted")
 }
 
 #[cfg(feature = "profile-cli")]
