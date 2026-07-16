@@ -1,4 +1,4 @@
-#![cfg(all(feature = "experimental-real-profile-cli", unix))]
+#![cfg(all(feature = "profile-cli", unix))]
 #![doc = "Synthetic end-to-end coverage for hidden real-profile CLI composition."]
 
 use serde_json::Value;
@@ -49,7 +49,7 @@ fn create_and_recover_conflicting_import(
     let interrupted = Command::new(binary)
         .args(["--data-dir"])
         .arg(data)
-        .args(["experimental-import", "work", "--from-home"])
+        .args(["add", "work", "--from-home"])
         .arg(source_home)
         .arg("--client")
         .arg(client)
@@ -65,7 +65,7 @@ fn create_and_recover_conflicting_import(
     let recovered = Command::new(binary)
         .args(["--data-dir"])
         .arg(data)
-        .arg("experimental-recover")
+        .arg("recover")
         .status()
         .expect("recover import");
     assert!(recovered.success());
@@ -101,7 +101,7 @@ fn imports_secure_official_home_and_executes_direct_argv() {
     let imported = Command::new(binary)
         .args(["--data-dir"])
         .arg(&data)
-        .args(["experimental-import", "work", "--from-home"])
+        .args(["add", "work", "--from-home"])
         .arg(&source_home)
         .arg("--client")
         .arg(&client)
@@ -153,7 +153,7 @@ fn imports_secure_official_home_and_executes_direct_argv() {
     let executed = Command::new(binary)
         .args(["--data-dir"])
         .arg(&data)
-        .args(["experimental-real-exec", "work", "--client"])
+        .args(["exec", "work", "--client"])
         .arg(&client)
         .arg("--")
         .arg(literal)
@@ -176,7 +176,7 @@ fn imports_secure_official_home_and_executes_direct_argv() {
     let mismatched = Command::new(binary)
         .args(["--data-dir"])
         .arg(&data)
-        .args(["experimental-real-exec", "work", "--client"])
+        .args(["exec", "work", "--client"])
         .arg(&client)
         .status()
         .expect("run mismatched client");

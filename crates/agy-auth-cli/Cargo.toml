@@ -8,13 +8,15 @@ repository.workspace = true
 license.workspace = true
 
 [features]
+default = ["profile-cli"]
 experimental-fake-client = []
 experimental-profile-credentials = [
   "agy-auth-app/experimental-profile-credentials",
   "agy-auth-storage/experimental-profile-credentials",
   "provider-antigravity-cli/experimental-profile-credentials",
 ]
-experimental-real-profile-cli = ["experimental-profile-credentials"]
+profile-cli = ["experimental-profile-credentials"]
+experimental-real-profile-cli = ["profile-cli"]
 
 [[bin]]
 name = "agy-auth"

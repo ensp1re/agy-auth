@@ -8,7 +8,10 @@ mod registry;
 #[cfg(feature = "experimental-profile-credentials")]
 mod session_lock;
 
-pub use credential_files::{CredentialFileError, OpaqueCredentialBytes, ProfileCredentialFiles};
+pub use credential_files::{
+    CredentialFileError, OfficialCredentialSourceFiles, OpaqueCredentialBytes,
+    ProfileCredentialFiles,
+};
 #[cfg(feature = "experimental-profile-credentials")]
 pub use import_transaction::{
     ImportRecoveryReport, ImportTransaction, ImportTransactionError, ImportTransactionJournal,
