@@ -19,7 +19,10 @@ The candidate contract is:
   `.gemini/antigravity-cli/antigravity-oauth-token`.
 
 The candidate uses Apple Security.framework directly. Credential bytes are never passed through
-command-line arguments or rendered in output.
+command-line arguments or rendered in output. Import and switching do not inspect the default
+`~/.gemini` tree on macOS; they access only the official Keychain item and project-owned profile
+data. macOS may show a native Keychain authorization prompt the first time the separately installed
+`agy-auth` binary accesses that item. That operating-system prompt must not be bypassed.
 
 ## Existing evidence
 
@@ -54,6 +57,7 @@ The contract may be promoted only after all of these pass:
 8. An induced selected-metadata failure restores the original Keychain credential.
 9. No credential value appears in stdout, stderr, process arguments, logs, registry metadata, or
    Git state.
+10. `add` and `switch` do not read or write the default `~/.gemini` tree.
 
 Until this gate passes and an ADR records the evidence, normal macOS capability reporting remains
 disabled and the candidate requires the explicit environment opt-in.
