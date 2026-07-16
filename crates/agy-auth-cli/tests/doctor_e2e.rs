@@ -71,6 +71,14 @@ fn json_contract_is_versioned_and_diagnostics_only() {
     assert_eq!(report["registry"]["dataDirectoryState"], "absent");
     assert_eq!(report["capabilities"]["profileSwitching"], false);
     assert_eq!(report["capabilities"]["authStateMutation"], false);
+    assert_eq!(
+        report["capabilities"]["reason"],
+        if cfg!(target_os = "linux") {
+            "verified_contract_not_enabled"
+        } else {
+            "no_verified_antigravity_profile_contract"
+        }
+    );
     assert!(!data_root.exists());
     fs::remove_dir_all(root).expect("remove fixture root");
 }
@@ -86,6 +94,11 @@ fn human_output_explains_unsupported_switching() {
     assert!(stdout.contains("client: agy 1.1.2"));
     assert!(stdout.contains("profile switching: unsupported"));
     assert!(stdout.contains("authentication mutation: disabled"));
+    assert!(stdout.contains(if cfg!(target_os = "linux") {
+        "reason: verified_contract_not_enabled"
+    } else {
+        "reason: no_verified_antigravity_profile_contract"
+    }));
     fs::remove_dir_all(root).expect("remove fixture root");
 }
 

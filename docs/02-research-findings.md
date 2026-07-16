@@ -29,31 +29,29 @@ evidence of an authentication isolation contract.
 ## Capability inventory conclusion
 
 For `agy 1.1.2`, the documented public surface supports authentication performed by the official
-client and destructive logout, but not third-party account selection. The previous proposed
-file-backed switching strategy has no current official contract and is withdrawn. `agy-auth` remains
-diagnostics-only while dedicated-account, non-secret platform research continues.
+client and destructive logout, but not account selection. Subsequent authorized reverse engineering
+identified and verified a Linux SSH file-fallback contract beneath the effective home. The contract
+is unofficial and version-scoped, but two-account runtime validation now supports implementing
+capability-gated profile commands.
 
-Two isolated Linux attempts subsequently stopped because `agy 1.1.2` silently recognized an existing
-identity before dedicated login, including a corrected attempt with a clean environment, dedicated
-working directory, fresh home/runtime, D-Bus, and Secret Service. The mechanism remains unknown by
-design because credential-state inspection is outside the approved boundary. ADR 0006 therefore
-keeps the product diagnostics-only until a supported profile contract exists.
+Earlier isolated Linux attempts silently recognized an existing identity because their Secret
+Service/UID boundary was not independent. ADR 0007 superseded that conclusion. A fresh-UID enrollment
+plus two disposable SSH file-backed homes proved distinct concurrent identities, restart persistence,
+forced refresh, clean-home non-reuse, and scoped teardown. See the July 16 two-account validation.
 
 ## What remains unverified
 
 - official account/profile selection commands;
-- complete credential and keyring storage by platform and mode;
-- whether any home override isolates credentials as well as settings;
-- refresh behavior after selection;
+- desktop keyring behavior outside the verified Linux SSH file mode;
 - interaction with running `agy` and Antigravity desktop processes;
-- atomic/reversible behavior for any observed file-backed mode;
+- rollback/recovery behavior in the public command composition;
 - compatibility across versions beyond observed `1.1.2`.
 
 ## Security conclusion
 
-Do not harvest or piggyback on CLI OAuth, call private model/quota backends, or infer a contract from
-filenames. The official client performs login, refresh, and requests. Until capability evidence is
-verified, real authentication-state mutation remains disabled.
+Do not call private model/quota backends or infer a contract from filenames. The official client
+performs refresh and requests. The verified integration materializes only the reviewed consumer
+credential envelope and remains fail-closed for other versions and platforms.
 
 ## Primary sources
 
