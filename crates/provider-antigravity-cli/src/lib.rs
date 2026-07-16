@@ -4,6 +4,8 @@ mod credential_envelope;
 
 use agy_auth_app::{ClientDiagnostic, DoctorClientProbe};
 use agy_auth_domain::ProviderKind;
+#[cfg(feature = "experimental-profile-credentials")]
+use agy_auth_process::{DiscoveredClient, IsolatedClientEnvironment, run_interactive_isolated};
 use agy_auth_process::{DiscoveryError, OfficialClient, ProcessError, discover_client};
 use std::ffi::OsString;
 use std::path::PathBuf;
@@ -17,8 +19,8 @@ pub use credential_envelope::{
 
 #[cfg(feature = "experimental-profile-credentials")]
 use agy_auth_app::{
-    CredentialEnvelopePort, CredentialMaterializationPlan, CredentialWorkflowError,
-    OpaqueSecretBytes,
+    CredentialEnvelopePort, CredentialMaterializationPlan, CredentialSessionClientPort,
+    CredentialWorkflowError, ManagedProfileEnvironment, OpaqueSecretBytes,
 };
 
 /// Identify the provider implemented by this adapter.
@@ -31,6 +33,78 @@ pub const fn provider_kind() -> ProviderKind {
 #[cfg(feature = "experimental-profile-credentials")]
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct AntigravityCredentialEnvelope;
+
+/// Experimental real-client session adapter for verified Linux SSH profile homes.
+#[cfg(feature = "experimental-profile-credentials")]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct AntigravityInteractiveSession {
+    client: DiscoveredClient,
+    environment: IsolatedClientEnvironment,
+}
+
+#[cfg(feature = "experimental-profile-credentials")]
+impl AntigravityInteractiveSession {
+    /// Discover `agy` and bind it to one prepared profile environment.
+    ///
+    /// # Errors
+    ///
+    /// Returns a non-secret workflow error when discovery or environment validation fails.
+    pub fn new(
+        explicit_client: Option<&std::path::Path>,
+        search_path: OsString,
+        environment: &ManagedProfileEnvironment,
+        terminal: Option<&str>,
+    ) -> Result<Self, CredentialWorkflowError> {
+        let client = discover_client(
+            OfficialClient::AntigravityCli,
+            explicit_client,
+            Some(&search_path),
+        )
+        .map_err(|_| CredentialWorkflowError::ClientExecutionFailed)?;
+        let isolated = IsolatedClientEnvironment::new(
+            environment.home.clone(),
+            environment.runtime_directory.clone(),
+            search_path,
+        )
+        .map_err(|_| CredentialWorkflowError::ClientExecutionFailed)?
+        .with_ssh_file_fallback();
+        let isolated = match terminal {
+            Some(terminal) => isolated
+                .with_terminal(terminal)
+                .map_err(|_| CredentialWorkflowError::ClientExecutionFailed)?,
+            None => isolated,
+        };
+        Ok(Self {
+            client,
+            environment: isolated,
+        })
+    }
+}
+
+#[cfg(feature = "experimental-profile-credentials")]
+impl CredentialSessionClientPort for AntigravityInteractiveSession {
+    fn execute(&self, arguments: &[OsString]) -> Result<i32, CredentialWorkflowError> {
+        let status =
+            run_interactive_isolated(self.client.executable(), arguments, &self.environment)
+                .map_err(|_| CredentialWorkflowError::ClientExecutionFailed)?;
+        Ok(exit_status_code(status))
+    }
+}
+
+#[cfg(feature = "experimental-profile-credentials")]
+fn exit_status_code(status: std::process::ExitStatus) -> i32 {
+    if let Some(code) = status.code() {
+        return code;
+    }
+    #[cfg(unix)]
+    {
+        use std::os::unix::process::ExitStatusExt;
+        if let Some(signal) = status.signal() {
+            return 128_i32.saturating_add(signal);
+        }
+    }
+    1
+}
 
 #[cfg(feature = "experimental-profile-credentials")]
 impl CredentialEnvelopePort for AntigravityCredentialEnvelope {
@@ -176,6 +250,13 @@ mod tests {
     use std::os::unix::fs::PermissionsExt;
     use std::time::{SystemTime, UNIX_EPOCH};
 
+    #[cfg(feature = "experimental-profile-credentials")]
+    use super::AntigravityInteractiveSession;
+    #[cfg(feature = "experimental-profile-credentials")]
+    use agy_auth_app::{CredentialSessionClientPort, ManagedProfileEnvironment};
+    #[cfg(feature = "experimental-profile-credentials")]
+    use std::ffi::OsString;
+
     #[test]
     fn probe_reports_bounded_version_without_authentication() {
         let directory = std::env::temp_dir().join(format!(
@@ -215,5 +296,67 @@ mod tests {
 
         assert!(!result.found);
         assert_eq!(result.error_code.as_deref(), Some("client_not_found"));
+    }
+
+    #[cfg(feature = "experimental-profile-credentials")]
+    #[test]
+    fn interactive_session_uses_direct_argv_and_ssh_profile_environment() {
+        let directory = std::env::temp_dir().join(format!(
+            "agy-auth-provider-session-{}-{}",
+            std::process::id(),
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .expect("clock after epoch")
+                .as_nanos()
+        ));
+        fs::create_dir(&directory).expect("create fixture directory");
+        let executable = directory.join("agy");
+        let observation = directory.join("observation");
+        let home = directory.join("home");
+        let runtime = directory.join("runtime");
+        for path in [&home, &runtime] {
+            fs::create_dir(path).expect("create isolation directory");
+            fs::set_permissions(path, fs::Permissions::from_mode(0o700))
+                .expect("secure isolation directory");
+        }
+        let mut file = fs::File::create(&executable).expect("create fixture");
+        file.write_all(
+            b"#!/bin/sh\nprintf '%s|%s|%s|%s' \"$2\" \"$HOME\" \"${SSH_CONNECTION-unset}\" \"${USER-unset}\" > \"$1\"\nexit 29\n",
+        )
+        .expect("write fixture");
+        file.sync_all().expect("sync fixture");
+        drop(file);
+        let mut permissions = fs::metadata(&executable).expect("metadata").permissions();
+        permissions.set_mode(0o700);
+        fs::set_permissions(&executable, permissions).expect("set executable");
+
+        let session = AntigravityInteractiveSession::new(
+            Some(&executable),
+            OsString::from("/usr/bin:/bin"),
+            &ManagedProfileEnvironment {
+                home: home.clone(),
+                runtime_directory: runtime,
+            },
+            Some("xterm-256color"),
+        )
+        .expect("session");
+        let literal = "literal; shell syntax is data";
+        let code = session
+            .execute(&[
+                observation.clone().into_os_string(),
+                OsString::from(literal),
+            ])
+            .expect("execute fixture");
+
+        assert_eq!(code, 29);
+        assert_eq!(
+            fs::read_to_string(&observation).expect("read observation"),
+            format!(
+                "{literal}|{}|127.0.0.1 40000 127.0.0.1 22|unset",
+                home.display()
+            )
+        );
+        assert!(!directory.join("shell syntax is data").exists());
+        fs::remove_dir_all(directory).expect("remove fixture directory");
     }
 }

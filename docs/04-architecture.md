@@ -22,6 +22,8 @@ silently mutate authentication state.
 - installed `agy 1.1.2` version probe;
 - non-default experimental workflow connecting the versioned consumer envelope to protected
   profile-home materialization and refreshed-token extraction;
+- non-default interactive session adapter that clears the environment, selects verified SSH
+  file-fallback storage, passes direct argv, and returns the official client exit status;
 - capability gates that keep unverified auth-state behavior disabled.
 
 ## Antigravity provider discovery

@@ -1,5 +1,6 @@
 //! Experimental orchestration for versioned profile credential materialization.
 
+use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 
 /// Opaque secret bytes that cannot be formatted or serialized accidentally.
@@ -100,6 +101,24 @@ pub trait CredentialFilePort {
     ) -> Result<OpaqueSecretBytes, CredentialWorkflowError>;
 }
 
+/// Port for one isolated official-client process session.
+pub trait CredentialSessionClientPort {
+    /// Launch the official client with direct argv and return its exit code.
+    ///
+    /// # Errors
+    ///
+    /// Returns a stable non-secret workflow error when the process cannot be launched or waited.
+    fn execute(&self, arguments: &[OsString]) -> Result<i32, CredentialWorkflowError>;
+}
+
+/// Result of a completed official-client credential session.
+pub struct CredentialSessionOutcome {
+    /// Official-client process exit code.
+    pub exit_code: i32,
+    /// Current refresh credential extracted after the client exited.
+    pub refresh_credential: OpaqueSecretBytes,
+}
+
 /// Build a versioned provider envelope and atomically persist it in one protected profile home.
 ///
 /// # Errors
@@ -133,6 +152,37 @@ pub fn capture_refreshed_profile_credential(
     envelope_port.extract_refresh(client_version, rewritten)
 }
 
+/// Materialize a profile credential, run the official client, and capture its refreshed credential.
+///
+/// Capture runs after every successfully launched process, including non-zero client exits. It does
+/// not run when process launch or waiting fails.
+///
+/// # Errors
+///
+/// Returns a stable provider, storage, or process workflow error.
+pub fn run_profile_credential_session(
+    client_version: &str,
+    refresh_credential: &OpaqueSecretBytes,
+    arguments: &[OsString],
+    envelope_port: &impl CredentialEnvelopePort,
+    file_port: &impl CredentialFilePort,
+    client_port: &impl CredentialSessionClientPort,
+    maximum_envelope_bytes: usize,
+) -> Result<CredentialSessionOutcome, CredentialWorkflowError> {
+    materialize_profile_credential(client_version, refresh_credential, envelope_port, file_port)?;
+    let exit_code = client_port.execute(arguments)?;
+    let refresh_credential = capture_refreshed_profile_credential(
+        client_version,
+        envelope_port,
+        file_port,
+        maximum_envelope_bytes,
+    )?;
+    Ok(CredentialSessionOutcome {
+        exit_code,
+        refresh_credential,
+    })
+}
+
 /// Experimental credential workflow failure without secret-bearing context.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum CredentialWorkflowError {
@@ -144,6 +194,8 @@ pub enum CredentialWorkflowError {
     InvalidCredentialEnvelope,
     /// Protected profile storage could not safely complete the operation.
     CredentialStorageFailed,
+    /// The official client could not be launched or waited.
+    ClientExecutionFailed,
 }
 
 impl std::fmt::Display for CredentialWorkflowError {
@@ -153,6 +205,7 @@ impl std::fmt::Display for CredentialWorkflowError {
             Self::UnsupportedClientVersion => "unsupported client version",
             Self::InvalidCredentialEnvelope => "invalid credential envelope",
             Self::CredentialStorageFailed => "credential storage operation failed",
+            Self::ClientExecutionFailed => "official client execution failed",
         };
         formatter.write_str(message)
     }
@@ -164,10 +217,12 @@ impl std::error::Error for CredentialWorkflowError {}
 mod tests {
     use super::{
         CredentialEnvelopePort, CredentialFilePort, CredentialMaterializationPlan,
-        CredentialWorkflowError, OpaqueSecretBytes, capture_refreshed_profile_credential,
-        materialize_profile_credential,
+        CredentialSessionClientPort, CredentialWorkflowError, OpaqueSecretBytes,
+        capture_refreshed_profile_credential, materialize_profile_credential,
+        run_profile_credential_session,
     };
     use std::cell::RefCell;
+    use std::ffi::OsString;
     use std::path::{Path, PathBuf};
 
     const DESTINATION: &str = ".synthetic/client/credential";
@@ -211,6 +266,20 @@ mod tests {
                 .strip_prefix(b"synthetic-rewritten:")
                 .ok_or(CredentialWorkflowError::InvalidCredentialEnvelope)?;
             OpaqueSecretBytes::new(refresh.to_vec(), 4096)
+        }
+    }
+
+    struct FakeClient<'a> {
+        events: &'a RefCell<Vec<String>>,
+        result: Result<i32, CredentialWorkflowError>,
+    }
+
+    impl CredentialSessionClientPort for FakeClient<'_> {
+        fn execute(&self, arguments: &[OsString]) -> Result<i32, CredentialWorkflowError> {
+            self.events
+                .borrow_mut()
+                .push(format!("exec:{}", arguments.len()));
+            self.result
         }
     }
 
@@ -293,5 +362,73 @@ mod tests {
             Err(CredentialWorkflowError::UnsupportedClientVersion)
         ));
         assert!(files.events.into_inner().is_empty());
+    }
+
+    #[test]
+    fn session_orders_materialize_execute_and_capture() {
+        let files = FakeFiles {
+            rewritten: RefCell::new(Some(b"synthetic-rewritten:synthetic-rotated".to_vec())),
+            ..FakeFiles::default()
+        };
+        let client = FakeClient {
+            events: &files.events,
+            result: Ok(23),
+        };
+        let refresh = OpaqueSecretBytes::new(b"synthetic-refresh".to_vec(), 4096).expect("refresh");
+
+        let outcome = run_profile_credential_session(
+            "TEST_CLIENT_1",
+            &refresh,
+            &[OsString::from("literal;argument")],
+            &FakeEnvelope,
+            &files,
+            &client,
+            4096,
+        )
+        .expect("session");
+
+        assert_eq!(outcome.exit_code, 23);
+        assert_eq!(
+            outcome.refresh_credential.into_secret_bytes(),
+            b"synthetic-rotated"
+        );
+        assert_eq!(
+            files.events.into_inner(),
+            vec![
+                "write:.synthetic/client/credential:36",
+                "exec:1",
+                "read:.synthetic/client/credential:4096"
+            ]
+        );
+    }
+
+    #[test]
+    fn client_failure_stops_before_capture() {
+        let files = FakeFiles {
+            rewritten: RefCell::new(Some(b"synthetic-rewritten:unused".to_vec())),
+            ..FakeFiles::default()
+        };
+        let client = FakeClient {
+            events: &files.events,
+            result: Err(CredentialWorkflowError::ClientExecutionFailed),
+        };
+        let refresh = OpaqueSecretBytes::new(b"synthetic-refresh".to_vec(), 4096).expect("refresh");
+
+        assert!(matches!(
+            run_profile_credential_session(
+                "TEST_CLIENT_1",
+                &refresh,
+                &[],
+                &FakeEnvelope,
+                &files,
+                &client,
+                4096,
+            ),
+            Err(CredentialWorkflowError::ClientExecutionFailed)
+        ));
+        assert_eq!(
+            files.events.into_inner(),
+            vec!["write:.synthetic/client/credential:36", "exec:0"]
+        );
     }
 }

@@ -114,5 +114,6 @@ they cannot accept an executable path or launch real `agy`. Release builds omit 
 remain diagnostics-only.
 
 The separate non-default feature `experimental-profile-credentials` compiles only the internal
-application/provider/storage credential workflow and synthetic end-to-end tests. It adds no CLI
-command, accepts no credential argument, and cannot launch `agy`. Release builds omit this feature.
+application/provider/storage credential workflow, the real interactive client adapter, and synthetic
+end-to-end tests. It adds no CLI command or credential argument, so the shipped binary has no path
+that can invoke the adapter. Release builds omit this feature.
