@@ -28,16 +28,16 @@
     },
     {
       "id": "phase-3-ssh-file-fallback-observation",
-      "title": "Implement the gated real-client credential session",
+      "title": "Add exclusive profile sessions and installed-client smoke coverage",
       "status": "active",
       "source": "docs/adr/0007-versioned-unofficial-isolated-homes.md",
       "plan": "docs/research/linux-ssh-token-injection-2026-07-16.md",
       "acceptance": [
-        "The experimental application workflow performs materialize, client execute, then refreshed-credential capture in that order.",
-        "Client launch failure does not claim a refreshed credential and stable non-secret errors are returned.",
-        "The provider supplies a real interactive agy adapter using cleared profile-specific environment roots and SSH file-fallback selection.",
-        "The adapter accepts direct argv only and propagates the official client exit status.",
-        "All automated tests remain synthetic; no public CLI command or default release capability is enabled."
+        "The application acquires an exclusive profile lease before materialization and holds it through capture.",
+        "A second session for the same runtime directory fails immediately with a stable busy error.",
+        "The storage lock rejects unsafe runtime directories, links, hardlinks, ownership, and permissions.",
+        "An ignored opt-in smoke test runs installed agy --version through the full session using synthetic credentials.",
+        "No public CLI command or default release capability is enabled."
       ],
       "blocker": null,
       "verification": [
@@ -48,7 +48,8 @@
         {"command": "python3 scripts/check.py", "revision": "05824ed94f08e8ac6e9ecb7b672f6425f762ed98", "outcome": "passing; 47 tests including exact envelope serialization, rotated refresh extraction, version rejection, malformed input, and size bounds"},
         {"command": "python3 scripts/check.py", "revision": "b6043255f6b867fdcc5dac38d41c59dcf475c386", "outcome": "passing; 50 tests including atomic replacement, mode 0600/0700 enforcement, bounded reread, and path/link/permission rejection"},
         {"command": "python3 scripts/check.py", "revision": "db451f3224973908abb39f8b51c0b0f86b9eaacc", "outcome": "passing; 54 tests including experimental application orchestration and provider-to-storage synthetic round trip"},
-        {"command": "python3 scripts/check.py", "revision": "bf71b021dd2369e4804a0ae1bcd2c65ed4882bde", "outcome": "passing; 57 tests including session ordering, launch-failure handling, direct argv, cleared environment, SSH fallback, and exit propagation"}
+        {"command": "python3 scripts/check.py", "revision": "bf71b021dd2369e4804a0ae1bcd2c65ed4882bde", "outcome": "passing; 57 tests including session ordering, launch-failure handling, direct argv, cleared environment, SSH fallback, and exit propagation"},
+        {"command": "python3 scripts/check.py plus installed-client ignored smoke", "revision": "c0e2d70ce93b7570772f47ae9f971993e0ee4893", "outcome": "passing; 61 automated tests plus real agy 1.1.2 --version through locked synthetic session"}
       ],
       "completion": null
     }

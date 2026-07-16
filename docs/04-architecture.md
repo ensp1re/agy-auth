@@ -24,6 +24,8 @@ silently mutate authentication state.
   profile-home materialization and refreshed-token extraction;
 - non-default interactive session adapter that clears the environment, selects verified SSH
   file-fallback storage, passes direct argv, and returns the official client exit status;
+- exclusive per-profile runtime leases that prevent concurrent materialization, refresh, and capture
+  against the same credential file;
 - capability gates that keep unverified auth-state behavior disabled.
 
 ## Antigravity provider discovery

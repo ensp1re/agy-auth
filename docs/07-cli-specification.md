@@ -116,4 +116,5 @@ remain diagnostics-only.
 The separate non-default feature `experimental-profile-credentials` compiles only the internal
 application/provider/storage credential workflow, the real interactive client adapter, and synthetic
 end-to-end tests. It adds no CLI command or credential argument, so the shipped binary has no path
-that can invoke the adapter. Release builds omit this feature.
+that can invoke the adapter. Experimental sessions require an exclusive profile-runtime lease.
+Release builds omit this feature.
