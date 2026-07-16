@@ -294,9 +294,9 @@ fn read_official_credential(
     #[cfg(target_os = "macos")]
     {
         let _ = official_home;
-        return MacOsKeychainCredentialStore
+        MacOsKeychainCredentialStore
             .read(16 * 1024)
-            .map_err(|_| RealProfileCliError::UnsafeStorage);
+            .map_err(|_| RealProfileCliError::UnsafeStorage)
     }
     #[cfg(not(target_os = "macos"))]
     {
@@ -315,9 +315,9 @@ fn materialize_official_credential(
     #[cfg(target_os = "macos")]
     {
         let _ = official_home;
-        return MacOsKeychainCredentialStore
+        MacOsKeychainCredentialStore
             .materialize(credential)
-            .map_err(|_| RealProfileCliError::UnsafeStorage);
+            .map_err(|_| RealProfileCliError::UnsafeStorage)
     }
     #[cfg(not(target_os = "macos"))]
     {
