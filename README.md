@@ -41,6 +41,23 @@ supported for authentication-state mutation.
 
 ## Installation
 
+### Install the prebuilt Linux release
+
+```bash
+curl --proto '=https' --tlsv1.2 -LsSf \
+  https://github.com/ensp1re/agy-auth/releases/download/v0.2.0-rc.1/agy-auth-installer.sh | sh
+```
+
+The installer supports Linux x86_64, verifies the archive SHA-256, and installs to
+`"$HOME/.local/bin"`. To inspect it first:
+
+```bash
+curl --proto '=https' --tlsv1.2 -fLO \
+  https://github.com/ensp1re/agy-auth/releases/download/v0.2.0-rc.1/agy-auth-installer.sh
+less agy-auth-installer.sh
+sh agy-auth-installer.sh
+```
+
 ### Build from source
 
 ```bash
@@ -58,11 +75,17 @@ agy-auth --version
 agy-auth doctor
 ```
 
+Alternatively, with Rust already installed:
+
+```bash
+cargo install --locked --git https://github.com/ensp1re/agy-auth \
+  --tag v0.2.0-rc.1 agy-auth-cli
+```
+
 ### Release artifacts
 
-Published release candidates and checksums are available from
-[GitHub Releases](https://github.com/ensp1re/agy-auth/releases). Review the release notes carefully:
-older release candidates may expose only diagnostics while newer functionality remains on `main`.
+Published release candidates, checksums, SBOMs, and installers are available from
+[GitHub Releases](https://github.com/ensp1re/agy-auth/releases).
 
 ## Quick start
 

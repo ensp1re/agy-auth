@@ -45,6 +45,7 @@ python3 scripts/generate_sbom.py \
   --target "$target" \
   --source-date-epoch "$epoch"
 cp "$stage/SBOM.spdx.json" "$output_dir/$name.spdx.json"
+install -m 0755 scripts/install.sh "$output_dir/agy-auth-installer.sh"
 printf 'version=%s\nrevision=%s\ntarget=%s\nsource_date_epoch=%s\n' \
   "$version" "$revision" "$target" "$epoch" > "$stage/RELEASE-METADATA.txt"
 
@@ -52,7 +53,7 @@ tar --sort=name --mtime="@$epoch" --owner=0 --group=0 --numeric-owner \
   -C "$work" -cf - "$name" | gzip -n > "$output_dir/$name.tar.gz"
 (
   cd "$output_dir"
-  sha256sum "$name.tar.gz" "$name.spdx.json" > "$name.sha256"
+  sha256sum "$name.tar.gz" "$name.spdx.json" agy-auth-installer.sh > "$name.sha256"
   sha256sum -c "$name.sha256"
 )
 printf 'Installable release candidate: %s/%s.tar.gz\n' "$output_dir" "$name"
