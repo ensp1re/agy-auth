@@ -1,5 +1,7 @@
 //! Protected opaque credential files beneath managed profile homes.
 
+#![cfg_attr(not(unix), allow(clippy::unnecessary_wraps))]
+
 use std::fs::{self, File, OpenOptions};
 use std::io::{self, Read, Write};
 use std::path::{Component, Path, PathBuf};

@@ -1,3 +1,5 @@
+#![cfg_attr(not(unix), allow(clippy::unnecessary_wraps))]
+
 use agy_auth_app::{
     DoctorRegistryProbe, ProfileCatalogPort, ProfileWorkflowError, RegistryDiagnostic,
 };
@@ -7,7 +9,9 @@ use agy_auth_domain::{
 };
 use fs2::FileExt;
 use serde::{Deserialize, Serialize};
-use std::fs::{self, File, OpenOptions};
+#[cfg(unix)]
+use std::fs::File;
+use std::fs::{self, OpenOptions};
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use thiserror::Error;
@@ -706,7 +710,10 @@ pub enum RegistryStoreError {
 
 #[cfg(test)]
 mod tests {
-    use super::{RegistryDoctorProbe, RegistryFile, RegistryStoreError};
+    #[cfg(unix)]
+    use super::RegistryDoctorProbe;
+    use super::{RegistryFile, RegistryStoreError};
+    #[cfg(unix)]
     use agy_auth_app::DoctorRegistryProbe;
     use agy_auth_domain::{
         Profile, ProfileId, ProfileName, ProfileStatus, ProviderKind, Registry, StorageLocator,

@@ -1,5 +1,7 @@
 //! Exclusive per-profile official-client session lease.
 
+#![cfg_attr(not(unix), allow(clippy::unnecessary_wraps))]
+
 use agy_auth_app::{CredentialSessionLease, CredentialSessionLockPort, CredentialWorkflowError};
 use fs2::FileExt;
 use std::fs::{self, File, OpenOptions};
@@ -174,6 +176,7 @@ fn open_lock_file(path: &std::path::Path) -> io::Result<File> {
         .read(true)
         .write(true)
         .create(true)
+        .truncate(false)
         .open(path)
 }
 
