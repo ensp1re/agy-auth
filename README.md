@@ -44,16 +44,20 @@ supported for authentication-state mutation.
 ### Install the prebuilt Linux release
 
 ```bash
-curl --proto '=https' --tlsv1.2 -LsSf \
-  https://github.com/ensp1re/agy-auth/releases/download/v0.2.0-rc.1/agy-auth-installer.sh | sh
+gh release download v0.2.0-rc.2 \
+  --repo ensp1re/agy-auth \
+  --pattern agy-auth-installer.sh \
+  --output - | sh
 ```
 
-The installer supports Linux x86_64, verifies the archive SHA-256, and installs to
-`"$HOME/.local/bin"`. To inspect it first:
+The private repository requires an authenticated GitHub CLI session (`gh auth login`). The installer
+supports Linux x86_64, verifies the archive SHA-256, and installs to `"$HOME/.local/bin"`. To inspect
+it first:
 
 ```bash
-curl --proto '=https' --tlsv1.2 -fLO \
-  https://github.com/ensp1re/agy-auth/releases/download/v0.2.0-rc.1/agy-auth-installer.sh
+gh release download v0.2.0-rc.2 \
+  --repo ensp1re/agy-auth \
+  --pattern agy-auth-installer.sh
 less agy-auth-installer.sh
 sh agy-auth-installer.sh
 ```
@@ -79,7 +83,7 @@ Alternatively, with Rust already installed:
 
 ```bash
 cargo install --locked --git https://github.com/ensp1re/agy-auth \
-  --tag v0.2.0-rc.1 agy-auth-cli
+  --tag v0.2.0-rc.2 agy-auth-cli
 ```
 
 ### Release artifacts
