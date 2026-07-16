@@ -15,8 +15,9 @@ pub use agy_auth_domain::{ErrorCode, ProviderKind};
 #[cfg(feature = "experimental-profile-credentials")]
 pub use credential_workflow::{
     CredentialEnvelopePort, CredentialFilePort, CredentialMaterializationPlan,
-    CredentialWorkflowError, OpaqueSecretBytes, capture_refreshed_profile_credential,
-    materialize_profile_credential,
+    CredentialSessionClientPort, CredentialSessionOutcome, CredentialWorkflowError,
+    OpaqueSecretBytes, capture_refreshed_profile_credential, materialize_profile_credential,
+    run_profile_credential_session,
 };
 
 /// Stable diagnostics schema version.

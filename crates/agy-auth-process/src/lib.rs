@@ -210,6 +210,7 @@ pub struct IsolatedClientEnvironment {
     runtime_directory: PathBuf,
     search_path: OsString,
     terminal: Option<String>,
+    ssh_file_fallback: bool,
 }
 
 impl IsolatedClientEnvironment {
@@ -239,6 +240,7 @@ impl IsolatedClientEnvironment {
             runtime_directory,
             search_path,
             terminal: None,
+            ssh_file_fallback: false,
         })
     }
 
@@ -261,6 +263,16 @@ impl IsolatedClientEnvironment {
         Ok(self)
     }
 
+    /// Select the official client's SSH file-backed credential mode.
+    ///
+    /// The synthetic loopback marker contains no caller network data. It is intended only for
+    /// version-scoped clients whose SSH fallback contract has been independently verified.
+    #[must_use]
+    pub const fn with_ssh_file_fallback(mut self) -> Self {
+        self.ssh_file_fallback = true;
+        self
+    }
+
     fn apply(&self, command: &mut Command) {
         command
             .env_clear()
@@ -274,6 +286,11 @@ impl IsolatedClientEnvironment {
             .env("LANG", "C.UTF-8");
         if let Some(terminal) = &self.terminal {
             command.env("TERM", terminal);
+        }
+        if self.ssh_file_fallback {
+            command
+                .env("SSH_CONNECTION", "127.0.0.1 40000 127.0.0.1 22")
+                .env("SSH_CLIENT", "127.0.0.1 40000 22");
         }
     }
 }
@@ -816,7 +833,7 @@ mod tests {
     fn interactive_launcher_passes_argv_and_allowlisted_terminal_only() {
         let (directory, executable) = fixture(
             "interactive",
-            "printf '%s|%s|%s|%s' \"$2\" \"$HOME\" \"${TERM-unset}\" \"${USER-unset}\" > \"$1\"; exit 23",
+            "printf '%s|%s|%s|%s|%s' \"$2\" \"$HOME\" \"${TERM-unset}\" \"${USER-unset}\" \"${SSH_CONNECTION-unset}\" > \"$1\"; exit 23",
         );
         let home = directory.join("home");
         let runtime = directory.join("runtime");
@@ -830,7 +847,8 @@ mod tests {
             IsolatedClientEnvironment::new(home.clone(), runtime, OsString::from("/usr/bin:/bin"))
                 .expect("isolated environment")
                 .with_terminal("xterm-256color")
-                .expect("valid terminal");
+                .expect("valid terminal")
+                .with_ssh_file_fallback();
         let argument = "literal; shell syntax is data";
         let status = run_interactive_isolated(
             &executable,
@@ -841,7 +859,10 @@ mod tests {
         assert_eq!(status.code(), Some(23));
         assert_eq!(
             fs::read_to_string(&observation).expect("read observation"),
-            format!("{argument}|{}|xterm-256color|unset", home.display())
+            format!(
+                "{argument}|{}|xterm-256color|unset|127.0.0.1 40000 127.0.0.1 22",
+                home.display()
+            )
         );
         assert!(!directory.join("shell syntax is data").exists());
         remove(&directory);

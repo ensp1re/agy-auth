@@ -28,16 +28,16 @@
     },
     {
       "id": "phase-3-ssh-file-fallback-observation",
-      "title": "Connect provider envelopes to protected storage experimentally",
+      "title": "Implement the gated real-client credential session",
       "status": "active",
       "source": "docs/adr/0007-versioned-unofficial-isolated-homes.md",
       "plan": "docs/research/linux-ssh-token-injection-2026-07-16.md",
       "acceptance": [
-        "The application owns opaque-secret, envelope, and credential-file ports without depending on infrastructure crates.",
-        "One workflow materializes a version-gated provider envelope through protected storage.",
-        "A second workflow rereads an official-client rewrite and extracts a possibly rotated refresh credential.",
-        "Provider and storage adapters implement the ports only under a non-default experimental feature.",
-        "All tests use synthetic bytes; default release builds and real commands remain unchanged."
+        "The experimental application workflow performs materialize, client execute, then refreshed-credential capture in that order.",
+        "Client launch failure does not claim a refreshed credential and stable non-secret errors are returned.",
+        "The provider supplies a real interactive agy adapter using cleared profile-specific environment roots and SSH file-fallback selection.",
+        "The adapter accepts direct argv only and propagates the official client exit status.",
+        "All automated tests remain synthetic; no public CLI command or default release capability is enabled."
       ],
       "blocker": null,
       "verification": [
@@ -47,7 +47,8 @@
         {"command": "isolated full-record and minimal refresh-token injection", "revision": "71eb5fdb19e904a2afba3f45fb1c413dd3bee430", "outcome": "passing for agy 1.1.2 Linux SSH fallback; silent refresh, expected identity, persisted replacement access token, and loadCodeAssist observed; cleanup complete"},
         {"command": "python3 scripts/check.py", "revision": "05824ed94f08e8ac6e9ecb7b672f6425f762ed98", "outcome": "passing; 47 tests including exact envelope serialization, rotated refresh extraction, version rejection, malformed input, and size bounds"},
         {"command": "python3 scripts/check.py", "revision": "b6043255f6b867fdcc5dac38d41c59dcf475c386", "outcome": "passing; 50 tests including atomic replacement, mode 0600/0700 enforcement, bounded reread, and path/link/permission rejection"},
-        {"command": "python3 scripts/check.py", "revision": "db451f3224973908abb39f8b51c0b0f86b9eaacc", "outcome": "passing; 54 tests including experimental application orchestration and provider-to-storage synthetic round trip"}
+        {"command": "python3 scripts/check.py", "revision": "db451f3224973908abb39f8b51c0b0f86b9eaacc", "outcome": "passing; 54 tests including experimental application orchestration and provider-to-storage synthetic round trip"},
+        {"command": "python3 scripts/check.py", "revision": "bf71b021dd2369e4804a0ae1bcd2c65ed4882bde", "outcome": "passing; 57 tests including session ordering, launch-failure handling, direct argv, cleared environment, SSH fallback, and exit propagation"}
       ],
       "completion": null
     }
