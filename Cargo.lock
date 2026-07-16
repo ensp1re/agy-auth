@@ -42,6 +42,7 @@ dependencies = [
  "agy-auth-app",
  "agy-auth-domain",
  "fs2",
+ "libc",
  "serde",
  "serde_json",
  "thiserror",

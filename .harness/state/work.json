@@ -28,15 +28,16 @@
     },
     {
       "id": "phase-3-ssh-file-fallback-observation",
-      "title": "Implement the agy 1.1.2 credential-envelope contract",
+      "title": "Implement protected profile credential materialization",
       "status": "active",
       "source": "docs/adr/0007-versioned-unofficial-isolated-homes.md",
       "plan": "docs/research/linux-ssh-token-injection-2026-07-16.md",
       "acceptance": [
-        "The provider serializes the exact agy 1.1.2 Linux SSH consumer-token envelope from a non-display secret type.",
-        "The provider extracts a possibly rotated refresh credential from a bounded refreshed envelope.",
-        "Unsupported client versions and malformed or oversized envelopes fail with stable non-secret errors.",
-        "All committed fixtures are synthetic and real profile commands remain capability-gated."
+        "Opaque credential bytes are written only beneath a validated owner-only profile home.",
+        "Nested directories are owner-only and the final credential file is mode 0600 on Unix.",
+        "Writes use an exclusive same-directory temporary file, flush, atomic rename, directory sync, and post-write validation.",
+        "Bounded rereads reject links, hardlinks, unsafe ownership or permissions, non-files, and oversized content.",
+        "All tests use synthetic bytes and real profile commands remain capability-gated."
       ],
       "blocker": null,
       "verification": [
@@ -44,7 +45,8 @@
         {"command": "post-observation cleanup audit", "revision": "3dffadce450b7f025549ddc09c355a5d29c9d9c3", "outcome": "passing; user, home, runtime, copied binary, transcript, and client processes absent"},
         {"command": "30-second SSH/no-D-Bus and 20-second actual-SSH_TTY follow-ups", "revision": "fb27929fecda11ec3c953abb2a83c4b01a1cbb8b", "outcome": "inconclusive; no identity reuse and no login chooser in either run; timeout 124, 37 bounded entries, cleanup complete"},
         {"command": "isolated full-record and minimal refresh-token injection", "revision": "71eb5fdb19e904a2afba3f45fb1c413dd3bee430", "outcome": "passing for agy 1.1.2 Linux SSH fallback; silent refresh, expected identity, persisted replacement access token, and loadCodeAssist observed; cleanup complete"},
-        {"command": "python3 scripts/check.py", "revision": "05824ed94f08e8ac6e9ecb7b672f6425f762ed98", "outcome": "passing; 47 tests including exact envelope serialization, rotated refresh extraction, version rejection, malformed input, and size bounds"}
+        {"command": "python3 scripts/check.py", "revision": "05824ed94f08e8ac6e9ecb7b672f6425f762ed98", "outcome": "passing; 47 tests including exact envelope serialization, rotated refresh extraction, version rejection, malformed input, and size bounds"},
+        {"command": "python3 scripts/check.py", "revision": "b6043255f6b867fdcc5dac38d41c59dcf475c386", "outcome": "passing; 50 tests including atomic replacement, mode 0600/0700 enforcement, bounded reread, and path/link/permission rejection"}
       ],
       "completion": null
     }
