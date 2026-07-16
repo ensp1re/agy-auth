@@ -5,28 +5,6 @@
   "retention": "Keep the active item and at most two recently passing items; durable outcomes belong in specifications, ADRs, commits, and reviews.",
   "items": [
     {
-      "id": "phase-3-managed-profile-contracts",
-      "title": "Implement managed profile directories and fake add/exec contracts",
-      "status": "passing",
-      "source": "docs/04-architecture.md",
-      "plan": "docs/plans/phase-3-managed-profile-contracts.md",
-      "acceptance": ["Owner-only UUID homes and fake application contracts pass."],
-      "blocker": null,
-      "verification": [{"command": "local gates", "revision": "7c98a2069a7cd5c0bdc9cf575a52ec1f52f0008c", "outcome": "passing; 42 tests"}],
-      "completion": {"commit": "9ae9f67b02a9b6b7dfa4eb088ec8d8c943fddc33", "review": "https://github.com/ensp1re/agy-auth/pull/20", "completedAt": "2026-07-15T23:13:24Z"}
-    },
-    {
-      "id": "phase-3-experimental-profile-cli",
-      "title": "Implement atomic catalog and experimental fake-client CLI",
-      "status": "passing",
-      "source": "docs/07-cli-specification.md",
-      "plan": "docs/plans/phase-3-experimental-profile-cli.md",
-      "acceptance": ["Atomic fake add/exec journey is compile-time gated and cannot launch real agy."],
-      "blocker": null,
-      "verification": [{"command": "python3 scripts/check.py and fake E2E", "revision": "37ae856392cf7823a62bc5dc7a34b15c2fd85725", "outcome": "passing; 43 tests"}],
-      "completion": {"commit": "3dffadce450b7f025549ddc09c355a5d29c9d9c3", "review": "https://github.com/ensp1re/agy-auth/pull/21", "completedAt": "2026-07-15T23:20:46Z"}
-    },
-    {
       "id": "phase-3-ssh-file-fallback-observation",
       "title": "Verify the agy 1.1.2 Linux SSH two-account contract",
       "status": "passing",
@@ -57,7 +35,7 @@
     {
       "id": "phase-3-experimental-real-profile-cli",
       "title": "Compose capability-gated real profile import and exec commands",
-      "status": "active",
+      "status": "passing",
       "source": "docs/07-cli-specification.md",
       "plan": "docs/adr/0007-versioned-unofficial-isolated-homes.md",
       "acceptance": [
@@ -66,7 +44,28 @@
         "Default builds remain diagnostics-only and synthetic end-to-end tests prove direct argv and exit propagation."
       ],
       "blocker": null,
-      "verification": [],
+      "verification": [
+        {"command": "python3 scripts/check.py", "revision": "fa930464b394e8196dd011c53349c92bb479b99d", "outcome": "passing; 62 automated tests plus dependency, compatibility, release, secret, and harness gates"}
+      ],
+      "completion": {"commit": "6bcde2966956b49e2d97c37afc18ebf1c068e974", "review": "https://github.com/ensp1re/agy-auth/pull/30", "completedAt": "2026-07-16T11:44:36Z"}
+    },
+    {
+      "id": "phase-3-real-two-profile-cli-integration",
+      "title": "Validate real import and exec with two enrolled agy accounts",
+      "status": "active",
+      "source": "docs/adr/0007-versioned-unofficial-isolated-homes.md",
+      "plan": "docs/07-cli-specification.md",
+      "acceptance": [
+        "Both enrolled official homes import through the experimental CLI into distinct managed profiles.",
+        "Both profiles complete a bounded real agy print request without browser login.",
+        "Managed refresh credentials remain distinct and temporary copies, output, and data roots are removed."
+      ],
+      "blocker": null,
+      "verification": [
+        {"command": "agy 1.1.3 disposable two-account upgrade gates", "revision": "6bcde2966956b49e2d97c37afc18ebf1c068e974", "outcome": "passing; concurrent expected identities, forced refresh, clean-third non-reuse, and scoped cleanup"},
+        {"command": "experimental-import and experimental-real-exec with installed agy 1.1.3", "revision": "6bcde2966956b49e2d97c37afc18ebf1c068e974", "outcome": "passing; two profiles imported and concurrently authenticated with distinct managed credentials"},
+        {"command": "python3 scripts/check.py", "revision": "worktree", "outcome": "passing; 62 automated tests plus dependency, compatibility, release, secret, and harness gates"}
+      ],
       "completion": null
     }
   ]

@@ -57,7 +57,7 @@ fn imports_secure_official_home_and_executes_direct_argv() {
     let client = root.join("agy");
     write_file(
         &client,
-        b"#!/bin/sh\nif [ \"${1-}\" = \"--version\" ]; then printf '1.1.2\\n'; exit 0; fi\nprintf '%s|%s|%s' \"$1\" \"$2\" \"$HOME\" > \"$3\"\nexit 29\n",
+        b"#!/bin/sh\nif [ \"${1-}\" = \"--version\" ]; then printf '1.1.3\\n'; exit 0; fi\nprintf '%s|%s|%s' \"$1\" \"$2\" \"$HOME\" > \"$3\"\nexit 29\n",
         0o700,
     );
     let binary = env!("CARGO_BIN_EXE_agy-auth");
@@ -78,7 +78,7 @@ fn imports_secure_official_home_and_executes_direct_argv() {
     let profile = &registry["profiles"][0];
     assert_eq!(profile["name"], "work");
     assert_eq!(profile["status"], "ready");
-    assert_eq!(profile["clientVersionAtCapture"], "1.1.2");
+    assert_eq!(profile["clientVersionAtCapture"], "1.1.3");
     let profile_id = profile["id"].as_str().expect("profile id");
     let managed_home = data.join("profiles").join(profile_id).join("home");
     let managed_envelope: Value = serde_json::from_slice(
@@ -113,6 +113,20 @@ fn imports_secure_official_home_and_executes_direct_argv() {
         format!("{literal}|second|{}", managed_home.display())
     );
     assert!(!root.join("shell syntax is data").exists());
+
+    write_file(
+        &client,
+        b"#!/bin/sh\nif [ \"${1-}\" = \"--version\" ]; then printf '1.1.2\\n'; exit 0; fi\nexit 0\n",
+        0o700,
+    );
+    let mismatched = Command::new(binary)
+        .args(["--data-dir"])
+        .arg(&data)
+        .args(["experimental-real-exec", "work", "--client"])
+        .arg(&client)
+        .status()
+        .expect("run mismatched client");
+    assert_eq!(mismatched.code(), Some(5));
 
     fs::remove_dir_all(root).expect("remove fixture");
 }

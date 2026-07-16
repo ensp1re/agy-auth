@@ -316,7 +316,9 @@ pub fn doctor(
     registry: &impl DoctorRegistryProbe,
 ) -> DoctorReport {
     let client = client.probe();
-    let reason = if cfg!(target_os = "linux") && client.version.as_deref() == Some("1.1.2") {
+    let reason = if cfg!(target_os = "linux")
+        && matches!(client.version.as_deref(), Some("1.1.2" | "1.1.3"))
+    {
         "verified_contract_not_enabled"
     } else {
         "no_verified_antigravity_profile_contract"

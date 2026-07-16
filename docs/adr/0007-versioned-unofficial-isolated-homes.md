@@ -1,6 +1,6 @@
 # ADR 0007: Permit Versioned Unofficial Isolated Homes
 
-- Status: Accepted; `agy 1.1.2` Linux SSH contract verified, public commands remain gated
+- Status: Accepted; `agy 1.1.2` and `1.1.3` Linux SSH contracts verified, public commands remain gated
 - Date: 2026-07-16
 - Supersedes: ADR 0006
 
@@ -56,6 +56,10 @@ The July 16, 2026 two-account experiment satisfies these gates for `agy 1.1.2` o
 [`linux-two-account-validation-2026-07-16.md`](../research/linux-two-account-validation-2026-07-16.md).
 Compatibility is now `verified`, but doctor capability booleans and public commands remain disabled
 until their production composition, recovery behavior, and user-facing contract are reviewed.
+
+The July 16, 2026 upgrade validation independently satisfies the same gates for `agy 1.1.3` without
+assuming patch-version compatibility. See
+[`linux-two-account-upgrade-validation-1.1.3-2026-07-16.md`](../research/linux-two-account-upgrade-validation-1.1.3-2026-07-16.md).
 
 ## Consequences
 
