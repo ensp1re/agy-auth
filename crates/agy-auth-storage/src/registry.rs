@@ -890,7 +890,10 @@ mod tests {
 
         assert!(result.healthy);
         assert_eq!(result.data_directory_state, "secure");
+        #[cfg(target_os = "linux")]
         assert_eq!(result.owner_matches, Some(true));
+        #[cfg(not(target_os = "linux"))]
+        assert_eq!(result.owner_matches, None);
         assert_eq!(result.permissions_secure, Some(true));
         fs::remove_dir_all(directory).expect("remove test directory");
     }
