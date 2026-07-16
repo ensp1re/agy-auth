@@ -4,7 +4,7 @@ version = 4
 
 [[package]]
 name = "agy-auth-app"
-version = "0.1.0-rc.1"
+version = "0.2.0-rc.1"
 dependencies = [
  "agy-auth-domain",
  "serde",
@@ -13,7 +13,7 @@ dependencies = [
 
 [[package]]
 name = "agy-auth-cli"
-version = "0.1.0-rc.1"
+version = "0.2.0-rc.1"
 dependencies = [
  "agy-auth-app",
  "agy-auth-storage",
@@ -26,7 +26,7 @@ dependencies = [
 
 [[package]]
 name = "agy-auth-domain"
-version = "0.1.0-rc.1"
+version = "0.2.0-rc.1"
 dependencies = [
  "time",
  "unicode-normalization",
@@ -35,11 +35,11 @@ dependencies = [
 
 [[package]]
 name = "agy-auth-process"
-version = "0.1.0-rc.1"
+version = "0.2.0-rc.1"
 
 [[package]]
 name = "agy-auth-storage"
-version = "0.1.0-rc.1"
+version = "0.2.0-rc.1"
 dependencies = [
  "agy-auth-app",
  "agy-auth-domain",
@@ -54,7 +54,7 @@ dependencies = [
 
 [[package]]
 name = "agy-auth-test-support"
-version = "0.1.0-rc.1"
+version = "0.2.0-rc.1"
 dependencies = [
  "agy-auth-domain",
 ]
@@ -448,7 +448,7 @@ dependencies = [
 
 [[package]]
 name = "provider-antigravity-cli"
-version = "0.1.0-rc.1"
+version = "0.2.0-rc.1"
 dependencies = [
  "agy-auth-app",
  "agy-auth-domain",
