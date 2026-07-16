@@ -13,16 +13,23 @@ use agy_auth_app::{
 use agy_auth_app::{DoctorRegistryProbe, DoctorReport, RegistryDiagnostic, doctor};
 #[cfg(feature = "experimental-fake-client")]
 use agy_auth_app::{ManagedProfileEnvironment, ProfileClientPort, add_profile, exec_profile};
+use agy_auth_storage::ActiveProfileStore;
 #[cfg(any(feature = "experimental-fake-client", feature = "profile-cli"))]
 use agy_auth_storage::ManagedProfileHomes;
 #[cfg(feature = "profile-cli")]
 use agy_auth_storage::{
-    ActiveProfileStore, ImportTransactionJournal, ImportTransactionStage,
-    OfficialCredentialSourceFiles, OpaqueCredentialBytes, ProfileCredentialFiles,
-    ProfileSessionLock,
+    ImportTransactionJournal, ImportTransactionStage, OfficialCredentialSourceFiles,
+    OpaqueCredentialBytes, ProfileCredentialFiles, ProfileSessionLock,
 };
 use agy_auth_storage::{RegistryCatalog, RegistryDoctorProbe};
 use clap::{Parser, Subcommand};
+#[cfg(feature = "profile-cli")]
+use crossterm::{
+    cursor, event,
+    event::{Event, KeyCode, KeyEventKind},
+    execute,
+    terminal::{self, ClearType},
+};
 use provider_antigravity_cli::AntigravityDoctorProbe;
 #[cfg(feature = "profile-cli")]
 use provider_antigravity_cli::{
@@ -30,6 +37,8 @@ use provider_antigravity_cli::{
 };
 #[cfg(any(feature = "experimental-fake-client", feature = "profile-cli"))]
 use std::ffi::OsString;
+#[cfg(feature = "profile-cli")]
+use std::io::{self, IsTerminal, Write};
 use std::path::Path as StdPath;
 use std::path::{Path, PathBuf};
 
@@ -78,8 +87,12 @@ enum Commands {
         #[arg(long, value_name = "PATH")]
         client: Option<PathBuf>,
     },
-    /// List registered profiles without reading authentication state.
-    List,
+    /// List profiles or select one interactively on a terminal.
+    List {
+        /// Disable the interactive selector.
+        #[arg(long)]
+        plain: bool,
+    },
     /// Save the account currently logged into the official agy home.
     #[cfg(feature = "profile-cli")]
     Add {
@@ -194,7 +207,7 @@ fn main() {
     let cli = Cli::parse();
     let exit_code = match &cli.command {
         Commands::Doctor { repair, client } => run_doctor(&cli, client.clone(), *repair),
-        Commands::List => run_list(&cli),
+        Commands::List { plain } => run_list(&cli, *plain),
         #[cfg(feature = "profile-cli")]
         Commands::Add {
             name,
@@ -572,7 +585,15 @@ fn run_recover(cli: &Cli) -> u8 {
     }
 }
 
-fn run_list(cli: &Cli) -> u8 {
+struct ListEntry {
+    name: String,
+    status: String,
+    version: String,
+    hint: String,
+    selected: bool,
+}
+
+fn run_list(cli: &Cli, plain: bool) -> u8 {
     let result = (|| {
         let catalog = catalog_adapter(cli)?;
         let selected = active_profile_store(cli)
@@ -583,6 +604,22 @@ fn run_list(cli: &Cli) -> u8 {
             .profiles()
             .map_err(|_| ProfileWorkflowError::CatalogReserveFailed)?;
         profiles.sort_by(|left, right| left.name.as_str().cmp(right.name.as_str()));
+        let entries = profiles
+            .iter()
+            .map(|profile| ListEntry {
+                name: profile.name.as_str().to_owned(),
+                status: profile.status.as_str().to_owned(),
+                version: profile
+                    .client_version_at_capture
+                    .clone()
+                    .unwrap_or_else(|| "-".to_owned()),
+                hint: profile
+                    .account_hint
+                    .clone()
+                    .unwrap_or_else(|| "-".to_owned()),
+                selected: selected.as_deref() == Some(profile.name.as_str()),
+            })
+            .collect::<Vec<_>>();
         if cli.json {
             let values: Vec<_> = profiles
                 .iter()
@@ -604,31 +641,127 @@ fn run_list(cli: &Cli) -> u8 {
                 }))
                 .map_err(|_| ProfileWorkflowError::CatalogReserveFailed)?
             );
-        } else if profiles.is_empty() {
+        } else if entries.is_empty() {
             println!("no profiles");
+        } else if cfg!(feature = "profile-cli")
+            && !plain
+            && stdin_is_terminal()
+            && stdout_is_terminal()
+        {
+            #[cfg(feature = "profile-cli")]
+            return Ok(Some(run_interactive_list(cli, &entries)));
         } else {
-            for profile in profiles {
+            for entry in entries {
                 println!(
                     "{} {}\t{}\t{}\t{}",
-                    if selected.as_deref() == Some(profile.name.as_str()) {
-                        "->"
-                    } else {
-                        "  "
-                    },
-                    profile.name.as_str(),
-                    profile.status.as_str(),
-                    profile.client_version_at_capture.as_deref().unwrap_or("-"),
-                    profile.account_hint.as_deref().unwrap_or("-")
+                    if entry.selected { "->" } else { "  " },
+                    entry.name,
+                    entry.status,
+                    entry.version,
+                    entry.hint
                 );
             }
         }
-        Ok(())
+        Ok(None)
     })();
     match result {
-        Ok(()) => 0,
+        Ok(Some(code)) => code,
+        Ok(None) => 0,
         Err(ProfileWorkflowError::HomeUnavailable) => 8,
         Err(_) => 11,
     }
+}
+
+#[cfg(feature = "profile-cli")]
+fn run_interactive_list(cli: &Cli, entries: &[ListEntry]) -> u8 {
+    let mut selected_index = entries.iter().position(|entry| entry.selected).unwrap_or(0);
+    if terminal::enable_raw_mode().is_err() {
+        return 11;
+    }
+    let _guard = RawModeGuard;
+    let mut stdout = io::stdout();
+    loop {
+        if execute!(
+            stdout,
+            cursor::Hide,
+            cursor::MoveTo(0, 0),
+            terminal::Clear(ClearType::All)
+        )
+        .is_err()
+        {
+            return 11;
+        }
+        println!("Select an account  ↑/↓ move · Enter switch · Esc/q exit\n");
+        for (index, entry) in entries.iter().enumerate() {
+            println!(
+                "{} {} {:<10} {:<8} {}",
+                if index == selected_index { ">" } else { " " },
+                if entry.selected { "●" } else { " " },
+                entry.name,
+                entry.version,
+                entry.hint
+            );
+        }
+        if stdout.flush().is_err() {
+            return 11;
+        }
+        let Ok(current_event) = event::read() else {
+            return 11;
+        };
+        let Event::Key(key) = current_event else {
+            continue;
+        };
+        if key.kind != KeyEventKind::Press {
+            continue;
+        }
+        match key.code {
+            KeyCode::Up => {
+                selected_index = selected_index
+                    .checked_sub(1)
+                    .unwrap_or(entries.len().saturating_sub(1));
+            }
+            KeyCode::Down => selected_index = (selected_index + 1) % entries.len(),
+            KeyCode::Enter => {
+                let name = entries[selected_index].name.clone();
+                let _ = terminal::disable_raw_mode();
+                let _ = execute!(stdout, cursor::Show, terminal::Clear(ClearType::All));
+                return run_switch(cli, &name, None);
+            }
+            KeyCode::Esc | KeyCode::Char('q') => return 0,
+            _ => {}
+        }
+    }
+}
+
+#[cfg(feature = "profile-cli")]
+struct RawModeGuard;
+
+#[cfg(feature = "profile-cli")]
+impl Drop for RawModeGuard {
+    fn drop(&mut self) {
+        let _ = terminal::disable_raw_mode();
+        let _ = execute!(io::stdout(), cursor::Show);
+    }
+}
+
+#[cfg(feature = "profile-cli")]
+fn stdin_is_terminal() -> bool {
+    io::stdin().is_terminal()
+}
+
+#[cfg(not(feature = "profile-cli"))]
+const fn stdin_is_terminal() -> bool {
+    false
+}
+
+#[cfg(feature = "profile-cli")]
+fn stdout_is_terminal() -> bool {
+    io::stdout().is_terminal()
+}
+
+#[cfg(not(feature = "profile-cli"))]
+const fn stdout_is_terminal() -> bool {
+    false
 }
 
 #[cfg(feature = "profile-cli")]

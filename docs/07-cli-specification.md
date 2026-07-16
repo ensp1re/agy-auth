@@ -136,6 +136,10 @@ official client continues to own login, token refresh, and backend traffic. The 
 file remains inside its mode-0700 isolated official-client home as approved by the storage contract;
 it is not exported into a separate plaintext vault.
 
+On an interactive terminal, `list` opens a selector where Up/Down moves, Enter switches, and
+Escape/q exits. `list --plain`, `list --json`, and redirected output retain deterministic
+non-interactive output.
+
 `switch <name>` atomically selects the credential used by subsequent plain `agy` launches and does
 not launch the client. `list` prefixes the selected profile with `->`; this is project-owned
 selection metadata and can become stale after direct `/logout`, login, or manual state replacement.
