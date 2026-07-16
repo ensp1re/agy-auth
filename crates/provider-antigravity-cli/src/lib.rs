@@ -109,32 +109,41 @@ impl AntigravityInteractiveSession {
     /// Full account identity is held only in temporary memory and is never returned to callers.
     #[must_use]
     pub fn masked_account_hint(&self) -> Option<String> {
-        let directory = self.environment.home().join(".gemini/antigravity-cli/log");
-        let mut paths = std::fs::read_dir(directory)
-            .ok()?
-            .filter_map(Result::ok)
-            .map(|entry| entry.path())
-            .collect::<Vec<_>>();
-        paths.sort();
-        for path in paths.into_iter().rev().take(32) {
-            let Ok(metadata) = std::fs::symlink_metadata(&path) else {
-                continue;
-            };
-            if metadata.file_type().is_symlink()
-                || !metadata.is_file()
-                || metadata.len() > 2 * 1024 * 1024
-            {
-                continue;
-            }
-            let Ok(bytes) = std::fs::read(path) else {
-                continue;
-            };
-            if let Some(hint) = masked_hint_from_log(&bytes) {
-                return Some(hint);
-            }
-        }
-        None
+        masked_account_hint_from_home(self.environment.home())
     }
+}
+
+/// Read bounded official-client logs beneath one home and return only a masked account hint.
+///
+/// Full account identity remains temporary and is never returned to the caller.
+#[cfg(feature = "experimental-profile-credentials")]
+#[must_use]
+pub fn masked_account_hint_from_home(home: &std::path::Path) -> Option<String> {
+    let directory = home.join(".gemini/antigravity-cli/log");
+    let mut paths = std::fs::read_dir(directory)
+        .ok()?
+        .filter_map(Result::ok)
+        .map(|entry| entry.path())
+        .collect::<Vec<_>>();
+    paths.sort();
+    for path in paths.into_iter().rev().take(32) {
+        let Ok(metadata) = std::fs::symlink_metadata(&path) else {
+            continue;
+        };
+        if metadata.file_type().is_symlink()
+            || !metadata.is_file()
+            || metadata.len() > 2 * 1024 * 1024
+        {
+            continue;
+        }
+        let Ok(bytes) = std::fs::read(path) else {
+            continue;
+        };
+        if let Some(hint) = masked_hint_from_log(&bytes) {
+            return Some(hint);
+        }
+    }
+    None
 }
 
 #[cfg(feature = "experimental-profile-credentials")]

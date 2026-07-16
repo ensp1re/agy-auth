@@ -14,6 +14,7 @@ The candidate contract is:
 - generic-password service: `gemini`;
 - generic-password account: `antigravity`;
 - default official-client credential location: Apple login Keychain;
+- Keychain value format: raw non-JSON refresh credential;
 - isolated SSH-style homes: bounded file credential at
   `.gemini/antigravity-cli/antigravity-oauth-token`.
 
