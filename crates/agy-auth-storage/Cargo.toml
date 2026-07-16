@@ -21,5 +21,8 @@ thiserror.workspace = true
 time.workspace = true
 uuid.workspace = true
 
+[target.'cfg(target_os = "macos")'.dependencies]
+security-framework.workspace = true
+
 [lints]
 workspace = true

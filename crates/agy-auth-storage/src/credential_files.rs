@@ -38,7 +38,7 @@ impl OpaqueCredentialBytes {
         self.value
     }
 
-    fn expose(&self) -> &[u8] {
+    pub(crate) fn expose(&self) -> &[u8] {
         &self.value
     }
 }
