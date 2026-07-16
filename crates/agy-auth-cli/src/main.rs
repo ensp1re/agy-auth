@@ -680,31 +680,12 @@ fn run_interactive_list(cli: &Cli, entries: &[ListEntry]) -> u8 {
     }
     let _guard = RawModeGuard;
     let mut stdout = io::stdout();
+    let mut rendered = false;
     loop {
-        if execute!(
-            stdout,
-            cursor::Hide,
-            cursor::MoveTo(0, 0),
-            terminal::Clear(ClearType::All)
-        )
-        .is_err()
-        {
+        if render_interactive_list(&mut stdout, entries, selected_index, rendered).is_err() {
             return 11;
         }
-        println!("Select an account  ↑/↓ move · Enter switch · Esc/q exit\n");
-        for (index, entry) in entries.iter().enumerate() {
-            println!(
-                "{} {} {:<10} {:<8} {}",
-                if index == selected_index { ">" } else { " " },
-                if entry.selected { "●" } else { " " },
-                entry.name,
-                entry.version,
-                entry.hint
-            );
-        }
-        if stdout.flush().is_err() {
-            return 11;
-        }
+        rendered = true;
         let Ok(current_event) = event::read() else {
             return 11;
         };
@@ -724,13 +705,62 @@ fn run_interactive_list(cli: &Cli, entries: &[ListEntry]) -> u8 {
             KeyCode::Enter => {
                 let name = entries[selected_index].name.clone();
                 let _ = terminal::disable_raw_mode();
-                let _ = execute!(stdout, cursor::Show, terminal::Clear(ClearType::All));
+                let _ = execute!(stdout, cursor::Show);
+                let _ = write!(stdout, "\r\n");
+                let _ = stdout.flush();
                 return run_switch(cli, &name, None);
             }
-            KeyCode::Esc | KeyCode::Char('q') => return 0,
+            KeyCode::Esc | KeyCode::Char('q') => {
+                let _ = write!(stdout, "\r\n");
+                let _ = stdout.flush();
+                return 0;
+            }
             _ => {}
         }
     }
+}
+
+#[cfg(feature = "profile-cli")]
+fn render_interactive_list(
+    stdout: &mut io::Stdout,
+    entries: &[ListEntry],
+    selected_index: usize,
+    redraw: bool,
+) -> io::Result<()> {
+    let line_count = u16::try_from(entries.len().saturating_add(2)).unwrap_or(u16::MAX);
+    if redraw {
+        execute!(stdout, cursor::MoveUp(line_count))?;
+    } else {
+        execute!(stdout, cursor::Hide)?;
+    }
+    execute!(
+        stdout,
+        cursor::MoveToColumn(0),
+        terminal::Clear(ClearType::CurrentLine)
+    )?;
+    write!(
+        stdout,
+        "Select an account  ↑/↓ move · Enter switch · Esc/q exit\r\n"
+    )?;
+    execute!(stdout, terminal::Clear(ClearType::CurrentLine))?;
+    write!(stdout, "\r\n")?;
+    for (index, entry) in entries.iter().enumerate() {
+        execute!(
+            stdout,
+            cursor::MoveToColumn(0),
+            terminal::Clear(ClearType::CurrentLine)
+        )?;
+        write!(
+            stdout,
+            "{} {} {:<10} {:<8} {}\r\n",
+            if index == selected_index { ">" } else { " " },
+            if entry.selected { "●" } else { " " },
+            entry.name,
+            entry.version,
+            entry.hint
+        )?;
+    }
+    stdout.flush()
 }
 
 #[cfg(feature = "profile-cli")]
