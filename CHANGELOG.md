@@ -7,6 +7,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- Removed CI and release badges that resolve poorly for private repository viewers.
+- Added explicit GitHub CLI authentication diagnostics for private release installation.
+- Allowed post-release maintenance commits while still requiring the published tag to remain in
+  main's history.
+
 ## [0.2.0-rc.2] - 2026-07-16
 
 ### Fixed

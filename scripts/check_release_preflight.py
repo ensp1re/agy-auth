@@ -58,9 +58,13 @@ def main() -> int:
     if existing:
         target = git("rev-list", "-n", "1", tag)
         head = git("rev-parse", "HEAD")
-        if target != head:
-            raise SystemExit(f"existing release tag {tag} does not target HEAD")
-        state = "tag target verified"
+        ancestor = subprocess.run(
+            ["git", "merge-base", "--is-ancestor", target, head],
+            check=False,
+        ).returncode
+        if ancestor != 0:
+            raise SystemExit(f"existing release tag {tag} is not reachable from HEAD")
+        state = "published tag reachable"
     else:
         state = "tag not created"
     print(f"Release preflight: passing ({tag}; {state})")

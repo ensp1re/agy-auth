@@ -15,8 +15,8 @@ case "$(uname -s):$(uname -m)" in
     ;;
 esac
 
-if ! command -v curl >/dev/null 2>&1; then
-  printf '%s\n' "agy-auth: curl is required by the release installer" >&2
+if ! command -v curl >/dev/null 2>&1 && ! command -v gh >/dev/null 2>&1; then
+  printf '%s\n' "agy-auth: curl or authenticated gh CLI is required" >&2
   exit 2
 fi
 if ! command -v sha256sum >/dev/null 2>&1; then
@@ -33,17 +33,24 @@ if [ -n "${AGY_AUTH_DOWNLOAD_BASE:-}" ]; then
 else
   BASE="https://github.com/${REPOSITORY}/releases/download/v${VERSION}"
   fetch() {
-    if curl --proto '=https' --tlsv1.2 -fLsS "$1" -o "$2" 2>/dev/null; then
+    if command -v curl >/dev/null 2>&1 \
+      && curl --proto '=https' --tlsv1.2 -fLsS "$1" -o "$2" 2>/dev/null; then
       return
     fi
     if command -v gh >/dev/null 2>&1; then
+      if ! gh repo view "$REPOSITORY" >/dev/null 2>&1; then
+        printf '%s\n' \
+          "agy-auth: GitHub account cannot access $REPOSITORY; run gh auth login or gh auth switch" \
+          >&2
+        exit 2
+      fi
       gh release download "v${VERSION}" \
         --repo "$REPOSITORY" \
         --pattern "$(basename "$1")" \
         --output "$2"
       return
     fi
-    printf '%s\n' "agy-auth: download failed; private repositories require authenticated gh CLI" >&2
+    printf '%s\n' "agy-auth: download failed; private releases require authenticated gh CLI" >&2
     exit 2
   }
 fi

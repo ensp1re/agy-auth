@@ -1,7 +1,5 @@
 # agy-auth
 
-[![CI](https://github.com/ensp1re/agy-auth/actions/workflows/ci.yml/badge.svg)](https://github.com/ensp1re/agy-auth/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/v/release/ensp1re/agy-auth?include_prereleases)](https://github.com/ensp1re/agy-auth/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Rust](https://img.shields.io/badge/Rust-1.88%2B-orange.svg)](rust-toolchain.toml)
 
@@ -43,6 +41,24 @@ supported for authentication-state mutation.
 
 ### Install the prebuilt Linux release
 
+This repository is private. Before installing, authenticate `gh` with a GitHub account that has
+access and confirm the repository is visible:
+
+```bash
+gh auth login --hostname github.com
+gh auth status
+gh repo view ensp1re/agy-auth
+```
+
+If `gh repo view` reports `repository not found`, switch to or authenticate an account that has been
+granted access:
+
+```bash
+gh auth switch --hostname github.com
+```
+
+Then install:
+
 ```bash
 gh release download v0.2.0-rc.2 \
   --repo ensp1re/agy-auth \
@@ -50,9 +66,8 @@ gh release download v0.2.0-rc.2 \
   --output - | sh
 ```
 
-The private repository requires an authenticated GitHub CLI session (`gh auth login`). The installer
-supports Linux x86_64, verifies the archive SHA-256, and installs to `"$HOME/.local/bin"`. To inspect
-it first:
+The installer supports Linux x86_64, verifies the archive SHA-256, and installs to
+`"$HOME/.local/bin"`. To inspect it first:
 
 ```bash
 gh release download v0.2.0-rc.2 \
