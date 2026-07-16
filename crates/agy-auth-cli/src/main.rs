@@ -35,10 +35,11 @@ use crossterm::{
     terminal::{self, ClearType},
 };
 use provider_antigravity_cli::AntigravityDoctorProbe;
+#[cfg(all(feature = "profile-cli", not(target_os = "macos")))]
+use provider_antigravity_cli::masked_account_hint_from_home;
 #[cfg(feature = "profile-cli")]
 use provider_antigravity_cli::{
     ANTIGRAVITY_TOKEN_RELATIVE_PATH, AntigravityCredentialEnvelope, AntigravityInteractiveSession,
-    masked_account_hint_from_home,
 };
 #[cfg(any(feature = "experimental-fake-client", feature = "profile-cli"))]
 use std::ffi::OsString;
@@ -350,6 +351,21 @@ fn materialize_official_refresh(
 }
 
 #[cfg(feature = "profile-cli")]
+fn account_hint_from_official_home(home: &Path) -> Option<String> {
+    #[cfg(target_os = "macos")]
+    {
+        // The macOS credential contract is Keychain-backed. Avoid touching the default
+        // ~/.gemini tree merely to discover an optional display label.
+        let _ = home;
+        None
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        masked_account_hint_from_home(home)
+    }
+}
+
+#[cfg(feature = "profile-cli")]
 #[derive(Clone, Copy)]
 enum RealProfileCliError {
     ProfileConflict,
@@ -430,7 +446,7 @@ fn run_experimental_import(
             .map_err(|_| RealProfileCliError::UnsafeStorage)?;
         let provider = AntigravityCredentialEnvelope;
         let refresh = read_official_refresh(from_home, &client_version, provider)?;
-        let account_hint = masked_account_hint_from_home(from_home);
+        let account_hint = account_hint_from_official_home(from_home);
 
         catalog
             .reserve(&profile)

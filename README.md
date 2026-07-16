@@ -155,8 +155,9 @@ whether account mutation is enabled for the current platform.
 ## Quick start
 
 > [!NOTE]
-> The profile workflow below requires the verified Linux SSH/headless environment described in the
-> [platform support](#platform-support) table.
+> The profile workflow is production-enabled on the verified Linux environment in the
+> [platform support](#platform-support) table. The macOS Keychain adapter remains an explicit
+> validation candidate until its two-account gate is complete.
 
 First, sign in normally with the official client:
 
@@ -199,6 +200,11 @@ agy
 ```
 
 `switch` only updates the selected local account. It deliberately does not launch `agy`.
+
+On macOS, profile import and switching use the official `gemini` / `antigravity` login-Keychain
+item and do not require access to the default `~/.gemini` directory. macOS may ask once whether the
+newly installed `agy-auth` binary may access that Keychain item; this is an operating-system
+security prompt, not a folder-access requirement.
 
 Run an isolated session without changing the default account:
 
