@@ -137,19 +137,28 @@ fn switch_and_verify_default(binary: &str, data: &Path, home: &Path, client: &Pa
     assert_eq!(selected["profiles"][0]["selected"], true);
 }
 
+fn seed_source_home(source_home: &Path) {
+    fs::create_dir(source_home).expect("create source home");
+    fs::set_permissions(source_home, fs::Permissions::from_mode(0o700)).expect("secure source");
+    write_file(
+        &source_home.join(".gemini/antigravity-cli/antigravity-oauth-token"),
+        br#"{"auth_method":"consumer","token":{"access_token":"synthetic-source-access","token_type":"Bearer","refresh_token":"synthetic-source-refresh","expiry":"2030-01-02T03:04:05Z"}}"#,
+        0o600,
+    );
+    write_file(
+        &source_home.join(".gemini/antigravity-cli/log/cli-test.log"),
+        b"applyAuthResult: email='synthetic-user@example.invalid'",
+        0o600,
+    );
+}
+
 #[test]
 fn imports_secure_official_home_and_executes_direct_argv() {
     let root = fixture();
     let source_home = root.join("source");
     let data = root.join("data");
     let observation = root.join("observation");
-    fs::create_dir(&source_home).expect("create source home");
-    fs::set_permissions(&source_home, fs::Permissions::from_mode(0o700)).expect("secure source");
-    write_file(
-        &source_home.join(".gemini/antigravity-cli/antigravity-oauth-token"),
-        br#"{"auth_method":"consumer","token":{"access_token":"synthetic-source-access","token_type":"Bearer","refresh_token":"synthetic-source-refresh","expiry":"2030-01-02T03:04:05Z"}}"#,
-        0o600,
-    );
+    seed_source_home(&source_home);
 
     let client = root.join("agy");
     write_file(
@@ -183,7 +192,10 @@ fn imports_secure_official_home_and_executes_direct_argv() {
     assert_eq!(listing["profiles"][0]["name"], "work");
     assert_eq!(listing["profiles"][0]["status"], "ready");
     assert_eq!(listing["profiles"][0]["clientVersion"], "1.1.3");
-    assert!(listing["profiles"][0]["accountHint"].is_null());
+    assert_eq!(
+        listing["profiles"][0]["accountHint"],
+        "syn***@example.invalid"
+    );
     assert!(listing["profiles"][0].get("id").is_none());
     assert!(listing["profiles"][0].get("storage").is_none());
 

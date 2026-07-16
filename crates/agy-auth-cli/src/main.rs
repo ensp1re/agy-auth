@@ -38,6 +38,7 @@ use provider_antigravity_cli::AntigravityDoctorProbe;
 #[cfg(feature = "profile-cli")]
 use provider_antigravity_cli::{
     ANTIGRAVITY_TOKEN_RELATIVE_PATH, AntigravityCredentialEnvelope, AntigravityInteractiveSession,
+    masked_account_hint_from_home,
 };
 #[cfg(any(feature = "experimental-fake-client", feature = "profile-cli"))]
 use std::ffi::OsString;
@@ -429,6 +430,7 @@ fn run_experimental_import(
             .map_err(|_| RealProfileCliError::UnsafeStorage)?;
         let provider = AntigravityCredentialEnvelope;
         let refresh = read_official_refresh(from_home, &client_version, provider)?;
+        let account_hint = masked_account_hint_from_home(from_home);
 
         catalog
             .reserve(&profile)
@@ -449,6 +451,11 @@ fn run_experimental_import(
         catalog
             .mark_ready(profile.id, &client_version)
             .map_err(|_| RealProfileCliError::Internal)?;
+        if let Some(account_hint) = account_hint {
+            catalog
+                .set_account_hint(profile.id, Some(account_hint))
+                .map_err(|_| RealProfileCliError::Internal)?;
+        }
         transaction
             .advance(ImportTransactionStage::Ready)
             .map_err(|_| RealProfileCliError::UnsafeStorage)?;
