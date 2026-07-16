@@ -22,7 +22,7 @@ fn login_delegates_to_client_and_registers_resulting_profile() {
     let client = root.join("agy");
     fs::write(
         &client,
-        b"#!/bin/sh\nif [ \"${1-}\" = \"--version\" ]; then printf '1.1.3\\n'; exit 0; fi\nmkdir -p \"$HOME/.gemini/antigravity-cli\"\nchmod 700 \"$HOME/.gemini\" \"$HOME/.gemini/antigravity-cli\"\nprintf '%s' '{\"auth_method\":\"consumer\",\"token\":{\"access_token\":\"synthetic-login-access\",\"token_type\":\"Bearer\",\"refresh_token\":\"synthetic-login-refresh\",\"expiry\":\"2030-01-02T03:04:05Z\"}}' > \"$HOME/.gemini/antigravity-cli/antigravity-oauth-token\"\nchmod 600 \"$HOME/.gemini/antigravity-cli/antigravity-oauth-token\"\n",
+        b"#!/bin/sh\nif [ \"${1-}\" = \"--version\" ]; then printf '1.1.3\\n'; exit 0; fi\nmkdir -p \"$HOME/.gemini/antigravity-cli\"\nchmod 700 \"$HOME/.gemini\" \"$HOME/.gemini/antigravity-cli\"\nprintf '%s' '{\"auth_method\":\"consumer\",\"token\":{\"access_token\":\"synthetic-login-access\",\"token_type\":\"Bearer\",\"refresh_token\":\"synthetic-login-refresh\",\"expiry\":\"2030-01-02T03:04:05Z\"}}' > \"$HOME/.gemini/antigravity-cli/antigravity-oauth-token\"\nchmod 600 \"$HOME/.gemini/antigravity-cli/antigravity-oauth-token\"\nsleep 2\ntouch \"$HOME/unwanted-next-action\"\n",
     )
     .expect("client");
     fs::set_permissions(&client, fs::Permissions::from_mode(0o700)).expect("executable");
@@ -47,6 +47,15 @@ fn login_delegates_to_client_and_registers_resulting_profile() {
             .expect("transactions")
             .count(),
         0
+    );
+    let profile_id = registry["profiles"][0]["id"].as_str().expect("profile id");
+    assert!(
+        !data
+            .join("profiles")
+            .join(profile_id)
+            .join("home")
+            .join("unwanted-next-action")
+            .exists()
     );
     fs::remove_dir_all(root).expect("cleanup");
 }

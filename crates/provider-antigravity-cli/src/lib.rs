@@ -5,7 +5,10 @@ mod credential_envelope;
 use agy_auth_app::{ClientDiagnostic, DoctorClientProbe};
 use agy_auth_domain::ProviderKind;
 #[cfg(feature = "experimental-profile-credentials")]
-use agy_auth_process::{DiscoveredClient, IsolatedClientEnvironment, run_interactive_isolated};
+use agy_auth_process::{
+    DiscoveredClient, InteractiveCompletion, IsolatedClientEnvironment, run_interactive_isolated,
+    run_interactive_isolated_until_file,
+};
 use agy_auth_process::{DiscoveryError, OfficialClient, ProcessError, discover_client};
 use std::ffi::OsString;
 use std::path::PathBuf;
@@ -78,6 +81,27 @@ impl AntigravityInteractiveSession {
             client,
             environment: isolated,
         })
+    }
+
+    /// Run official `agy` until it persists the verified credential path.
+    ///
+    /// # Errors
+    ///
+    /// Returns a stable workflow error when enrollment exits early, times out, or cannot be
+    /// monitored safely.
+    pub fn enroll_until_credential(&self) -> Result<(), CredentialWorkflowError> {
+        match run_interactive_isolated_until_file(
+            self.client.executable(),
+            std::iter::empty::<&str>(),
+            &self.environment,
+            std::path::Path::new(ANTIGRAVITY_TOKEN_RELATIVE_PATH),
+            Duration::from_secs(15 * 60),
+        )
+        .map_err(|_| CredentialWorkflowError::ClientExecutionFailed)?
+        {
+            InteractiveCompletion::FileCreated => Ok(()),
+            InteractiveCompletion::Exited(_) => Err(CredentialWorkflowError::ClientExecutionFailed),
+        }
     }
 }
 

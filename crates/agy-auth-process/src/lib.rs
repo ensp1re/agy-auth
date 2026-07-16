@@ -200,6 +200,15 @@ pub struct ProcessOutput {
     pub stderr_truncated: bool,
 }
 
+/// Outcome of an interactive enrollment process watched for one managed-home-relative file.
+#[derive(Debug)]
+pub enum InteractiveCompletion {
+    /// The watched file appeared and the client was terminated after persisting it.
+    FileCreated,
+    /// The client exited before creating the watched file.
+    Exited(ExitStatus),
+}
+
 /// Explicit, minimal environment for launching a client inside a managed profile home.
 ///
 /// Every path must name an existing absolute directory. On Unix, group or other permission bits
@@ -421,6 +430,103 @@ where
         }
     }
     unreachable!("interactive spawn loop returns on every final attempt")
+}
+
+/// Run an interactive client in its isolated home until a watched relative file appears.
+///
+/// This is intended for official-client delegated enrollment. The process is terminated immediately
+/// after the client persists the expected credential file, before unrelated workspace UI continues.
+///
+/// # Errors
+///
+/// Returns an error for unsafe relative paths, pre-existing watched state, spawn/wait failures, or
+/// timeout.
+pub fn run_interactive_isolated_until_file<I, S>(
+    executable: &Path,
+    arguments: I,
+    environment: &IsolatedClientEnvironment,
+    watched_relative_path: &Path,
+    timeout: Duration,
+) -> Result<InteractiveCompletion, ProcessError>
+where
+    I: IntoIterator<Item = S>,
+    S: AsRef<OsStr>,
+{
+    if watched_relative_path.as_os_str().is_empty()
+        || watched_relative_path.is_absolute()
+        || watched_relative_path
+            .components()
+            .any(|component| !matches!(component, std::path::Component::Normal(_)))
+    {
+        return Err(ProcessError::UnsafeIsolation(
+            "watched enrollment path must be relative",
+        ));
+    }
+    let watched = environment.home.join(watched_relative_path);
+    if fs::symlink_metadata(&watched).is_ok() {
+        return Err(ProcessError::UnsafeIsolation(
+            "watched enrollment path must be absent",
+        ));
+    }
+    let arguments = arguments
+        .into_iter()
+        .map(|argument| argument.as_ref().to_owned())
+        .collect::<Vec<OsString>>();
+    let mut command = Command::new(executable);
+    command
+        .args(&arguments)
+        .current_dir(&environment.home)
+        .stdin(Stdio::inherit())
+        .stdout(Stdio::inherit())
+        .stderr(Stdio::inherit());
+    environment.apply(&mut command);
+    let mut child = command.spawn()?;
+    let deadline = Instant::now() + timeout;
+    loop {
+        match fs::symlink_metadata(&watched) {
+            Ok(metadata)
+                if metadata.is_file()
+                    && !metadata.file_type().is_symlink()
+                    && metadata.len() > 0 =>
+            {
+                thread::sleep(Duration::from_millis(100));
+                let stable = fs::symlink_metadata(&watched)?;
+                if stable.is_file()
+                    && !stable.file_type().is_symlink()
+                    && stable.len() == metadata.len()
+                {
+                    if child.try_wait()?.is_none() {
+                        child.kill()?;
+                        let _ = child.wait();
+                    }
+                    return Ok(InteractiveCompletion::FileCreated);
+                }
+            }
+            Ok(metadata) if metadata.is_file() && !metadata.file_type().is_symlink() => {}
+            Ok(_) => {
+                child.kill()?;
+                let _ = child.wait();
+                return Err(ProcessError::UnsafeIsolation(
+                    "watched enrollment path has unsafe type",
+                ));
+            }
+            Err(error) if error.kind() == io::ErrorKind::NotFound => {}
+            Err(error) => {
+                child.kill()?;
+                let _ = child.wait();
+                return Err(error.into());
+            }
+        }
+        if let Some(status) = child.try_wait()? {
+            return Ok(InteractiveCompletion::Exited(status));
+        }
+        if Instant::now() >= deadline {
+            child.kill()?;
+            let _ = child.wait();
+            return Err(ProcessError::TimedOut);
+        }
+        thread::sleep(Duration::from_millis(50));
+    }
 }
 
 fn spawn_bounded(executable: &Path, arguments: &[OsString]) -> io::Result<Child> {

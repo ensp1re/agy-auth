@@ -7,9 +7,8 @@ use agy_auth_app::ProfileWorkflowError;
 use agy_auth_app::new_pending_profile;
 #[cfg(feature = "profile-cli")]
 use agy_auth_app::{
-    CredentialEnvelopePort, CredentialFilePort, CredentialSessionClientPort,
-    CredentialSessionPorts, CredentialWorkflowError, OpaqueSecretBytes, ProfileCatalogPort,
-    require_ready_profile, run_profile_credential_session,
+    CredentialEnvelopePort, CredentialFilePort, CredentialSessionPorts, CredentialWorkflowError,
+    OpaqueSecretBytes, ProfileCatalogPort, require_ready_profile, run_profile_credential_session,
 };
 use agy_auth_app::{DoctorRegistryProbe, DoctorReport, RegistryDiagnostic, doctor};
 #[cfg(feature = "experimental-fake-client")]
@@ -419,10 +418,9 @@ fn run_login(cli: &Cli, name: &str, explicit_client: Option<&Path>) -> u8 {
             std::env::var("TERM").ok().as_deref(),
         )
         .map_err(map_credential_error)?;
-        let exit_code = client.execute(&[]).map_err(map_credential_error)?;
-        if exit_code != 0 {
-            return Err(RealProfileCliError::LoginFailed);
-        }
+        client
+            .enroll_until_credential()
+            .map_err(|_| RealProfileCliError::LoginFailed)?;
         let files = ProfileCredentialFiles::new(&environment.home)
             .map_err(|_| RealProfileCliError::UnsafeStorage)?;
         let provider = AntigravityCredentialEnvelope;
@@ -460,7 +458,9 @@ fn run_login(cli: &Cli, name: &str, explicit_client: Option<&Path>) -> u8 {
                     })
                 );
             } else {
-                println!("profile enrolled: {name}");
+                println!("Successfully logged in: {name}");
+                println!("Run: agy-auth exec {name}");
+                println!("Help: agy-auth --help");
             }
             0
         }

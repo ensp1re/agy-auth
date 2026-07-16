@@ -122,8 +122,10 @@ an alias for `profile-cli`.
 The default CLI exposes `add`, `login`, `list`, `exec`, and `recover`. `add <name>` captures the
 account already logged into the caller's official `agy` home; `--from-home` selects another
 same-user official home. `login <name>` launches official `agy` in a newly managed isolated home so
-another account can be enrolled without logging out the default home. These commands are restricted
-to the verified
+another account can be enrolled without logging out the default home. Enrollment watches only the
+verified credential path; once stable credential state appears, `agy-auth` terminates that enrollment
+process before workspace/project prompts, validates the envelope, commits the profile, and prints the
+next `exec` command. These commands are restricted to the verified
 `agy 1.1.2` or `1.1.3` Linux contract. Import reads a bounded secure official-client envelope,
 extracts only its refresh credential, and materializes a minimal envelope in an owner-only managed
 profile home.
