@@ -137,7 +137,8 @@ file remains inside its mode-0700 isolated official-client home as approved by t
 it is not exported into a separate plaintext vault.
 
 On an interactive terminal, `list` opens a selector where Up/Down moves, Enter switches, and
-Escape/q exits. `list --plain`, `list --json`, and redirected output retain deterministic
+Escape, q/Q, Ctrl+C, Ctrl+D, Backspace, or Left Arrow exits without switching. `list --plain`,
+`list --json`, and redirected output retain deterministic
 non-interactive output. The selector redraws only its own inline rows and must not clear the
 surrounding terminal history. Both views show `NAME`, masked `ACCOUNT`, `VERSION`, and
 `LAST ACTIVITY`; activity updates after successful login, switch, or profile execution.

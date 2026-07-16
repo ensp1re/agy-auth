@@ -26,7 +26,7 @@ use clap::{Parser, Subcommand};
 #[cfg(feature = "profile-cli")]
 use crossterm::{
     cursor, event,
-    event::{Event, KeyCode, KeyEventKind},
+    event::{Event, KeyCode, KeyEventKind, KeyModifiers},
     execute,
     terminal::{self, ClearType},
 };
@@ -733,7 +733,12 @@ fn run_interactive_list(cli: &Cli, entries: &[ListEntry]) -> u8 {
                 let _ = stdout.flush();
                 return run_switch(cli, &name, None);
             }
-            KeyCode::Esc | KeyCode::Char('q') => {
+            KeyCode::Char('c' | 'd') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                let _ = write!(stdout, "\r\n");
+                let _ = stdout.flush();
+                return 0;
+            }
+            KeyCode::Esc | KeyCode::Left | KeyCode::Backspace | KeyCode::Char('q' | 'Q') => {
                 let _ = write!(stdout, "\r\n");
                 let _ = stdout.flush();
                 return 0;
@@ -763,7 +768,7 @@ fn render_interactive_list(
     )?;
     write!(
         stdout,
-        "Select an account  ↑/↓ move · Enter switch · Esc/q exit\r\n"
+        "Select an account  ↑/↓ move · Enter switch · Esc/q/Ctrl+C exit\r\n"
     )?;
     execute!(stdout, terminal::Clear(ClearType::CurrentLine))?;
     write!(
