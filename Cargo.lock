@@ -21,6 +21,7 @@ dependencies = [
  "crossterm",
  "provider-antigravity-cli",
  "serde_json",
+ "time",
 ]
 
 [[package]]

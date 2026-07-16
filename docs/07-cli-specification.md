@@ -139,7 +139,8 @@ it is not exported into a separate plaintext vault.
 On an interactive terminal, `list` opens a selector where Up/Down moves, Enter switches, and
 Escape/q exits. `list --plain`, `list --json`, and redirected output retain deterministic
 non-interactive output. The selector redraws only its own inline rows and must not clear the
-surrounding terminal history.
+surrounding terminal history. Both views show `NAME`, masked `ACCOUNT`, `VERSION`, and
+`LAST ACTIVITY`; activity updates after successful login, switch, or profile execution.
 
 `switch <name>` atomically selects the credential used by subsequent plain `agy` launches and does
 not launch the client. `list` prefixes the selected profile with `->`; this is project-owned

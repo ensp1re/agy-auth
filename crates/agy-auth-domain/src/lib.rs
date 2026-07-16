@@ -191,6 +191,8 @@ pub struct Profile {
     pub created_at: OffsetDateTime,
     /// Last metadata update time.
     pub updated_at: OffsetDateTime,
+    /// Last successful login, switch, or execution time.
+    pub last_activity_at: Option<OffsetDateTime>,
     /// Official client version observed during capture.
     pub client_version_at_capture: Option<String>,
     /// Non-secret schema fingerprint.
@@ -207,6 +209,12 @@ impl Profile {
     /// Returns a domain error for unmasked account hints or inconsistent timestamps.
     pub fn validate(&self) -> Result<(), DomainError> {
         if self.updated_at < self.created_at {
+            return Err(DomainError::InvalidTimestampOrder);
+        }
+        if self
+            .last_activity_at
+            .is_some_and(|activity| activity < self.created_at)
+        {
             return Err(DomainError::InvalidTimestampOrder);
         }
         if let Some(hint) = &self.account_hint {
@@ -304,6 +312,29 @@ impl Registry {
         profile.status = ProfileStatus::Ready;
         profile.client_version_at_capture = Some(client_version.to_owned());
         profile.updated_at = updated_at;
+        Ok(())
+    }
+
+    /// Record successful user activity for one ready profile.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the profile is absent, not ready, or the timestamp is invalid.
+    pub fn mark_activity(
+        &mut self,
+        profile_id: ProfileId,
+        activity_at: OffsetDateTime,
+    ) -> Result<(), DomainError> {
+        let profile = self
+            .profiles
+            .iter_mut()
+            .find(|profile| profile.id == profile_id)
+            .ok_or(DomainError::ProfileNotFound)?;
+        if profile.status != ProfileStatus::Ready || activity_at < profile.created_at {
+            return Err(DomainError::InvalidStatusTransition);
+        }
+        profile.last_activity_at = Some(activity_at);
+        profile.updated_at = activity_at;
         Ok(())
     }
 

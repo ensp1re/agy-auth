@@ -41,6 +41,7 @@ use std::ffi::OsString;
 use std::io::{self, IsTerminal, Write};
 use std::path::Path as StdPath;
 use std::path::{Path, PathBuf};
+use time::OffsetDateTime;
 
 /// Capability-gated local profile management for Google Antigravity CLI.
 #[derive(Debug, Parser)]
@@ -501,6 +502,9 @@ fn run_login(cli: &Cli, requested_name: Option<&str>, explicit_client: Option<&P
                 .set_account_hint(profile.id, Some(account_hint))
                 .map_err(|_| RealProfileCliError::Internal)?;
         }
+        catalog
+            .mark_activity(profile.id)
+            .map_err(|_| RealProfileCliError::Internal)?;
         transaction
             .advance(ImportTransactionStage::Ready)
             .map_err(|_| RealProfileCliError::UnsafeStorage)?;
@@ -587,9 +591,9 @@ fn run_recover(cli: &Cli) -> u8 {
 
 struct ListEntry {
     name: String,
-    status: String,
     version: String,
     hint: String,
+    activity: String,
     selected: bool,
 }
 
@@ -608,7 +612,6 @@ fn run_list(cli: &Cli, plain: bool) -> u8 {
             .iter()
             .map(|profile| ListEntry {
                 name: profile.name.as_str().to_owned(),
-                status: profile.status.as_str().to_owned(),
                 version: profile
                     .client_version_at_capture
                     .clone()
@@ -617,6 +620,7 @@ fn run_list(cli: &Cli, plain: bool) -> u8 {
                     .account_hint
                     .clone()
                     .unwrap_or_else(|| "-".to_owned()),
+                activity: format_activity(profile.last_activity_at),
                 selected: selected.as_deref() == Some(profile.name.as_str()),
             })
             .collect::<Vec<_>>();
@@ -630,6 +634,9 @@ fn run_list(cli: &Cli, plain: bool) -> u8 {
                         "clientVersion": profile.client_version_at_capture,
                         "accountHint": profile.account_hint.as_deref(),
                         "selected": selected.as_deref() == Some(profile.name.as_str()),
+                        "lastActivityAt": profile
+                            .last_activity_at
+                            .map(time::OffsetDateTime::unix_timestamp),
                     })
                 })
                 .collect();
@@ -651,14 +658,15 @@ fn run_list(cli: &Cli, plain: bool) -> u8 {
             #[cfg(feature = "profile-cli")]
             return Ok(Some(run_interactive_list(cli, &entries)));
         } else {
+            println!("   NAME\tACCOUNT\tVERSION\tLAST ACTIVITY");
             for entry in entries {
                 println!(
                     "{} {}\t{}\t{}\t{}",
                     if entry.selected { "->" } else { "  " },
                     entry.name,
-                    entry.status,
+                    entry.hint,
                     entry.version,
-                    entry.hint
+                    entry.activity
                 );
             }
         }
@@ -669,6 +677,21 @@ fn run_list(cli: &Cli, plain: bool) -> u8 {
         Ok(None) => 0,
         Err(ProfileWorkflowError::HomeUnavailable) => 8,
         Err(_) => 11,
+    }
+}
+
+fn format_activity(activity: Option<OffsetDateTime>) -> String {
+    let Some(activity) = activity else {
+        return "-".to_owned();
+    };
+    let seconds = (OffsetDateTime::now_utc() - activity)
+        .whole_seconds()
+        .max(0);
+    match seconds {
+        0..=59 => "Now".to_owned(),
+        60..=3_599 => format!("{}m ago", seconds / 60),
+        3_600..=86_399 => format!("{}h ago", seconds / 3_600),
+        _ => format!("{}d ago", seconds / 86_400),
     }
 }
 
@@ -743,7 +766,11 @@ fn render_interactive_list(
         "Select an account  ↑/↓ move · Enter switch · Esc/q exit\r\n"
     )?;
     execute!(stdout, terminal::Clear(ClearType::CurrentLine))?;
-    write!(stdout, "\r\n")?;
+    write!(
+        stdout,
+        "  {:<10} {:<24} {:<8} LAST ACTIVITY\r\n",
+        "NAME", "ACCOUNT", "VERSION"
+    )?;
     for (index, entry) in entries.iter().enumerate() {
         execute!(
             stdout,
@@ -752,12 +779,13 @@ fn render_interactive_list(
         )?;
         write!(
             stdout,
-            "{} {} {:<10} {:<8} {}\r\n",
+            "{} {} {:<10} {:<24} {:<8} {}\r\n",
             if index == selected_index { ">" } else { " " },
             if entry.selected { "●" } else { " " },
             entry.name,
+            entry.hint,
             entry.version,
-            entry.hint
+            entry.activity
         )?;
     }
     stdout.flush()
@@ -879,6 +907,9 @@ fn run_switch(cli: &Cli, name: &str, explicit_client: Option<&Path>) -> u8 {
                 .map_err(|_| RealProfileCliError::UnsafeStorage)?;
             return Err(RealProfileCliError::UnsafeStorage);
         }
+        catalog
+            .mark_activity(target.id)
+            .map_err(|_| RealProfileCliError::Internal)?;
         Ok(())
     })();
     match result {
@@ -981,9 +1012,13 @@ fn run_experimental_real_exec(
             client: &client,
             lock: &lock,
         };
-        run_profile_credential_session(&client_version, &refresh, arguments, &ports, 16 * 1024)
-            .map(|outcome| outcome.exit_code)
-            .map_err(map_credential_error)
+        let outcome =
+            run_profile_credential_session(&client_version, &refresh, arguments, &ports, 16 * 1024)
+                .map_err(map_credential_error)?;
+        catalog
+            .mark_activity(profile.id)
+            .map_err(|_| RealProfileCliError::Internal)?;
+        Ok(outcome.exit_code)
     })();
     match result {
         Ok(code) => u8::try_from(code).unwrap_or(11),
