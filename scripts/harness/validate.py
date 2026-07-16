@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import subprocess
 import sys
@@ -75,7 +76,11 @@ def main() -> int:
         if source and not (ROOT / source).is_file():
             errors.append(f"work item source does not exist: {source}")
 
-    if handoff.get("git", {}).get("branch") != git("branch", "--show-current"):
+    # GitHub Actions checks out synthetic merge commits or detached revisions. Local validation
+    # remains the authority for matching durable handoff state to a developer's working branch.
+    if os.environ.get("GITHUB_ACTIONS") != "true" and handoff.get("git", {}).get(
+        "branch"
+    ) != git("branch", "--show-current"):
         errors.append("handoff branch differs from Git")
 
     tracked = git("ls-files").splitlines()

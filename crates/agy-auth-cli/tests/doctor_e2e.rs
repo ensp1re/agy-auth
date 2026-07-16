@@ -1,6 +1,5 @@
+#![doc = "End-to-end contract tests for diagnostics-only doctor output."]
 #![cfg(unix)]
-
-//! End-to-end contract tests for diagnostics-only doctor output.
 
 use serde_json::Value;
 use std::fs;

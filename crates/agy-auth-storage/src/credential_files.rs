@@ -1,5 +1,7 @@
 //! Protected opaque credential files beneath managed profile homes.
 
+#![cfg_attr(not(unix), allow(clippy::unnecessary_wraps))]
+
 use std::fs::{self, File, OpenOptions};
 use std::io::{self, Read, Write};
 use std::path::{Component, Path, PathBuf};
@@ -449,7 +451,9 @@ fn validate_owner_and_mode(
     metadata: &fs::Metadata,
     forbidden_mode: u32,
 ) -> Result<(), CredentialFileError> {
-    use std::os::unix::fs::{MetadataExt, PermissionsExt};
+    #[cfg(target_os = "linux")]
+    use std::os::unix::fs::MetadataExt;
+    use std::os::unix::fs::PermissionsExt;
 
     if metadata.permissions().mode() & forbidden_mode != 0 {
         return Err(CredentialFileError::UnsafePermissions);

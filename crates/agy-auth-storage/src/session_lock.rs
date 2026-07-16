@@ -1,5 +1,7 @@
 //! Exclusive per-profile official-client session lease.
 
+#![cfg_attr(not(unix), allow(clippy::unnecessary_wraps))]
+
 use agy_auth_app::{CredentialSessionLease, CredentialSessionLockPort, CredentialWorkflowError};
 use fs2::FileExt;
 use std::fs::{self, File, OpenOptions};
@@ -115,7 +117,9 @@ fn validate_owner_and_mode(
     metadata: &fs::Metadata,
     forbidden_mode: u32,
 ) -> Result<(), ProfileSessionLockError> {
-    use std::os::unix::fs::{MetadataExt, PermissionsExt};
+    #[cfg(target_os = "linux")]
+    use std::os::unix::fs::MetadataExt;
+    use std::os::unix::fs::PermissionsExt;
 
     if metadata.permissions().mode() & forbidden_mode != 0 {
         return Err(ProfileSessionLockError::UnsafePermissions);
@@ -172,6 +176,7 @@ fn open_lock_file(path: &std::path::Path) -> io::Result<File> {
         .read(true)
         .write(true)
         .create(true)
+        .truncate(false)
         .open(path)
 }
 

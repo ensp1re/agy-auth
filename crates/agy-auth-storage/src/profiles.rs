@@ -1,5 +1,7 @@
 //! Project-owned managed profile directory lifecycle.
 
+#![cfg_attr(not(unix), allow(clippy::unnecessary_wraps))]
+
 use agy_auth_app::{ManagedProfileEnvironment, ProfileHomePort, ProfileWorkflowError};
 use agy_auth_domain::ProfileId;
 use std::fs;

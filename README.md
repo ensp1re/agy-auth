@@ -34,8 +34,9 @@ APIs, pool usage, or rotate accounts automatically.
 - Official Antigravity CLI executable available as `agy`.
 - Verified `agy` version `1.1.2` or `1.1.3`.
 
-Desktop keyrings, macOS, Windows, Linux ARM64, and unverified `agy` versions are not currently
-supported for authentication-state mutation.
+The CLI is compiled and tested on Linux, macOS, and Windows. Authentication-state mutation remains
+limited to the verified Linux SSH/headless contract; desktop keyrings, macOS, Windows, Linux ARM64,
+and unverified `agy` versions fail closed.
 
 ## Installation
 

@@ -1,3 +1,5 @@
+#![cfg_attr(not(unix), allow(clippy::unnecessary_wraps))]
+
 use agy_auth_app::{
     DoctorRegistryProbe, ProfileCatalogPort, ProfileWorkflowError, RegistryDiagnostic,
 };
@@ -7,7 +9,9 @@ use agy_auth_domain::{
 };
 use fs2::FileExt;
 use serde::{Deserialize, Serialize};
-use std::fs::{self, File, OpenOptions};
+#[cfg(unix)]
+use std::fs::File;
+use std::fs::{self, OpenOptions};
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use thiserror::Error;
@@ -251,7 +255,9 @@ fn inspect_data_root(path: &Path) -> Result<FilesystemDiagnostic, &'static str> 
 fn unix_directory_security(
     metadata: &fs::Metadata,
 ) -> Result<(Option<bool>, Option<bool>), &'static str> {
-    use std::os::unix::fs::{MetadataExt, PermissionsExt};
+    #[cfg(target_os = "linux")]
+    use std::os::unix::fs::MetadataExt;
+    use std::os::unix::fs::PermissionsExt;
 
     let permissions_secure = metadata.permissions().mode().trailing_zeros() >= 6;
     if !permissions_secure {
@@ -704,7 +710,10 @@ pub enum RegistryStoreError {
 
 #[cfg(test)]
 mod tests {
-    use super::{RegistryDoctorProbe, RegistryFile, RegistryStoreError};
+    #[cfg(unix)]
+    use super::RegistryDoctorProbe;
+    use super::{RegistryFile, RegistryStoreError};
+    #[cfg(unix)]
     use agy_auth_app::DoctorRegistryProbe;
     use agy_auth_domain::{
         Profile, ProfileId, ProfileName, ProfileStatus, ProviderKind, Registry, StorageLocator,
@@ -881,7 +890,10 @@ mod tests {
 
         assert!(result.healthy);
         assert_eq!(result.data_directory_state, "secure");
+        #[cfg(target_os = "linux")]
         assert_eq!(result.owner_matches, Some(true));
+        #[cfg(not(target_os = "linux"))]
+        assert_eq!(result.owner_matches, None);
         assert_eq!(result.permissions_secure, Some(true));
         fs::remove_dir_all(directory).expect("remove test directory");
     }

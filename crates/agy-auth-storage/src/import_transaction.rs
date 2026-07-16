@@ -1,9 +1,13 @@
 //! Non-secret interrupted-import journal and idempotent recovery.
 
+#![cfg_attr(not(unix), allow(clippy::unnecessary_wraps))]
+
 use crate::{ManagedProfileHomes, RegistryCatalog};
 use agy_auth_domain::{ProfileId, ProfileStatus};
 use serde::{Deserialize, Serialize};
-use std::fs::{self, File, OpenOptions};
+#[cfg(unix)]
+use std::fs::File;
+use std::fs::{self, OpenOptions};
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use thiserror::Error;
