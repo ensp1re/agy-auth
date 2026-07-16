@@ -29,7 +29,7 @@
     {
       "id": "phase-3-ssh-file-fallback-observation",
       "title": "Verify the agy 1.1.2 Linux SSH two-account contract",
-      "status": "active",
+      "status": "passing",
       "source": "docs/adr/0007-versioned-unofficial-isolated-homes.md",
       "plan": "docs/research/linux-two-account-validation-2026-07-16.md",
       "acceptance": [
@@ -52,6 +52,21 @@
         {"command": "python3 scripts/check.py plus installed-client ignored smoke", "revision": "c0e2d70ce93b7570772f47ae9f971993e0ee4893", "outcome": "passing; 61 automated tests plus real agy 1.1.2 --version through locked synthetic session"},
         {"command": "concurrent two-profile launch, restart, forced-refresh, clean-third, and cleanup validation", "revision": "ab3244775fba207c363687661a04df6de523b8cc", "outcome": "passing; two distinct identities remained isolated across concurrent launch and restart, both refresh credentials restored their account, clean third required login, cleanup complete"}
       ],
+      "completion": {"commit": "a8147950fa107f850106518b0b4e153dfe0c3013", "review": "https://github.com/ensp1re/agy-auth/pull/29", "completedAt": "2026-07-16T11:31:00Z"}
+    },
+    {
+      "id": "phase-3-experimental-real-profile-cli",
+      "title": "Compose capability-gated real profile import and exec commands",
+      "status": "active",
+      "source": "docs/07-cli-specification.md",
+      "plan": "docs/adr/0007-versioned-unofficial-isolated-homes.md",
+      "acceptance": [
+        "A hidden non-default command imports only the refresh credential from a secure official agy home.",
+        "A hidden non-default command executes verified agy 1.1.2 Linux through the managed locked credential session.",
+        "Default builds remain diagnostics-only and synthetic end-to-end tests prove direct argv and exit propagation."
+      ],
+      "blocker": null,
+      "verification": [],
       "completion": null
     }
   ]

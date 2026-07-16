@@ -119,3 +119,12 @@ application/provider/storage credential workflow, the real interactive client ad
 end-to-end tests. It adds no CLI command or credential argument, so the shipped binary has no path
 that can invoke the adapter. Experimental sessions require an exclusive profile-runtime lease.
 Release builds omit this feature.
+
+The non-default feature `experimental-real-profile-cli` additionally exposes hidden
+`experimental-import <name> --from-home <path>` and
+`experimental-real-exec <name> -- [args...]` commands. They are restricted to the verified
+`agy 1.1.2` Linux contract. Import reads a bounded secure official-client envelope, extracts only its
+refresh credential, and materializes a minimal envelope in an owner-only managed profile home.
+Execution uses direct argv, the isolated SSH environment, and an exclusive profile lock; the
+official client continues to own token refresh and backend traffic. Default release builds omit this
+feature.
