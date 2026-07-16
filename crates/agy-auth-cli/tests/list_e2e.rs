@@ -1,5 +1,5 @@
-#![cfg(unix)]
 #![doc = "End-to-end coverage for public secret-safe profile listing."]
+#![cfg(unix)]
 
 use serde_json::Value;
 use std::fs;
