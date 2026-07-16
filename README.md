@@ -1,242 +1,307 @@
 # agy-auth
 
+[![CI](https://github.com/ensp1re/agy-auth/actions/workflows/ci.yml/badge.svg)](https://github.com/ensp1re/agy-auth/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/ensp1re/agy-auth?include_prereleases)](https://github.com/ensp1re/agy-auth/releases)
+[![Rust 1.88+](https://img.shields.io/badge/Rust-1.88%2B-orange.svg)](rust-toolchain.toml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Rust](https://img.shields.io/badge/Rust-1.88%2B-orange.svg)](rust-toolchain.toml)
 
-`agy-auth` is a local account-profile manager for Google Antigravity CLI (`agy`). It lets one person
-enroll, identify, and manually switch between their own Google account contexts without repeatedly
-logging out of the official client.
+Switch between your personal and work accounts in Google Antigravity CLI without repeatedly using
+`/logout`.
 
-The official `agy` binary still owns OAuth login, token refresh, model requests, entitlements, and
-Google policy enforcement. `agy-auth` does not implement Google OAuth, call private model or quota
-APIs, pool usage, or rotate accounts automatically.
+`agy-auth` saves local account profiles, opens new sign-ins through the official `agy` client, and
+lets you choose which account the next plain `agy` launch will use. Login, token refresh, model
+requests, entitlements, and Google policy enforcement remain owned by the official client.
 
 > [!IMPORTANT]
-> The switching contract is reverse engineered, not supported by Google. It is currently verified
-> only for Antigravity CLI `1.1.2` and `1.1.3` on Linux SSH/headless systems. Other versions and
-> platforms fail closed.
+> Account switching uses a reverse-engineered local contract that is not supported by Google. It is
+> currently verified only for Antigravity CLI `1.1.2` and `1.1.3` on Linux x86_64 SSH/headless
+> systems. Unsupported versions and platforms fail closed.
 
-## Features
+## At a glance
 
-- Enroll additional accounts through the official interactive `agy` login.
-- Capture the account already logged into the official default home.
-- Switch the account used by the next plain `agy` launch without opening the client.
-- Browse profiles in a terminal-safe interactive selector.
-- Show profile name, masked account hint, captured client version, selection, and last activity.
-- Launch an isolated one-off `agy` session with `agy-auth exec`.
-- Preserve refresh-token rotation and recover interrupted profile imports.
-- Refuse unsafe ownership, permissions, links, schemas, versions, and concurrent profile sessions.
+```console
+$ agy-auth list --plain
+   NAME       ACCOUNT             VERSION   LAST ACTIVITY
+   personal   arc***@gmail.com    1.1.3     2m ago
+-> work       ale***@gmail.com    1.1.3     now
 
-## Requirements
+$ agy-auth switch personal
+Switched to personal. Run `agy` to start.
+```
 
-- Linux x86_64 SSH/headless environment.
-- Rust `1.88` or newer when building from source.
-- Official Antigravity CLI executable available as `agy`.
-- Verified `agy` version `1.1.2` or `1.1.3`.
+### What it does
 
-The CLI is compiled and tested on Linux, macOS, and Windows. Authentication-state mutation remains
-limited to the verified Linux SSH/headless contract; desktop keyrings, macOS, Windows, Linux ARM64,
-and unverified `agy` versions fail closed.
+- Saves the account already logged into the default `agy` home.
+- Enrolls another account through the official interactive `agy` login.
+- Switches the account used by future plain `agy` launches without opening the client.
+- Provides a terminal-safe interactive profile selector.
+- Runs one-off isolated sessions without changing the selected default account.
+- Preserves refresh-token rotation and recovers interrupted imports.
+- Rejects unsafe permissions, links, schemas, versions, and concurrent sessions.
+
+### What it does not do
+
+- Implement Google OAuth or ask for your Google password.
+- Call private Gemini, Code Assist, quota, or entitlement APIs.
+- Display account quotas or choose accounts based on remaining usage.
+- Share credentials, synchronize profiles, or provide a hosted vault.
+- Automatically rotate, balance, or fall back between accounts.
+
+## Platform support
+
+| Platform | Build and tests | Diagnostics | Account profile workflows |
+|---|:---:|:---:|:---:|
+| Linux x86_64 SSH/headless | ✅ | ✅ | ✅ `agy` 1.1.2–1.1.3 |
+| macOS | ✅ | ✅ | ❌ fails closed |
+| Windows | ✅ | Build verified | ❌ fails closed |
+| Linux ARM64 | Not tested | Not tested | ❌ fails closed |
+
+macOS and Windows users can install and run the CLI. macOS diagnostics are exercised in CI; Windows
+release compilation is exercised in CI, while installed-client diagnostics have not been runtime
+validated there. Saving, enrolling, executing, and switching profiles remain disabled on both
+platforms until their official-client storage contracts are independently verified.
 
 ## Installation
 
-### Install the prebuilt Linux release
+### Linux — prebuilt release
 
-This repository is private. Before installing, authenticate `gh` with a GitHub account that has
-access and confirm the repository is visible:
+The installer downloads the pinned Linux x86_64 release, verifies its SHA-256 checksum, and places
+`agy-auth` in `~/.local/bin`:
 
 ```bash
-gh auth login --hostname github.com
-gh auth status
-gh repo view ensp1re/agy-auth
+curl --proto '=https' --tlsv1.2 -fsSL \
+  https://github.com/ensp1re/agy-auth/releases/download/v0.2.0-rc.2/agy-auth-installer.sh |
+  sh
 ```
 
-If `gh repo view` reports `repository not found`, switch to or authenticate an account that has been
-granted access:
+To review the installer before running it:
 
 ```bash
-gh auth switch --hostname github.com
-```
-
-Then install:
-
-```bash
-gh release download v0.2.0-rc.2 \
-  --repo ensp1re/agy-auth \
-  --pattern agy-auth-installer.sh \
-  --output - | sh
-```
-
-The installer supports Linux x86_64, verifies the archive SHA-256, and installs to
-`"$HOME/.local/bin"`. To inspect it first:
-
-```bash
-gh release download v0.2.0-rc.2 \
-  --repo ensp1re/agy-auth \
-  --pattern agy-auth-installer.sh
+curl --proto '=https' --tlsv1.2 -fLO \
+  https://github.com/ensp1re/agy-auth/releases/download/v0.2.0-rc.2/agy-auth-installer.sh
 less agy-auth-installer.sh
 sh agy-auth-installer.sh
 ```
 
-### Build from source
+If necessary, add the installation directory to your shell:
+
+```bash
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.profile
+export PATH="$HOME/.local/bin:$PATH"
+```
+
+### macOS — install with Cargo
+
+Install the Xcode command-line tools and Rust:
+
+```bash
+xcode-select --install
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+source "$HOME/.cargo/env"
+```
+
+Then install the latest reviewed release:
+
+```bash
+cargo install --locked \
+  --git https://github.com/ensp1re/agy-auth \
+  --tag v0.2.0-rc.2 \
+  agy-auth-cli
+```
+
+### Windows — install with Cargo
+
+Install Rust with the MSVC toolchain from [rustup.rs](https://rustup.rs/). The installer may prompt
+for the Visual Studio C++ build tools if they are not already available.
+
+Open a new PowerShell window, then run:
+
+```powershell
+rustup default stable-msvc
+cargo install --locked `
+  --git https://github.com/ensp1re/agy-auth `
+  --tag v0.2.0-rc.2 `
+  agy-auth-cli
+```
+
+Cargo installs the executable into `%USERPROFILE%\.cargo\bin`, which rustup normally adds to
+`PATH`.
+
+### Any platform — build from a checkout
+
+Requires Git and Rust `1.88` or newer:
 
 ```bash
 git clone https://github.com/ensp1re/agy-auth.git
 cd agy-auth
-cargo build --release -p agy-auth-cli
-install -d -m 0700 "$HOME/.local/bin"
-install -m 0755 target/release/agy-auth "$HOME/.local/bin/agy-auth"
+cargo build --locked --release -p agy-auth-cli
 ```
 
-Ensure `"$HOME/.local/bin"` is on `PATH`, then verify the installation:
+The executable is written to:
+
+- Linux/macOS: `target/release/agy-auth`
+- Windows: `target\release\agy-auth.exe`
+
+### Verify the installation
 
 ```bash
 agy-auth --version
 agy-auth doctor
 ```
 
-Alternatively, with Rust already installed:
-
-```bash
-cargo install --locked --git https://github.com/ensp1re/agy-auth \
-  --tag v0.2.0-rc.2 agy-auth-cli
-```
-
-### Release artifacts
-
-Published release candidates, checksums, SBOMs, and installers are available from
-[GitHub Releases](https://github.com/ensp1re/agy-auth/releases).
+`doctor` reports the installed `agy` version, profile registry health, interrupted transactions, and
+whether account mutation is enabled for the current platform.
 
 ## Quick start
 
-Save the account currently logged into the default official `agy` home:
+> [!NOTE]
+> The profile workflow below requires the verified Linux SSH/headless environment described in the
+> [platform support](#platform-support) table.
+
+First, sign in normally with the official client:
+
+```bash
+agy
+```
+
+Exit `agy`, then save that account:
 
 ```bash
 agy-auth add personal
 ```
 
-Enroll another account through official `agy`:
+Enroll a second account through official `agy`:
 
 ```bash
 agy-auth login work
 ```
 
-Names are optional. If omitted, `agy-auth` selects the first unused `profileN` name:
+Names are optional. Without one, `agy-auth` chooses the first unused `profileN` name:
 
 ```bash
 agy-auth login
 ```
 
-Open the interactive account selector:
+Open the interactive selector:
 
 ```bash
 agy-auth list
 ```
 
-Use Up/Down to navigate, Enter to switch, and Esc, `q`, or Ctrl+C to exit without switching.
-For deterministic script-friendly output:
+Use Up/Down to navigate, Enter to switch, and Esc, `q`, or Ctrl+C to exit without changing the
+selection.
 
-```bash
-agy-auth list --plain
-agy-auth --json list
-```
-
-Switch directly:
+Switch directly and start the official client:
 
 ```bash
 agy-auth switch work
 agy
 ```
 
-`switch` does not launch `agy`; the following plain `agy` command uses the selected account.
+`switch` only updates the selected local account. It deliberately does not launch `agy`.
 
-Run one isolated session without changing the default account:
+Run an isolated session without changing the default account:
 
 ```bash
 agy-auth exec personal
 ```
 
-Diagnose local state or recover an interrupted import:
+For scripts and diagnostics:
 
 ```bash
+agy-auth list --plain
+agy-auth --json list
 agy-auth doctor
+agy-auth doctor --json
 agy-auth recover
 ```
 
-## Command overview
+## Commands
 
-| Command | Purpose |
+| Command | Description |
 |---|---|
 | `agy-auth doctor` | Diagnose client compatibility, registry safety, and recovery state |
-| `agy-auth list` | Interactively browse and switch profiles |
-| `agy-auth list --plain` | Print deterministic profile metadata |
+| `agy-auth list` | Browse profiles interactively and optionally switch |
+| `agy-auth list --plain` | Print stable, non-interactive profile metadata |
 | `agy-auth add [name]` | Save the account in the current official `agy` home |
 | `agy-auth login [name]` | Enroll another account through official `agy` |
 | `agy-auth switch <name>` | Select the account used by future plain `agy` launches |
-| `agy-auth exec <name>` | Launch an isolated one-off session |
-| `agy-auth hint <name> <masked-hint>` | Set a privacy-preserving account hint |
+| `agy-auth exec <name>` | Launch an isolated one-off official-client session |
+| `agy-auth hint <name> <masked-hint>` | Set a privacy-preserving account label |
 | `agy-auth recover` | Recover interrupted profile imports |
+
+Run `agy-auth <command> --help` for command-specific options.
 
 ## How it works
 
 ```text
-agy-auth CLI
-    │
-    ├── non-secret registry and selected-profile metadata
-    ├── transaction and permission checks
-    └── version-gated Antigravity adapter
-             │
-             └── official agy owns login, refresh, and model traffic
+agy-auth
+├── profile registry (non-secret metadata)
+├── selected-profile marker
+├── owner-only managed profile homes
+├── transaction, permission, and recovery checks
+└── version-gated Antigravity adapter
+    └── official agy owns login, refresh, and model traffic
 ```
 
-Each profile has an owner-only managed home. During login, `agy-auth` launches the official client
-inside a fresh isolated home, waits for verified credential and onboarding completion, then records
-only the reviewed profile state. Account hints are masked before entering the registry.
+During enrollment, `agy-auth` launches the official client inside a fresh isolated home and waits
+for the reviewed login and onboarding signals. Switching validates the installed client version,
+atomically replaces the verified official credential envelope, updates the selection marker, and
+rolls back if persistence fails.
 
-Switching validates the installed client version, atomically replaces the verified official default
-credential envelope, records the selected profile, and rolls back if metadata persistence fails.
-The provider describes the versioned envelope; the storage layer owns filesystem mutation.
+The implementation keeps provider knowledge separate from filesystem mutation: the provider
+describes the versioned contract, while the storage layer owns transactional local changes.
 
-See the [architecture](docs/04-architecture.md), [CLI specification](docs/07-cli-specification.md),
-and [architecture decisions](docs/adr/) for the complete contract.
+Read the [architecture](docs/04-architecture.md), [CLI specification](docs/07-cli-specification.md),
+and [architecture decisions](docs/adr/) for the full design.
 
-## Security model
+## Security
 
-`agy-auth` is intentionally local and manual:
+Profile homes and credential files are owner-only and checked for unsafe permissions, symlinks,
+hardlinks, unexpected schemas, and concurrent use. Routine output uses profile names and masked
+account hints rather than tokens or full account identifiers.
 
-- no Google passwords or independent OAuth implementation;
-- no private Gemini, Code Assist, quota, or entitlement API calls;
-- no automatic fallback, scoring, load balancing, or account rotation;
-- no credential synchronization or shared vault service;
-- no full emails, tokens, authorization URLs, or private logs in routine output;
-- owner-only directories and files with link, ownership, and permission checks.
+This protects against common local mistakes; it cannot protect credentials from malware or an
+attacker already running as the same operating-system user.
 
-This reduces accidental exposure but cannot protect credentials from malware or an attacker already
-running as the same operating-system user.
+Please report vulnerabilities privately as described in [SECURITY.md](SECURITY.md).
 
-Please read [SECURITY.md](SECURITY.md) before reporting a vulnerability.
+## Updating and uninstalling
+
+Update a Cargo installation:
+
+```bash
+cargo install --force --locked \
+  --git https://github.com/ensp1re/agy-auth \
+  --tag v0.2.0-rc.2 \
+  agy-auth-cli
+```
+
+Remove a Cargo installation:
+
+```bash
+cargo uninstall agy-auth-cli
+```
+
+For the Linux release installer, remove `~/.local/bin/agy-auth`. Removing the executable does not
+delete managed profile data. Inspect `agy-auth doctor --json` before deleting local state manually.
 
 ## Development
 
-Install repository tooling once to enable the Husky pre-commit hook:
-
 ```bash
+git clone https://github.com/ensp1re/agy-auth.git
+cd agy-auth
 npm install
-```
-
-The hook requires Node.js 18+ and blocks commits unless the locked release binary builds
-successfully.
-
-Run the complete local gate:
-
-```bash
 python3 scripts/check.py
 ```
 
-The gate covers formatting, Clippy, tests, dependency direction, compatibility metadata, release
-preflight, secret scanning, and harness validation.
+`npm install` enables the repository-local Husky pre-commit hook. The hook requires Node.js 18+ and
+blocks commits unless the locked release binary builds successfully.
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution requirements.
+The complete check covers formatting, Clippy, tests, dependency direction, compatibility metadata,
+release preflight, secret scanning, and harness validation.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the contribution workflow.
 
 ## License
 
