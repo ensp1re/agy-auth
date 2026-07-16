@@ -7,6 +7,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.2.0-rc.2] - 2026-07-16
+
+### Fixed
+
+- Added authenticated GitHub CLI fallback so the one-command installer works while the repository
+  and release assets are private.
+
 ## [0.2.0-rc.1] - 2026-07-16
 
 ### Added
@@ -80,6 +87,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Added explicit prohibitions on OAuth implementation, backend calls, quota handling, credential
   sharing, and automatic account rotation.
 
-[Unreleased]: https://github.com/ensp1re/agy-auth/compare/v0.2.0-rc.1...HEAD
+[Unreleased]: https://github.com/ensp1re/agy-auth/compare/v0.2.0-rc.2...HEAD
+[0.2.0-rc.2]: https://github.com/ensp1re/agy-auth/compare/v0.2.0-rc.1...v0.2.0-rc.2
 [0.2.0-rc.1]: https://github.com/ensp1re/agy-auth/compare/v0.1.0-rc.1...v0.2.0-rc.1
 [0.1.0-rc.1]: https://github.com/ensp1re/agy-auth/releases/tag/v0.1.0-rc.1

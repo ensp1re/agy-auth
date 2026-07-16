@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-VERSION="${AGY_AUTH_VERSION:-0.2.0-rc.1}"
+VERSION="${AGY_AUTH_VERSION:-0.2.0-rc.2}"
 REPOSITORY="${AGY_AUTH_REPOSITORY:-ensp1re/agy-auth}"
 INSTALL_DIR="${AGY_AUTH_INSTALL_DIR:-${HOME}/.local/bin}"
 
@@ -33,7 +33,18 @@ if [ -n "${AGY_AUTH_DOWNLOAD_BASE:-}" ]; then
 else
   BASE="https://github.com/${REPOSITORY}/releases/download/v${VERSION}"
   fetch() {
-    curl --proto '=https' --tlsv1.2 -fLsS "$1" -o "$2"
+    if curl --proto '=https' --tlsv1.2 -fLsS "$1" -o "$2" 2>/dev/null; then
+      return
+    fi
+    if command -v gh >/dev/null 2>&1; then
+      gh release download "v${VERSION}" \
+        --repo "$REPOSITORY" \
+        --pattern "$(basename "$1")" \
+        --output "$2"
+      return
+    fi
+    printf '%s\n' "agy-auth: download failed; private repositories require authenticated gh CLI" >&2
+    exit 2
   }
 fi
 WORK="$(mktemp -d)"
