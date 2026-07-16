@@ -129,3 +129,9 @@ profile home.
 Execution uses direct argv, the isolated SSH environment, and an exclusive profile lock; the
 official client continues to own token refresh and backend traffic. Default release builds omit this
 feature.
+
+The same feature exposes hidden `experimental-recover`. Import creates a non-secret durable marker
+before registry reservation and advances it after reservation, credential materialization, and the
+ready commit. Recovery removes only pending or absent profile metadata and its project-owned managed
+home. If readiness committed before marker cleanup, recovery preserves the ready profile and removes
+only the stale marker. Repeated recovery is idempotent.

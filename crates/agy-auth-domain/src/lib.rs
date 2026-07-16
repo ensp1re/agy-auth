@@ -295,6 +295,27 @@ impl Registry {
         Ok(())
     }
 
+    /// Remove one pending profile during idempotent interrupted-import recovery.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the profile is ready/unavailable. A missing profile is already
+    /// recovered and succeeds.
+    pub fn remove_pending(&mut self, profile_id: ProfileId) -> Result<(), DomainError> {
+        let Some(index) = self
+            .profiles
+            .iter()
+            .position(|profile| profile.id == profile_id)
+        else {
+            return Ok(());
+        };
+        if self.profiles[index].status != ProfileStatus::Pending {
+            return Err(DomainError::InvalidStatusTransition);
+        }
+        self.profiles.remove(index);
+        Ok(())
+    }
+
     /// Recheck every registry invariant.
     ///
     /// # Errors

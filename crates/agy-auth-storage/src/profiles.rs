@@ -67,6 +67,28 @@ impl ManagedProfileHomes {
             runtime_directory,
         })
     }
+
+    /// Remove one project-owned managed profile directory during interrupted-import recovery.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the managed root or target directory is unsafe or cannot be removed.
+    pub fn remove(&self, profile_id: ProfileId) -> Result<(), ManagedProfileHomeError> {
+        self.initialize()?;
+        let profile_root = self.data_root.join("profiles").join(profile_id.to_string());
+        match fs::symlink_metadata(&profile_root) {
+            Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(()),
+            Err(error) => Err(error.into()),
+            Ok(metadata) => {
+                if metadata.file_type().is_symlink() || !metadata.is_dir() {
+                    return Err(ManagedProfileHomeError::UnsafeType);
+                }
+                validate_platform_security(&metadata)?;
+                fs::remove_dir_all(profile_root)?;
+                Ok(())
+            }
+        }
+    }
 }
 
 impl ProfileHomePort for ManagedProfileHomes {
