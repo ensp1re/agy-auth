@@ -111,12 +111,42 @@ pub trait CredentialSessionClientPort {
     fn execute(&self, arguments: &[OsString]) -> Result<i32, CredentialWorkflowError>;
 }
 
+/// Marker for a held exclusive profile-session lease.
+pub trait CredentialSessionLease {}
+
+/// Port for excluding concurrent sessions that share one profile credential file.
+pub trait CredentialSessionLockPort {
+    /// Concrete lease held for the lifetime of one session.
+    type Lease<'a>: CredentialSessionLease
+    where
+        Self: 'a;
+
+    /// Attempt to acquire the profile lease without waiting.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`CredentialWorkflowError::SessionBusy`] when another session holds the lease.
+    fn try_acquire(&self) -> Result<Self::Lease<'_>, CredentialWorkflowError>;
+}
+
 /// Result of a completed official-client credential session.
 pub struct CredentialSessionOutcome {
     /// Official-client process exit code.
     pub exit_code: i32,
     /// Current refresh credential extracted after the client exited.
     pub refresh_credential: OpaqueSecretBytes,
+}
+
+/// Adapter set required for one credential-backed official-client session.
+pub struct CredentialSessionPorts<'a, Envelope, Files, Client, Lock> {
+    /// Versioned provider envelope adapter.
+    pub envelope: &'a Envelope,
+    /// Protected profile credential-file adapter.
+    pub files: &'a Files,
+    /// Isolated official-client process adapter.
+    pub client: &'a Client,
+    /// Exclusive per-profile session lock adapter.
+    pub lock: &'a Lock,
 }
 
 /// Build a versioned provider envelope and atomically persist it in one protected profile home.
@@ -164,17 +194,27 @@ pub fn run_profile_credential_session(
     client_version: &str,
     refresh_credential: &OpaqueSecretBytes,
     arguments: &[OsString],
-    envelope_port: &impl CredentialEnvelopePort,
-    file_port: &impl CredentialFilePort,
-    client_port: &impl CredentialSessionClientPort,
+    ports: &CredentialSessionPorts<
+        '_,
+        impl CredentialEnvelopePort,
+        impl CredentialFilePort,
+        impl CredentialSessionClientPort,
+        impl CredentialSessionLockPort,
+    >,
     maximum_envelope_bytes: usize,
 ) -> Result<CredentialSessionOutcome, CredentialWorkflowError> {
-    materialize_profile_credential(client_version, refresh_credential, envelope_port, file_port)?;
-    let exit_code = client_port.execute(arguments)?;
+    let _lease = ports.lock.try_acquire()?;
+    materialize_profile_credential(
+        client_version,
+        refresh_credential,
+        ports.envelope,
+        ports.files,
+    )?;
+    let exit_code = ports.client.execute(arguments)?;
     let refresh_credential = capture_refreshed_profile_credential(
         client_version,
-        envelope_port,
-        file_port,
+        ports.envelope,
+        ports.files,
         maximum_envelope_bytes,
     )?;
     Ok(CredentialSessionOutcome {
@@ -196,6 +236,8 @@ pub enum CredentialWorkflowError {
     CredentialStorageFailed,
     /// The official client could not be launched or waited.
     ClientExecutionFailed,
+    /// Another process already holds the profile session lease.
+    SessionBusy,
 }
 
 impl std::fmt::Display for CredentialWorkflowError {
@@ -206,6 +248,7 @@ impl std::fmt::Display for CredentialWorkflowError {
             Self::InvalidCredentialEnvelope => "invalid credential envelope",
             Self::CredentialStorageFailed => "credential storage operation failed",
             Self::ClientExecutionFailed => "official client execution failed",
+            Self::SessionBusy => "profile session is already running",
         };
         formatter.write_str(message)
     }
@@ -217,7 +260,8 @@ impl std::error::Error for CredentialWorkflowError {}
 mod tests {
     use super::{
         CredentialEnvelopePort, CredentialFilePort, CredentialMaterializationPlan,
-        CredentialSessionClientPort, CredentialWorkflowError, OpaqueSecretBytes,
+        CredentialSessionClientPort, CredentialSessionLease, CredentialSessionLockPort,
+        CredentialSessionPorts, CredentialWorkflowError, OpaqueSecretBytes,
         capture_refreshed_profile_credential, materialize_profile_credential,
         run_profile_credential_session,
     };
@@ -272,6 +316,27 @@ mod tests {
     struct FakeClient<'a> {
         events: &'a RefCell<Vec<String>>,
         result: Result<i32, CredentialWorkflowError>,
+    }
+
+    struct FakeLease;
+
+    impl CredentialSessionLease for FakeLease {}
+
+    struct FakeLock<'a> {
+        events: &'a RefCell<Vec<String>>,
+        result: Result<(), CredentialWorkflowError>,
+    }
+
+    impl CredentialSessionLockPort for FakeLock<'_> {
+        type Lease<'a>
+            = FakeLease
+        where
+            Self: 'a;
+
+        fn try_acquire(&self) -> Result<Self::Lease<'_>, CredentialWorkflowError> {
+            self.events.borrow_mut().push("lock".to_owned());
+            self.result.map(|()| FakeLease)
+        }
     }
 
     impl CredentialSessionClientPort for FakeClient<'_> {
@@ -374,15 +439,23 @@ mod tests {
             events: &files.events,
             result: Ok(23),
         };
+        let lock = FakeLock {
+            events: &files.events,
+            result: Ok(()),
+        };
         let refresh = OpaqueSecretBytes::new(b"synthetic-refresh".to_vec(), 4096).expect("refresh");
+        let ports = CredentialSessionPorts {
+            envelope: &FakeEnvelope,
+            files: &files,
+            client: &client,
+            lock: &lock,
+        };
 
         let outcome = run_profile_credential_session(
             "TEST_CLIENT_1",
             &refresh,
             &[OsString::from("literal;argument")],
-            &FakeEnvelope,
-            &files,
-            &client,
+            &ports,
             4096,
         )
         .expect("session");
@@ -395,6 +468,7 @@ mod tests {
         assert_eq!(
             files.events.into_inner(),
             vec![
+                "lock",
                 "write:.synthetic/client/credential:36",
                 "exec:1",
                 "read:.synthetic/client/credential:4096"
@@ -412,23 +486,51 @@ mod tests {
             events: &files.events,
             result: Err(CredentialWorkflowError::ClientExecutionFailed),
         };
+        let lock = FakeLock {
+            events: &files.events,
+            result: Ok(()),
+        };
         let refresh = OpaqueSecretBytes::new(b"synthetic-refresh".to_vec(), 4096).expect("refresh");
+        let ports = CredentialSessionPorts {
+            envelope: &FakeEnvelope,
+            files: &files,
+            client: &client,
+            lock: &lock,
+        };
 
         assert!(matches!(
-            run_profile_credential_session(
-                "TEST_CLIENT_1",
-                &refresh,
-                &[],
-                &FakeEnvelope,
-                &files,
-                &client,
-                4096,
-            ),
+            run_profile_credential_session("TEST_CLIENT_1", &refresh, &[], &ports, 4096,),
             Err(CredentialWorkflowError::ClientExecutionFailed)
         ));
         assert_eq!(
             files.events.into_inner(),
-            vec!["write:.synthetic/client/credential:36", "exec:0"]
+            vec!["lock", "write:.synthetic/client/credential:36", "exec:0"]
         );
+    }
+
+    #[test]
+    fn busy_session_stops_before_materialization() {
+        let files = FakeFiles::default();
+        let client = FakeClient {
+            events: &files.events,
+            result: Ok(0),
+        };
+        let lock = FakeLock {
+            events: &files.events,
+            result: Err(CredentialWorkflowError::SessionBusy),
+        };
+        let refresh = OpaqueSecretBytes::new(b"synthetic-refresh".to_vec(), 4096).expect("refresh");
+        let ports = CredentialSessionPorts {
+            envelope: &FakeEnvelope,
+            files: &files,
+            client: &client,
+            lock: &lock,
+        };
+
+        assert!(matches!(
+            run_profile_credential_session("TEST_CLIENT_1", &refresh, &[], &ports, 4096,),
+            Err(CredentialWorkflowError::SessionBusy)
+        ));
+        assert_eq!(files.events.into_inner(), vec!["lock"]);
     }
 }

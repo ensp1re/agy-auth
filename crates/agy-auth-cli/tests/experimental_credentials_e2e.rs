@@ -2,11 +2,16 @@
 #![doc = "Synthetic end-to-end coverage for the experimental credential workflow."]
 
 use agy_auth_app::{
-    OpaqueSecretBytes, capture_refreshed_profile_credential, materialize_profile_credential,
+    CredentialSessionPorts, ManagedProfileEnvironment, OpaqueSecretBytes,
+    capture_refreshed_profile_credential, materialize_profile_credential,
+    run_profile_credential_session,
 };
-use agy_auth_storage::{OpaqueCredentialBytes, ProfileCredentialFiles};
-use provider_antigravity_cli::{ANTIGRAVITY_TOKEN_RELATIVE_PATH, AntigravityCredentialEnvelope};
+use agy_auth_storage::{OpaqueCredentialBytes, ProfileCredentialFiles, ProfileSessionLock};
+use provider_antigravity_cli::{
+    ANTIGRAVITY_TOKEN_RELATIVE_PATH, AntigravityCredentialEnvelope, AntigravityInteractiveSession,
+};
 use serde_json::Value;
+use std::ffi::OsString;
 use std::fs;
 use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
@@ -70,4 +75,58 @@ fn provider_and_storage_round_trip_synthetic_refresh_credential() {
     assert_eq!(captured.into_secret_bytes(), b"synthetic-rotated-refresh");
 
     fs::remove_dir_all(home).expect("remove fixture");
+}
+
+#[test]
+#[ignore = "requires AGY_AUTH_TEST_AGY pointing to an installed agy executable"]
+fn installed_agy_version_runs_through_locked_synthetic_session() {
+    let executable = PathBuf::from(
+        std::env::var_os("AGY_AUTH_TEST_AGY").expect("AGY_AUTH_TEST_AGY must be set"),
+    );
+    let root = fixture();
+    let home = root.join("home");
+    let runtime = root.join("runtime");
+    for directory in [&home, &runtime] {
+        fs::create_dir(directory).expect("create profile directory");
+        fs::set_permissions(directory, fs::Permissions::from_mode(0o700))
+            .expect("secure profile directory");
+    }
+
+    let files = ProfileCredentialFiles::new(&home).expect("protected profile files");
+    let lock = ProfileSessionLock::new(&runtime).expect("profile session lock");
+    let provider = AntigravityCredentialEnvelope;
+    let client = AntigravityInteractiveSession::new(
+        Some(&executable),
+        OsString::from("/usr/bin:/bin"),
+        &ManagedProfileEnvironment {
+            home,
+            runtime_directory: runtime,
+        },
+        None,
+    )
+    .expect("installed client adapter");
+    let refresh = OpaqueSecretBytes::new(b"synthetic-smoke-refresh".to_vec(), 4096)
+        .expect("synthetic secret");
+    let ports = CredentialSessionPorts {
+        envelope: &provider,
+        files: &files,
+        client: &client,
+        lock: &lock,
+    };
+
+    let outcome = run_profile_credential_session(
+        "1.1.2",
+        &refresh,
+        &[OsString::from("--version")],
+        &ports,
+        16 * 1024,
+    )
+    .expect("installed client smoke session");
+
+    assert_eq!(outcome.exit_code, 0);
+    assert_eq!(
+        outcome.refresh_credential.into_secret_bytes(),
+        b"synthetic-smoke-refresh"
+    );
+    fs::remove_dir_all(root).expect("remove fixture");
 }
