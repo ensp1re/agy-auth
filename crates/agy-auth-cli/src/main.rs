@@ -180,12 +180,12 @@ fn main() {
 }
 
 #[cfg(feature = "experimental-real-profile-cli")]
-const VERIFIED_CLIENT_VERSION: &str = "1.1.2";
+const VERIFIED_CLIENT_VERSIONS: [&str; 2] = ["1.1.2", "1.1.3"];
 
 #[cfg(feature = "experimental-real-profile-cli")]
 fn verified_client(
     explicit_client: Option<&Path>,
-) -> Result<(Option<PathBuf>, OsString), RealProfileCliError> {
+) -> Result<(Option<PathBuf>, OsString, String), RealProfileCliError> {
     if !cfg!(target_os = "linux") {
         return Err(RealProfileCliError::UnsupportedClient);
     }
@@ -196,10 +196,11 @@ fn verified_client(
     if !diagnostic.found {
         return Err(RealProfileCliError::ClientUnavailable);
     }
-    if diagnostic.version.as_deref() != Some(VERIFIED_CLIENT_VERSION) {
-        return Err(RealProfileCliError::UnsupportedClient);
-    }
-    Ok((explicit_client, search_path))
+    let version = diagnostic
+        .version
+        .filter(|version| VERIFIED_CLIENT_VERSIONS.contains(&version.as_str()))
+        .ok_or(RealProfileCliError::UnsupportedClient)?;
+    Ok((explicit_client, search_path, version))
 }
 
 #[cfg(feature = "experimental-real-profile-cli")]
@@ -246,7 +247,7 @@ fn run_experimental_import(
     explicit_client: Option<&Path>,
 ) -> u8 {
     let result = (|| {
-        let _ = verified_client(explicit_client)?;
+        let (_, _, client_version) = verified_client(explicit_client)?;
         let profile =
             new_pending_profile(name).map_err(|_| RealProfileCliError::ProfileConflict)?;
         let (catalog, homes) =
@@ -259,7 +260,7 @@ fn run_experimental_import(
         let provider = AntigravityCredentialEnvelope;
         let refresh = provider
             .extract_refresh(
-                VERIFIED_CLIENT_VERSION,
+                &client_version,
                 OpaqueSecretBytes::new(source_envelope.into_secret_bytes(), 16 * 1024)
                     .map_err(map_credential_error)?,
             )
@@ -273,15 +274,10 @@ fn run_experimental_import(
             .map_err(|_| RealProfileCliError::UnsafeStorage)?;
         let target = ProfileCredentialFiles::new(&environment.home)
             .map_err(|_| RealProfileCliError::UnsafeStorage)?;
-        agy_auth_app::materialize_profile_credential(
-            VERIFIED_CLIENT_VERSION,
-            &refresh,
-            &provider,
-            &target,
-        )
-        .map_err(map_credential_error)?;
+        agy_auth_app::materialize_profile_credential(&client_version, &refresh, &provider, &target)
+            .map_err(map_credential_error)?;
         catalog
-            .mark_ready(profile.id, VERIFIED_CLIENT_VERSION)
+            .mark_ready(profile.id, &client_version)
             .map_err(|_| RealProfileCliError::Internal)
     })();
     result.map_or_else(real_error_code, |()| 0)
@@ -295,7 +291,7 @@ fn run_experimental_real_exec(
     arguments: &[OsString],
 ) -> u8 {
     let result = (|| {
-        let (explicit_client, search_path) = verified_client(explicit_client)?;
+        let (explicit_client, search_path, client_version) = verified_client(explicit_client)?;
         let (catalog, homes) =
             experimental_adapters(cli).map_err(|_| RealProfileCliError::UnsafeStorage)?;
         let profile = catalog
@@ -303,6 +299,9 @@ fn run_experimental_real_exec(
             .map_err(|_| RealProfileCliError::UnsafeStorage)?
             .ok_or(RealProfileCliError::ProfileConflict)?;
         require_ready_profile(&profile).map_err(|_| RealProfileCliError::ProfileConflict)?;
+        if profile.client_version_at_capture.as_deref() != Some(client_version.as_str()) {
+            return Err(RealProfileCliError::UnsupportedClient);
+        }
         let environment = homes
             .prepare(profile.id)
             .map_err(|_| RealProfileCliError::UnsafeStorage)?;
@@ -316,7 +315,7 @@ fn run_experimental_real_exec(
         )
         .map_err(map_credential_error)?;
         let refresh = provider
-            .extract_refresh(VERIFIED_CLIENT_VERSION, stored)
+            .extract_refresh(&client_version, stored)
             .map_err(map_credential_error)?;
         let client = AntigravityInteractiveSession::new(
             explicit_client.as_deref(),
@@ -333,15 +332,9 @@ fn run_experimental_real_exec(
             client: &client,
             lock: &lock,
         };
-        run_profile_credential_session(
-            VERIFIED_CLIENT_VERSION,
-            &refresh,
-            arguments,
-            &ports,
-            16 * 1024,
-        )
-        .map(|outcome| outcome.exit_code)
-        .map_err(map_credential_error)
+        run_profile_credential_session(&client_version, &refresh, arguments, &ports, 16 * 1024)
+            .map(|outcome| outcome.exit_code)
+            .map_err(map_credential_error)
     })();
     match result {
         Ok(code) => u8::try_from(code).unwrap_or(11),

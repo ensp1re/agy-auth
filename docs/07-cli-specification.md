@@ -30,7 +30,7 @@ permissions, interrupted project-owned transactions, and provider capability sta
 must not alter Antigravity authentication state until a mutation contract is verified.
 
 Diagnostics report `profileSwitching: false` and `authStateMutation: false` until public commands are
-enabled. For verified `agy 1.1.2` Linux builds the stable reason is
+enabled. For verified `agy 1.1.2` and `1.1.3` Linux builds the stable reason is
 `verified_contract_not_enabled`; unsupported or unverified combinations use
 `no_verified_antigravity_profile_contract`. JSON output uses `schemaVersion: 1` and never includes
 executable paths, registry paths, environment values, account identity, or client output other than
@@ -123,8 +123,9 @@ Release builds omit this feature.
 The non-default feature `experimental-real-profile-cli` additionally exposes hidden
 `experimental-import <name> --from-home <path>` and
 `experimental-real-exec <name> -- [args...]` commands. They are restricted to the verified
-`agy 1.1.2` Linux contract. Import reads a bounded secure official-client envelope, extracts only its
-refresh credential, and materializes a minimal envelope in an owner-only managed profile home.
+`agy 1.1.2` or `1.1.3` Linux contract. Import reads a bounded secure official-client envelope,
+extracts only its refresh credential, and materializes a minimal envelope in an owner-only managed
+profile home.
 Execution uses direct argv, the isolated SSH environment, and an exclusive profile lock; the
 official client continues to own token refresh and backend traffic. Default release builds omit this
 feature.

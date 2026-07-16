@@ -4,10 +4,10 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use time::OffsetDateTime;
 
-/// Home-relative path used by `agy 1.1.2` Linux SSH file-fallback storage.
+/// Home-relative path used by verified `agy` Linux SSH file-fallback storage.
 pub const ANTIGRAVITY_TOKEN_RELATIVE_PATH: &str = ".gemini/antigravity-cli/antigravity-oauth-token";
 
-const SUPPORTED_CLIENT_VERSION: &str = "1.1.2";
+const SUPPORTED_CLIENT_VERSIONS: [&str; 2] = ["1.1.2", "1.1.3"];
 const MAX_ENVELOPE_BYTES: usize = 16 * 1024;
 const MAX_REFRESH_TOKEN_BYTES: usize = 8 * 1024;
 const PLACEHOLDER_ACCESS_TOKEN: &str = "agy-auth-expired-placeholder";
@@ -62,7 +62,7 @@ impl ConsumerRefreshCredential {
     }
 }
 
-/// Serialize the minimal consumer token envelope accepted by `agy 1.1.2`.
+/// Serialize the minimal consumer token envelope accepted by verified `agy` versions.
 ///
 /// The access token is an intentionally expired placeholder. The official client replaces it by
 /// refreshing through the supplied credential.
@@ -121,7 +121,7 @@ pub fn extract_consumer_refresh_credential(
 }
 
 fn require_supported_version(client_version: &str) -> Result<(), CredentialEnvelopeError> {
-    if client_version == SUPPORTED_CLIENT_VERSION {
+    if SUPPORTED_CLIENT_VERSIONS.contains(&client_version) {
         Ok(())
     } else {
         Err(CredentialEnvelopeError::UnsupportedClientVersion)
@@ -240,7 +240,7 @@ mod tests {
         let credential =
             ConsumerRefreshCredential::new(SYNTHETIC_REFRESH.to_vec()).expect("credential");
         assert_eq!(
-            build_consumer_token_envelope("1.1.3", &credential),
+            build_consumer_token_envelope("1.1.4", &credential),
             Err(CredentialEnvelopeError::UnsupportedClientVersion)
         );
 
