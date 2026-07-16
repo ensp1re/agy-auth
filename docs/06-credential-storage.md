@@ -30,10 +30,15 @@ Out of scope: protecting credentials from a fully compromised same-user session 
 3. **Encrypted file vault**: opt-in fallback for headless systems without Secret Service.
 4. **Plaintext mode-0600 vault**: not offered by default. A later expert-only mode would require loud warnings and explicit configuration.
 
-For the ADR 0007 isolated-home strategy, each profile retains official-client state only inside its
-own owner-only home. `agy-auth` does not create inactive credential copies, parse the official file,
-or move authentication bytes between homes. Vault and keyring capture remain deferred alternatives,
-not part of the isolated-home workflow.
+For the ADR 0007 Linux SSH strategy, each profile retains official-client state only inside its own
+owner-only home. For explicitly supported client versions, `agy-auth` may materialize the reviewed
+consumer-token envelope directly at the official home-relative path and parse only enough of the
+official client's rewrite to retain a rotated refresh credential. This is not a separate plaintext
+vault: the mode-`0600` credential file remains inside the mode-`0700` profile home and is never moved
+between profiles. Vault and keyring capture remain deferred alternatives.
+
+Materialization must be version-gated, bounded, same-directory atomic, and followed by a secure
+reread. The provider owns the envelope schema; the storage adapter treats its bytes as opaque.
 
 ## Secret-store interface
 
