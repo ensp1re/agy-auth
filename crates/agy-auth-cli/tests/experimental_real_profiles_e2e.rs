@@ -40,6 +40,43 @@ fn write_file(path: &Path, value: &[u8], mode: u32) {
     fs::set_permissions(path, fs::Permissions::from_mode(mode)).expect("set fixture mode");
 }
 
+fn create_and_recover_conflicting_import(
+    binary: &str,
+    data: &Path,
+    source_home: &Path,
+    client: &Path,
+) {
+    let interrupted = Command::new(binary)
+        .args(["--data-dir"])
+        .arg(data)
+        .args(["experimental-import", "work", "--from-home"])
+        .arg(source_home)
+        .arg("--client")
+        .arg(client)
+        .status()
+        .expect("run conflicting import");
+    assert_eq!(interrupted.code(), Some(3));
+    assert_eq!(
+        fs::read_dir(data.join("transactions"))
+            .expect("transaction directory")
+            .count(),
+        1
+    );
+    let recovered = Command::new(binary)
+        .args(["--data-dir"])
+        .arg(data)
+        .arg("experimental-recover")
+        .status()
+        .expect("recover import");
+    assert!(recovered.success());
+    assert_eq!(
+        fs::read_dir(data.join("transactions"))
+            .expect("transaction directory")
+            .count(),
+        0
+    );
+}
+
 #[test]
 fn imports_secure_official_home_and_executes_direct_argv() {
     let root = fixture();
@@ -71,6 +108,8 @@ fn imports_secure_official_home_and_executes_direct_argv() {
         .status()
         .expect("run import");
     assert!(imported.success());
+
+    create_and_recover_conflicting_import(binary, &data, &source_home, &client);
 
     let registry: Value =
         serde_json::from_slice(&fs::read(data.join("registry.json")).expect("read registry"))

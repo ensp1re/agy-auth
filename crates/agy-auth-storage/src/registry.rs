@@ -57,6 +57,34 @@ impl RegistryCatalog {
             .load()
             .map(|registry| registry.find_by_name(&name).cloned())
     }
+
+    /// Load one profile by identifier.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the registry cannot be loaded safely.
+    pub fn profile_by_id(
+        &self,
+        profile_id: ProfileId,
+    ) -> Result<Option<Profile>, RegistryStoreError> {
+        self.registry.load().map(|registry| {
+            registry
+                .profiles()
+                .iter()
+                .find(|profile| profile.id == profile_id)
+                .cloned()
+        })
+    }
+
+    /// Remove pending metadata during interrupted-import recovery.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when metadata is not pending or the registry cannot be replaced safely.
+    pub fn remove_pending(&self, profile_id: ProfileId) -> Result<(), RegistryStoreError> {
+        self.registry
+            .update(move |registry| registry.remove_pending(profile_id))
+    }
 }
 
 impl ProfileCatalogPort for RegistryCatalog {

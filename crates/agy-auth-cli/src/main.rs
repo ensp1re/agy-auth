@@ -16,13 +16,15 @@ use agy_auth_app::{ManagedProfileEnvironment, ProfileClientPort, add_profile, ex
 ))]
 use agy_auth_app::{ProfileWorkflowError, new_pending_profile};
 use agy_auth_storage::RegistryDoctorProbe;
+#[cfg(feature = "experimental-real-profile-cli")]
+use agy_auth_storage::{
+    ImportTransactionJournal, ImportTransactionStage, ProfileCredentialFiles, ProfileSessionLock,
+};
 #[cfg(any(
     feature = "experimental-fake-client",
     feature = "experimental-real-profile-cli"
 ))]
 use agy_auth_storage::{ManagedProfileHomes, RegistryCatalog};
-#[cfg(feature = "experimental-real-profile-cli")]
-use agy_auth_storage::{ProfileCredentialFiles, ProfileSessionLock};
 use clap::{Parser, Subcommand};
 use provider_antigravity_cli::AntigravityDoctorProbe;
 #[cfg(feature = "experimental-real-profile-cli")]
@@ -127,6 +129,10 @@ enum Commands {
         #[arg(last = true)]
         arguments: Vec<OsString>,
     },
+    /// Recover interrupted experimental profile imports.
+    #[cfg(feature = "experimental-real-profile-cli")]
+    #[command(hide = true)]
+    ExperimentalRecover,
 }
 
 enum RegistryProbe {
@@ -175,6 +181,8 @@ fn main() {
             client,
             arguments,
         } => run_experimental_real_exec(&cli, name, client.as_deref(), arguments),
+        #[cfg(feature = "experimental-real-profile-cli")]
+        Commands::ExperimentalRecover => run_experimental_recover(&cli),
     };
     std::process::exit(exit_code.into());
 }
@@ -252,6 +260,12 @@ fn run_experimental_import(
             new_pending_profile(name).map_err(|_| RealProfileCliError::ProfileConflict)?;
         let (catalog, homes) =
             experimental_adapters(cli).map_err(|_| RealProfileCliError::UnsafeStorage)?;
+        let root = experimental_data_root(cli).map_err(|_| RealProfileCliError::UnsafeStorage)?;
+        let journal =
+            ImportTransactionJournal::new(root).map_err(|_| RealProfileCliError::UnsafeStorage)?;
+        let mut transaction = journal
+            .begin(profile.id)
+            .map_err(|_| RealProfileCliError::UnsafeStorage)?;
         let source = ProfileCredentialFiles::new(from_home)
             .map_err(|_| RealProfileCliError::UnsafeStorage)?;
         let source_envelope = source
@@ -269,6 +283,9 @@ fn run_experimental_import(
         catalog
             .reserve(&profile)
             .map_err(|_| RealProfileCliError::ProfileConflict)?;
+        transaction
+            .advance(ImportTransactionStage::Reserved)
+            .map_err(|_| RealProfileCliError::UnsafeStorage)?;
         let environment = homes
             .prepare(profile.id)
             .map_err(|_| RealProfileCliError::UnsafeStorage)?;
@@ -276,11 +293,34 @@ fn run_experimental_import(
             .map_err(|_| RealProfileCliError::UnsafeStorage)?;
         agy_auth_app::materialize_profile_credential(&client_version, &refresh, &provider, &target)
             .map_err(map_credential_error)?;
+        transaction
+            .advance(ImportTransactionStage::Materialized)
+            .map_err(|_| RealProfileCliError::UnsafeStorage)?;
         catalog
             .mark_ready(profile.id, &client_version)
-            .map_err(|_| RealProfileCliError::Internal)
+            .map_err(|_| RealProfileCliError::Internal)?;
+        transaction
+            .advance(ImportTransactionStage::Ready)
+            .map_err(|_| RealProfileCliError::UnsafeStorage)?;
+        transaction
+            .complete()
+            .map_err(|_| RealProfileCliError::UnsafeStorage)
     })();
     result.map_or_else(real_error_code, |()| 0)
+}
+
+#[cfg(feature = "experimental-real-profile-cli")]
+fn run_experimental_recover(cli: &Cli) -> u8 {
+    let result = (|| {
+        let (catalog, homes) =
+            experimental_adapters(cli).map_err(|_| RealProfileCliError::UnsafeStorage)?;
+        let root = experimental_data_root(cli).map_err(|_| RealProfileCliError::UnsafeStorage)?;
+        ImportTransactionJournal::new(root)
+            .map_err(|_| RealProfileCliError::UnsafeStorage)?
+            .recover(&catalog, &homes)
+            .map_err(|_| RealProfileCliError::UnsafeStorage)
+    })();
+    result.map_or_else(real_error_code, |_| 0)
 }
 
 #[cfg(feature = "experimental-real-profile-cli")]
@@ -372,11 +412,7 @@ impl ProfileClientPort for InProcessFakeClient {
 fn experimental_adapters(
     cli: &Cli,
 ) -> Result<(RegistryCatalog, ManagedProfileHomes), ProfileWorkflowError> {
-    let root = cli
-        .data_dir
-        .clone()
-        .or_else(default_data_dir)
-        .ok_or(ProfileWorkflowError::HomeUnavailable)?;
+    let root = experimental_data_root(cli)?;
     let parent = root.parent().ok_or(ProfileWorkflowError::HomeUnavailable)?;
     if !StdPath::new(parent).is_dir() {
         return Err(ProfileWorkflowError::HomeUnavailable);
@@ -389,6 +425,17 @@ fn experimental_adapters(
         .initialize()
         .map_err(|_| ProfileWorkflowError::HomeUnavailable)?;
     Ok((catalog, homes))
+}
+
+#[cfg(any(
+    feature = "experimental-fake-client",
+    feature = "experimental-real-profile-cli"
+))]
+fn experimental_data_root(cli: &Cli) -> Result<PathBuf, ProfileWorkflowError> {
+    cli.data_dir
+        .clone()
+        .or_else(default_data_dir)
+        .ok_or(ProfileWorkflowError::HomeUnavailable)
 }
 
 #[cfg(feature = "experimental-fake-client")]
