@@ -1,5 +1,5 @@
-#![cfg(all(feature = "experimental-profile-credentials", unix))]
 #![doc = "Synthetic end-to-end coverage for the experimental credential workflow."]
+#![cfg(all(feature = "experimental-profile-credentials", unix))]
 
 use agy_auth_app::{
     CredentialSessionPorts, ManagedProfileEnvironment, OpaqueSecretBytes,

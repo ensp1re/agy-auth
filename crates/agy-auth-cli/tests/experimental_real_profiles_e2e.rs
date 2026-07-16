@@ -1,5 +1,5 @@
-#![cfg(all(feature = "profile-cli", target_os = "linux"))]
 #![doc = "Synthetic end-to-end coverage for hidden real-profile CLI composition."]
+#![cfg(all(feature = "profile-cli", target_os = "linux"))]
 
 use serde_json::Value;
 use std::fs;

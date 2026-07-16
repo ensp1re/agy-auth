@@ -1,5 +1,5 @@
-#![cfg(all(feature = "profile-cli", unix))]
 #![doc = "Synthetic end-to-end coverage for official-client delegated profile enrollment."]
+#![cfg(all(feature = "profile-cli", unix))]
 
 use serde_json::Value;
 use std::fs;
