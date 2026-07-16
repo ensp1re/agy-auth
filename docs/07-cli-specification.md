@@ -29,8 +29,8 @@ MVP-safe diagnostics include executable discovery/version, registry validity, lo
 permissions, interrupted project-owned transactions, and provider capability status. `--repair`
 must not alter Antigravity authentication state until a mutation contract is verified.
 
-Diagnostics report `profileSwitching: false` and `authStateMutation: false` until public commands are
-enabled. For verified `agy 1.1.2` and `1.1.3` Linux builds the stable reason is
+Diagnostics report `profileSwitching: false` and `authStateMutation: false` until a default
+credential-at-rest design is approved. Verified `agy 1.1.2` and `1.1.3` Linux builds use
 `verified_contract_not_enabled`; unsupported or unverified combinations use
 `no_verified_antigravity_profile_contract`. JSON output uses `schemaVersion: 1` and never includes
 executable paths, registry paths, environment values, account identity, or client output other than
@@ -120,17 +120,18 @@ end-to-end tests. It adds no CLI command or credential argument, so the shipped 
 that can invoke the adapter. Experimental sessions require an exclusive profile-runtime lease.
 Release builds omit this feature.
 
-The non-default feature `experimental-real-profile-cli` additionally exposes hidden
-`experimental-import <name> --from-home <path>` and
-`experimental-real-exec <name> -- [args...]` commands. They are restricted to the verified
+The default CLI build exposes secret-safe `list`. The non-default
+`experimental-real-profile-cli` feature retains hidden `experimental-import`,
+`experimental-real-exec`, and `experimental-recover`. They are restricted to the verified
 `agy 1.1.2` or `1.1.3` Linux contract. Import reads a bounded secure official-client envelope,
 extracts only its refresh credential, and materializes a minimal envelope in an owner-only managed
 profile home.
 Execution uses direct argv, the isolated SSH environment, and an exclusive profile lock; the
-official client continues to own token refresh and backend traffic. Default release builds omit this
-feature.
+official client continues to own token refresh and backend traffic. Default release builds omit
+these mutation commands because the approved storage contract does not offer plaintext mode-0600
+refresh credentials by default.
 
-The same feature exposes hidden `experimental-recover`. Import creates a non-secret durable marker
+Import creates a non-secret durable marker
 before registry reservation and advances it after reservation, credential materialization, and the
 ready commit. Recovery removes only pending or absent profile metadata and its project-owned managed
 home. If readiness committed before marker cleanup, recovery preserves the ready profile and removes

@@ -1,42 +1,44 @@
 #![doc = "Command-line entry point for agy-auth."]
 
 #[cfg(feature = "experimental-real-profile-cli")]
+use agy_auth_app::DoctorClientProbe;
+use agy_auth_app::ProfileWorkflowError;
+#[cfg(any(
+    feature = "experimental-fake-client",
+    feature = "experimental-real-profile-cli"
+))]
+use agy_auth_app::new_pending_profile;
+#[cfg(feature = "experimental-real-profile-cli")]
 use agy_auth_app::{
     CredentialEnvelopePort, CredentialFilePort, CredentialSessionPorts, CredentialWorkflowError,
     OpaqueSecretBytes, ProfileCatalogPort, require_ready_profile, run_profile_credential_session,
 };
-use agy_auth_app::{
-    DoctorClientProbe, DoctorRegistryProbe, DoctorReport, RegistryDiagnostic, doctor,
-};
+use agy_auth_app::{DoctorRegistryProbe, DoctorReport, RegistryDiagnostic, doctor};
 #[cfg(feature = "experimental-fake-client")]
 use agy_auth_app::{ManagedProfileEnvironment, ProfileClientPort, add_profile, exec_profile};
 #[cfg(any(
     feature = "experimental-fake-client",
     feature = "experimental-real-profile-cli"
 ))]
-use agy_auth_app::{ProfileWorkflowError, new_pending_profile};
-use agy_auth_storage::RegistryDoctorProbe;
+use agy_auth_storage::ManagedProfileHomes;
 #[cfg(feature = "experimental-real-profile-cli")]
 use agy_auth_storage::{
     ImportTransactionJournal, ImportTransactionStage, ProfileCredentialFiles, ProfileSessionLock,
 };
-#[cfg(any(
-    feature = "experimental-fake-client",
-    feature = "experimental-real-profile-cli"
-))]
-use agy_auth_storage::{ManagedProfileHomes, RegistryCatalog};
+use agy_auth_storage::{RegistryCatalog, RegistryDoctorProbe};
 use clap::{Parser, Subcommand};
 use provider_antigravity_cli::AntigravityDoctorProbe;
 #[cfg(feature = "experimental-real-profile-cli")]
 use provider_antigravity_cli::{
     ANTIGRAVITY_TOKEN_RELATIVE_PATH, AntigravityCredentialEnvelope, AntigravityInteractiveSession,
 };
-use std::path::{Path, PathBuf};
 #[cfg(any(
     feature = "experimental-fake-client",
     feature = "experimental-real-profile-cli"
 ))]
-use std::{ffi::OsString, path::Path as StdPath};
+use std::ffi::OsString;
+use std::path::Path as StdPath;
+use std::path::{Path, PathBuf};
 
 /// Capability-gated local profile management for Google Antigravity CLI.
 #[derive(Debug, Parser)]
@@ -70,7 +72,7 @@ struct Cli {
     verbose: u8,
 }
 
-/// Supported diagnostics-only commands.
+/// Supported profile-management and diagnostic commands.
 #[derive(Debug, Subcommand)]
 enum Commands {
     /// Diagnose official-client, registry, and capability status.
@@ -83,6 +85,8 @@ enum Commands {
         #[arg(long, value_name = "PATH")]
         client: Option<PathBuf>,
     },
+    /// List registered profiles without reading authentication state.
+    List,
     /// Exercise profile-add orchestration with an in-process fake client.
     #[cfg(feature = "experimental-fake-client")]
     #[command(hide = true)]
@@ -116,7 +120,7 @@ enum Commands {
         #[arg(long, value_name = "PATH")]
         client: Option<PathBuf>,
     },
-    /// Execute real agy through a managed credential-backed profile.
+    /// Execute agy through a managed credential-backed profile.
     #[cfg(feature = "experimental-real-profile-cli")]
     #[command(hide = true)]
     ExperimentalRealExec {
@@ -129,7 +133,7 @@ enum Commands {
         #[arg(last = true)]
         arguments: Vec<OsString>,
     },
-    /// Recover interrupted experimental profile imports.
+    /// Recover interrupted profile imports.
     #[cfg(feature = "experimental-real-profile-cli")]
     #[command(hide = true)]
     ExperimentalRecover,
@@ -161,6 +165,7 @@ fn main() {
     let cli = Cli::parse();
     let exit_code = match &cli.command {
         Commands::Doctor { repair, client } => run_doctor(&cli, client.clone(), *repair),
+        Commands::List => run_list(&cli),
         #[cfg(feature = "experimental-fake-client")]
         Commands::ExperimentalAdd { name } => run_experimental_add(&cli, name),
         #[cfg(feature = "experimental-fake-client")]
@@ -182,7 +187,7 @@ fn main() {
             arguments,
         } => run_experimental_real_exec(&cli, name, client.as_deref(), arguments),
         #[cfg(feature = "experimental-real-profile-cli")]
-        Commands::ExperimentalRecover => run_experimental_recover(&cli),
+        Commands::ExperimentalRecover => run_recover(&cli),
     };
     std::process::exit(exit_code.into());
 }
@@ -310,7 +315,7 @@ fn run_experimental_import(
 }
 
 #[cfg(feature = "experimental-real-profile-cli")]
-fn run_experimental_recover(cli: &Cli) -> u8 {
+fn run_recover(cli: &Cli) -> u8 {
     let result = (|| {
         let (catalog, homes) =
             experimental_adapters(cli).map_err(|_| RealProfileCliError::UnsafeStorage)?;
@@ -321,6 +326,53 @@ fn run_experimental_recover(cli: &Cli) -> u8 {
             .map_err(|_| RealProfileCliError::UnsafeStorage)
     })();
     result.map_or_else(real_error_code, |_| 0)
+}
+
+fn run_list(cli: &Cli) -> u8 {
+    let result = (|| {
+        let catalog = catalog_adapter(cli)?;
+        let mut profiles = catalog
+            .profiles()
+            .map_err(|_| ProfileWorkflowError::CatalogReserveFailed)?;
+        profiles.sort_by(|left, right| left.name.as_str().cmp(right.name.as_str()));
+        if cli.json {
+            let values: Vec<_> = profiles
+                .iter()
+                .map(|profile| {
+                    serde_json::json!({
+                        "name": profile.name.as_str(),
+                        "status": profile.status.as_str(),
+                        "clientVersion": profile.client_version_at_capture,
+                    })
+                })
+                .collect();
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&serde_json::json!({
+                    "schemaVersion": 1,
+                    "profiles": values,
+                }))
+                .map_err(|_| ProfileWorkflowError::CatalogReserveFailed)?
+            );
+        } else if profiles.is_empty() {
+            println!("no profiles");
+        } else {
+            for profile in profiles {
+                println!(
+                    "{}\t{}\t{}",
+                    profile.name.as_str(),
+                    profile.status.as_str(),
+                    profile.client_version_at_capture.as_deref().unwrap_or("-")
+                );
+            }
+        }
+        Ok(())
+    })();
+    match result {
+        Ok(()) => 0,
+        Err(ProfileWorkflowError::HomeUnavailable) => 8,
+        Err(_) => 11,
+    }
 }
 
 #[cfg(feature = "experimental-real-profile-cli")]
@@ -417,8 +469,7 @@ fn experimental_adapters(
     if !StdPath::new(parent).is_dir() {
         return Err(ProfileWorkflowError::HomeUnavailable);
     }
-    let catalog = RegistryCatalog::new(root.join("registry.json"))
-        .map_err(|_| ProfileWorkflowError::CatalogReserveFailed)?;
+    let catalog = catalog_adapter(cli)?;
     let homes =
         ManagedProfileHomes::new(root).map_err(|_| ProfileWorkflowError::HomeUnavailable)?;
     homes
@@ -427,10 +478,16 @@ fn experimental_adapters(
     Ok((catalog, homes))
 }
 
-#[cfg(any(
-    feature = "experimental-fake-client",
-    feature = "experimental-real-profile-cli"
-))]
+fn catalog_adapter(cli: &Cli) -> Result<RegistryCatalog, ProfileWorkflowError> {
+    let root = experimental_data_root(cli)?;
+    let parent = root.parent().ok_or(ProfileWorkflowError::HomeUnavailable)?;
+    if !StdPath::new(parent).is_dir() {
+        return Err(ProfileWorkflowError::HomeUnavailable);
+    }
+    RegistryCatalog::new(root.join("registry.json"))
+        .map_err(|_| ProfileWorkflowError::CatalogReserveFailed)
+}
+
 fn experimental_data_root(cli: &Cli) -> Result<PathBuf, ProfileWorkflowError> {
     cli.data_dir
         .clone()
@@ -539,8 +596,22 @@ fn render_human(report: &DoctorReport, repair: bool) {
         "interrupted transactions: {}",
         report.registry.interrupted_transactions
     );
-    println!("profile switching: unsupported");
-    println!("authentication mutation: disabled");
+    println!(
+        "profile switching: {}",
+        if report.capabilities.profile_switching {
+            "supported"
+        } else {
+            "unsupported"
+        }
+    );
+    println!(
+        "authentication mutation: {}",
+        if report.capabilities.auth_state_mutation {
+            "enabled"
+        } else {
+            "disabled"
+        }
+    );
     println!("reason: {}", report.capabilities.reason);
     if repair {
         println!("repair: no safe repair actions are available");

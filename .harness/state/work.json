@@ -5,85 +5,48 @@
   "retention": "Keep the active item and at most two recently passing items; durable outcomes belong in specifications, ADRs, commits, and reviews.",
   "items": [
     {
-      "id": "phase-3-ssh-file-fallback-observation",
-      "title": "Verify the agy 1.1.2 Linux SSH two-account contract",
-      "status": "passing",
-      "source": "docs/adr/0007-versioned-unofficial-isolated-homes.md",
-      "plan": "docs/research/linux-two-account-validation-2026-07-16.md",
-      "acceptance": [
-        "Two independently enrolled accounts authenticate as distinct identities in separate owner-only SSH profile homes.",
-        "Both profiles survive restart and forced refresh without browser login or identity crossover.",
-        "A clean third profile reuses neither identity and requires login.",
-        "Concurrent launches remain isolated and all disposable state is removed without changing default client state.",
-        "Compatibility becomes verified while public commands and doctor capability booleans remain disabled."
-      ],
-      "blocker": null,
-      "verification": [
-        {"command": "bounded disposable non-root pseudo-terminal observation", "revision": "3dffadce450b7f025549ddc09c355a5d29c9d9c3", "outcome": "inconclusive but materially different; no existing identity and no login screen observed before timeout; no input sent"},
-        {"command": "post-observation cleanup audit", "revision": "3dffadce450b7f025549ddc09c355a5d29c9d9c3", "outcome": "passing; user, home, runtime, copied binary, transcript, and client processes absent"},
-        {"command": "30-second SSH/no-D-Bus and 20-second actual-SSH_TTY follow-ups", "revision": "fb27929fecda11ec3c953abb2a83c4b01a1cbb8b", "outcome": "inconclusive; no identity reuse and no login chooser in either run; timeout 124, 37 bounded entries, cleanup complete"},
-        {"command": "isolated full-record and minimal refresh-token injection", "revision": "71eb5fdb19e904a2afba3f45fb1c413dd3bee430", "outcome": "passing for agy 1.1.2 Linux SSH fallback; silent refresh, expected identity, persisted replacement access token, and loadCodeAssist observed; cleanup complete"},
-        {"command": "python3 scripts/check.py", "revision": "05824ed94f08e8ac6e9ecb7b672f6425f762ed98", "outcome": "passing; 47 tests including exact envelope serialization, rotated refresh extraction, version rejection, malformed input, and size bounds"},
-        {"command": "python3 scripts/check.py", "revision": "b6043255f6b867fdcc5dac38d41c59dcf475c386", "outcome": "passing; 50 tests including atomic replacement, mode 0600/0700 enforcement, bounded reread, and path/link/permission rejection"},
-        {"command": "python3 scripts/check.py", "revision": "db451f3224973908abb39f8b51c0b0f86b9eaacc", "outcome": "passing; 54 tests including experimental application orchestration and provider-to-storage synthetic round trip"},
-        {"command": "python3 scripts/check.py", "revision": "bf71b021dd2369e4804a0ae1bcd2c65ed4882bde", "outcome": "passing; 57 tests including session ordering, launch-failure handling, direct argv, cleared environment, SSH fallback, and exit propagation"},
-        {"command": "python3 scripts/check.py plus installed-client ignored smoke", "revision": "c0e2d70ce93b7570772f47ae9f971993e0ee4893", "outcome": "passing; 61 automated tests plus real agy 1.1.2 --version through locked synthetic session"},
-        {"command": "concurrent two-profile launch, restart, forced-refresh, clean-third, and cleanup validation", "revision": "ab3244775fba207c363687661a04df6de523b8cc", "outcome": "passing; two distinct identities remained isolated across concurrent launch and restart, both refresh credentials restored their account, clean third required login, cleanup complete"}
-      ],
-      "completion": {"commit": "a8147950fa107f850106518b0b4e153dfe0c3013", "review": "https://github.com/ensp1re/agy-auth/pull/29", "completedAt": "2026-07-16T11:31:00Z"}
-    },
-    {
-      "id": "phase-3-experimental-real-profile-cli",
-      "title": "Compose capability-gated real profile import and exec commands",
-      "status": "passing",
-      "source": "docs/07-cli-specification.md",
-      "plan": "docs/adr/0007-versioned-unofficial-isolated-homes.md",
-      "acceptance": [
-        "A hidden non-default command imports only the refresh credential from a secure official agy home.",
-        "A hidden non-default command executes verified agy 1.1.2 Linux through the managed locked credential session.",
-        "Default builds remain diagnostics-only and synthetic end-to-end tests prove direct argv and exit propagation."
-      ],
-      "blocker": null,
-      "verification": [
-        {"command": "python3 scripts/check.py", "revision": "fa930464b394e8196dd011c53349c92bb479b99d", "outcome": "passing; 62 automated tests plus dependency, compatibility, release, secret, and harness gates"}
-      ],
-      "completion": {"commit": "6bcde2966956b49e2d97c37afc18ebf1c068e974", "review": "https://github.com/ensp1re/agy-auth/pull/30", "completedAt": "2026-07-16T11:44:36Z"}
-    },
-    {
       "id": "phase-3-real-two-profile-cli-integration",
       "title": "Validate real import and exec with two enrolled agy accounts",
       "status": "passing",
       "source": "docs/adr/0007-versioned-unofficial-isolated-homes.md",
       "plan": "docs/07-cli-specification.md",
-      "acceptance": [
-        "Both enrolled official homes import through the experimental CLI into distinct managed profiles.",
-        "Both profiles complete a bounded real agy print request without browser login.",
-        "Managed refresh credentials remain distinct and temporary copies, output, and data roots are removed."
-      ],
+      "acceptance": ["Two real profiles import, execute concurrently, remain distinct, and clean up safely."],
       "blocker": null,
       "verification": [
-        {"command": "agy 1.1.3 disposable two-account upgrade gates", "revision": "6bcde2966956b49e2d97c37afc18ebf1c068e974", "outcome": "passing; concurrent expected identities, forced refresh, clean-third non-reuse, and scoped cleanup"},
-        {"command": "experimental-import and experimental-real-exec with installed agy 1.1.3", "revision": "6bcde2966956b49e2d97c37afc18ebf1c068e974", "outcome": "passing; two profiles imported and concurrently authenticated with distinct managed credentials"},
-        {"command": "python3 scripts/check.py", "revision": "worktree", "outcome": "passing; 62 automated tests plus dependency, compatibility, release, secret, and harness gates"}
+        {"command": "agy 1.1.3 two-account gates and experimental CLI integration", "revision": "34c1c3863db88d0350cc9206a597c975716fadc1", "outcome": "passing; distinct identities, forced refresh, clean-third non-reuse, and cleanup"}
       ],
       "completion": {"commit": "34c1c3863db88d0350cc9206a597c975716fadc1", "review": "https://github.com/ensp1re/agy-auth/pull/31", "completedAt": "2026-07-16T11:52:27Z"}
     },
     {
       "id": "phase-3-import-transaction-recovery",
       "title": "Journal and recover interrupted experimental profile imports",
-      "status": "active",
+      "status": "passing",
       "source": "docs/04-architecture.md",
       "plan": "docs/09-testing-strategy.md",
+      "acceptance": ["Interrupted imports recover idempotently without removing ready profiles."],
+      "blocker": null,
+      "verification": [
+        {"command": "python3 scripts/check.py", "revision": "7c4176af510f8b3c1453b4dfab8587c1028634d4", "outcome": "passing; 64 automated tests plus all repository gates"}
+      ],
+      "completion": {"commit": "b136c182e998c859decb48c7eca2bbbbd512962f", "review": "https://github.com/ensp1re/agy-auth/pull/32", "completedAt": "2026-07-16T12:04:44Z"}
+    },
+    {
+      "id": "phase-3-public-profile-list",
+      "title": "Promote secret-safe profile listing while preserving mutation gates",
+      "status": "active",
+      "source": "docs/07-cli-specification.md",
+      "plan": "docs/10-delivery-roadmap.md",
       "acceptance": [
-        "A non-secret owner-only marker exists before the first import mutation and advances after each durable stage.",
-        "Recovery removes only absent or pending profile metadata and its project-owned managed home.",
-        "Recovery preserves ready profiles when only marker cleanup was interrupted and repeated recovery is idempotent.",
-        "The hidden CLI demonstrates interruption detection and explicit recovery with synthetic fixtures."
+        "Default builds expose public list without compiling credential mutation adapters.",
+        "List emits deterministic secret-safe human and JSON metadata.",
+        "Doctor continues to report mutation disabled.",
+        "Experimental import, exec, and recover remain non-default pending an approved at-rest protection design."
       ],
       "blocker": null,
       "verification": [
-        {"command": "python3 scripts/check.py", "revision": "worktree", "outcome": "passing; 64 automated tests plus dependency, compatibility, release, secret, and harness gates"},
-        {"command": "experimental real-profile CLI interruption and recovery E2E", "revision": "worktree", "outcome": "passing; marker detected, ready profile preserved, explicit recovery cleared marker"}
+        {"command": "python3 scripts/check.py", "revision": "worktree", "outcome": "passing; 65 automated tests plus dependency, compatibility, release, secret, and harness gates"},
+        {"command": "default agy-auth --help", "revision": "worktree", "outcome": "passing; only doctor and list are public"},
+        {"command": "installed agy 1.1.3 two-profile public-path feasibility smoke", "revision": "worktree", "outcome": "passing technically; all disposable state removed, mutation promotion withheld for credential-at-rest policy"}
       ],
       "completion": null
     }
