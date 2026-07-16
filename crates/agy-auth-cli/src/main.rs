@@ -14,12 +14,16 @@ use agy_auth_app::{DoctorRegistryProbe, DoctorReport, RegistryDiagnostic, doctor
 #[cfg(feature = "experimental-fake-client")]
 use agy_auth_app::{ManagedProfileEnvironment, ProfileClientPort, add_profile, exec_profile};
 use agy_auth_storage::ActiveProfileStore;
+#[cfg(all(feature = "profile-cli", target_os = "macos"))]
+use agy_auth_storage::MacOsKeychainCredentialStore;
 #[cfg(any(feature = "experimental-fake-client", feature = "profile-cli"))]
 use agy_auth_storage::ManagedProfileHomes;
+#[cfg(all(feature = "profile-cli", not(target_os = "macos")))]
+use agy_auth_storage::OfficialCredentialSourceFiles;
 #[cfg(feature = "profile-cli")]
 use agy_auth_storage::{
-    ImportTransactionJournal, ImportTransactionStage, OfficialCredentialSourceFiles,
-    OpaqueCredentialBytes, ProfileCredentialFiles, ProfileSessionLock,
+    ImportTransactionJournal, ImportTransactionStage, OpaqueCredentialBytes,
+    ProfileCredentialFiles, ProfileSessionLock,
 };
 use agy_auth_storage::{RegistryCatalog, RegistryDoctorProbe};
 use clap::{Parser, Subcommand};
@@ -259,7 +263,11 @@ const VERIFIED_CLIENT_VERSIONS: [&str; 2] = ["1.1.2", "1.1.3"];
 fn verified_client(
     explicit_client: Option<&Path>,
 ) -> Result<(Option<PathBuf>, OsString, String), RealProfileCliError> {
-    if !cfg!(target_os = "linux") {
+    let platform_verified = cfg!(target_os = "linux")
+        || (cfg!(target_os = "macos")
+            && std::env::var_os("AGY_AUTH_MACOS_KEYCHAIN").as_deref()
+                == Some(std::ffi::OsStr::new("1")));
+    if !platform_verified {
         return Err(RealProfileCliError::UnsupportedClient);
     }
     let search_path = std::env::var_os("PATH").ok_or(RealProfileCliError::ClientUnavailable)?;
@@ -273,7 +281,51 @@ fn verified_client(
         .version
         .filter(|version| VERIFIED_CLIENT_VERSIONS.contains(&version.as_str()))
         .ok_or(RealProfileCliError::UnsupportedClient)?;
+    if cfg!(target_os = "macos") && version != "1.1.3" {
+        return Err(RealProfileCliError::UnsupportedClient);
+    }
     Ok((explicit_client, search_path, version))
+}
+
+#[cfg(feature = "profile-cli")]
+fn read_official_credential(
+    official_home: &Path,
+) -> Result<OpaqueCredentialBytes, RealProfileCliError> {
+    #[cfg(target_os = "macos")]
+    {
+        let _ = official_home;
+        MacOsKeychainCredentialStore
+            .read(16 * 1024)
+            .map_err(|_| RealProfileCliError::UnsafeStorage)
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        OfficialCredentialSourceFiles::new(official_home)
+            .map_err(|_| RealProfileCliError::UnsafeStorage)?
+            .read(Path::new(ANTIGRAVITY_TOKEN_RELATIVE_PATH), 16 * 1024)
+            .map_err(|_| RealProfileCliError::UnsafeStorage)
+    }
+}
+
+#[cfg(feature = "profile-cli")]
+fn materialize_official_credential(
+    official_home: &Path,
+    credential: &OpaqueCredentialBytes,
+) -> Result<(), RealProfileCliError> {
+    #[cfg(target_os = "macos")]
+    {
+        let _ = official_home;
+        MacOsKeychainCredentialStore
+            .materialize(credential)
+            .map_err(|_| RealProfileCliError::UnsafeStorage)
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        OfficialCredentialSourceFiles::new(official_home)
+            .map_err(|_| RealProfileCliError::UnsafeStorage)?
+            .materialize(Path::new(ANTIGRAVITY_TOKEN_RELATIVE_PATH), credential)
+            .map_err(|_| RealProfileCliError::UnsafeStorage)
+    }
 }
 
 #[cfg(feature = "profile-cli")]
@@ -355,11 +407,7 @@ fn run_experimental_import(
         let mut transaction = journal
             .begin(profile.id)
             .map_err(|_| RealProfileCliError::UnsafeStorage)?;
-        let source = OfficialCredentialSourceFiles::new(from_home)
-            .map_err(|_| RealProfileCliError::UnsafeStorage)?;
-        let source_envelope = source
-            .read(Path::new(ANTIGRAVITY_TOKEN_RELATIVE_PATH), 16 * 1024)
-            .map_err(|_| RealProfileCliError::UnsafeStorage)?;
+        let source_envelope = read_official_credential(from_home)?;
         let provider = AntigravityCredentialEnvelope;
         let refresh = provider
             .extract_refresh(
@@ -847,13 +895,9 @@ fn run_switch(cli: &Cli, name: &str, explicit_client: Option<&Path>) -> u8 {
         let home = std::env::var_os("HOME")
             .map(PathBuf::from)
             .ok_or(RealProfileCliError::UnsafeStorage)?;
-        let official = OfficialCredentialSourceFiles::new(home)
-            .map_err(|_| RealProfileCliError::UnsafeStorage)?;
         let provider = AntigravityCredentialEnvelope;
         let active = active_profile_store(cli).map_err(|_| RealProfileCliError::UnsafeStorage)?;
-        let rollback = official
-            .read(Path::new(ANTIGRAVITY_TOKEN_RELATIVE_PATH), 16 * 1024)
-            .map_err(|_| RealProfileCliError::UnsafeStorage)?;
+        let rollback = read_official_credential(&home)?;
 
         if let Some(previous_name) = active
             .load()
@@ -865,9 +909,7 @@ fn run_switch(cli: &Cli, name: &str, explicit_client: Option<&Path>) -> u8 {
                 .map_err(|_| RealProfileCliError::UnsafeStorage)?
                 .ok_or(RealProfileCliError::ProfileConflict)?;
             require_ready_profile(&previous).map_err(|_| RealProfileCliError::ProfileConflict)?;
-            let current = official
-                .read(Path::new(ANTIGRAVITY_TOKEN_RELATIVE_PATH), 16 * 1024)
-                .map_err(|_| RealProfileCliError::UnsafeStorage)?;
+            let current = read_official_credential(&home)?;
             let refresh = provider
                 .extract_refresh(
                     &client_version,
@@ -906,13 +948,9 @@ fn run_switch(cli: &Cli, name: &str, explicit_client: Option<&Path>) -> u8 {
             .map_err(map_credential_error)?;
         let envelope = OpaqueCredentialBytes::new(plan.envelope.into_secret_bytes(), 16 * 1024)
             .map_err(|_| RealProfileCliError::UnsafeStorage)?;
-        official
-            .materialize(&plan.relative_path, &envelope)
-            .map_err(|_| RealProfileCliError::UnsafeStorage)?;
+        materialize_official_credential(&home, &envelope)?;
         if active.save(name).is_err() {
-            official
-                .materialize(&plan.relative_path, &rollback)
-                .map_err(|_| RealProfileCliError::UnsafeStorage)?;
+            materialize_official_credential(&home, &rollback)?;
             return Err(RealProfileCliError::UnsafeStorage);
         }
         catalog

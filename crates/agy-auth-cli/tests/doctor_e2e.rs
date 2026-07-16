@@ -7,16 +7,20 @@ use std::io::Write;
 use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
+
+static FIXTURE_SEQUENCE: AtomicU64 = AtomicU64::new(0);
 
 fn fixture() -> (PathBuf, PathBuf) {
     let root = std::env::temp_dir().join(format!(
-        "agy-auth-doctor-e2e-{}-{}",
+        "agy-auth-doctor-e2e-{}-{}-{}",
         std::process::id(),
         SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .expect("clock after epoch")
-            .as_nanos()
+            .as_nanos(),
+        FIXTURE_SEQUENCE.fetch_add(1, Ordering::Relaxed)
     ));
     fs::create_dir(&root).expect("create fixture root");
     fs::set_permissions(&root, fs::Permissions::from_mode(0o700)).expect("secure fixture root");
