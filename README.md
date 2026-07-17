@@ -57,8 +57,7 @@ Switched to personal. Run `agy` to start.
 
 Windows release compilation is exercised in CI, while installed-client diagnostics have not been
 runtime validated there. Saving, enrolling, executing, and switching profiles remain disabled on
-Windows until its official-client storage contract is independently verified. macOS is not a
-supported, built, tested, or distributed target.
+Windows until its official-client storage contract is independently verified.
 
 ## Installation
 
@@ -69,7 +68,7 @@ The installer downloads the pinned Linux x86_64 release, verifies its SHA-256 ch
 
 ```bash
 curl --proto '=https' --tlsv1.2 -fsSL \
-  https://github.com/ensp1re/agy-auth/releases/download/v0.2.0-rc.2/agy-auth-installer.sh |
+  https://github.com/ensp1re/agy-auth/releases/download/v0.2.1/agy-auth-installer.sh |
   sh
 ```
 
@@ -77,7 +76,7 @@ To review the installer before running it:
 
 ```bash
 curl --proto '=https' --tlsv1.2 -fLO \
-  https://github.com/ensp1re/agy-auth/releases/download/v0.2.0-rc.2/agy-auth-installer.sh
+  https://github.com/ensp1re/agy-auth/releases/download/v0.2.1/agy-auth-installer.sh
 less agy-auth-installer.sh
 sh agy-auth-installer.sh
 ```
@@ -100,7 +99,7 @@ Open a new PowerShell window, then run:
 rustup default stable-msvc
 cargo install --locked `
   --git https://github.com/ensp1re/agy-auth `
-  --tag v0.2.0-rc.2 `
+  --tag v0.2.1 `
   agy-auth-cli
 ```
 
@@ -253,7 +252,7 @@ Update a Cargo installation:
 ```bash
 cargo install --force --locked \
   --git https://github.com/ensp1re/agy-auth \
-  --tag v0.2.0-rc.2 \
+  --tag v0.2.1 \
   agy-auth-cli
 ```
 

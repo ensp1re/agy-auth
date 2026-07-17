@@ -56,4 +56,4 @@ tar --sort=name --mtime="@$epoch" --owner=0 --group=0 --numeric-owner \
   sha256sum "$name.tar.gz" "$name.spdx.json" agy-auth-installer.sh > "$name.sha256"
   sha256sum -c "$name.sha256"
 )
-printf 'Installable release candidate: %s/%s.tar.gz\n' "$output_dir" "$name"
+printf 'Installable release: %s/%s.tar.gz\n' "$output_dir" "$name"

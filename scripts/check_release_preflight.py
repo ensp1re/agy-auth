@@ -42,7 +42,7 @@ def main() -> int:
         "x86_64-unknown-linux-gnu",
         "Antigravity CLI `1.1.2` and `1.1.3`",
         "reverse engineered",
-        "GitHub Actions usage limit",
+        "GitHub Actions CI",
         "SHA-256",
         f"`{tag}`",
     )
