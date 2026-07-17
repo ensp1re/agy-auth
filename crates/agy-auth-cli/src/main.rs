@@ -14,11 +14,9 @@ use agy_auth_app::{DoctorRegistryProbe, DoctorReport, RegistryDiagnostic, doctor
 #[cfg(feature = "experimental-fake-client")]
 use agy_auth_app::{ManagedProfileEnvironment, ProfileClientPort, add_profile, exec_profile};
 use agy_auth_storage::ActiveProfileStore;
-#[cfg(all(feature = "profile-cli", target_os = "macos"))]
-use agy_auth_storage::MacOsKeychainCredentialStore;
 #[cfg(any(feature = "experimental-fake-client", feature = "profile-cli"))]
 use agy_auth_storage::ManagedProfileHomes;
-#[cfg(all(feature = "profile-cli", not(target_os = "macos")))]
+#[cfg(feature = "profile-cli")]
 use agy_auth_storage::OfficialCredentialSourceFiles;
 #[cfg(feature = "profile-cli")]
 use agy_auth_storage::{
@@ -35,11 +33,10 @@ use crossterm::{
     terminal::{self, ClearType},
 };
 use provider_antigravity_cli::AntigravityDoctorProbe;
-#[cfg(all(feature = "profile-cli", not(target_os = "macos")))]
-use provider_antigravity_cli::masked_account_hint_from_home;
 #[cfg(feature = "profile-cli")]
 use provider_antigravity_cli::{
     ANTIGRAVITY_TOKEN_RELATIVE_PATH, AntigravityCredentialEnvelope, AntigravityInteractiveSession,
+    masked_account_hint_from_home,
 };
 #[cfg(any(feature = "experimental-fake-client", feature = "profile-cli"))]
 use std::ffi::OsString;
@@ -265,10 +262,7 @@ const VERIFIED_CLIENT_VERSIONS: [&str; 2] = ["1.1.2", "1.1.3"];
 fn verified_client(
     explicit_client: Option<&Path>,
 ) -> Result<(Option<PathBuf>, OsString, String), RealProfileCliError> {
-    let platform_verified = cfg!(target_os = "linux")
-        || (cfg!(target_os = "macos")
-            && std::env::var_os("AGY_AUTH_MACOS_KEYCHAIN").as_deref()
-                == Some(std::ffi::OsStr::new("1")));
+    let platform_verified = cfg!(target_os = "linux");
     if !platform_verified {
         return Err(RealProfileCliError::UnsupportedClient);
     }
@@ -283,9 +277,6 @@ fn verified_client(
         .version
         .filter(|version| VERIFIED_CLIENT_VERSIONS.contains(&version.as_str()))
         .ok_or(RealProfileCliError::UnsupportedClient)?;
-    if cfg!(target_os = "macos") && version != "1.1.3" {
-        return Err(RealProfileCliError::UnsupportedClient);
-    }
     Ok((explicit_client, search_path, version))
 }
 
@@ -295,29 +286,17 @@ fn read_official_refresh(
     client_version: &str,
     provider: AntigravityCredentialEnvelope,
 ) -> Result<OpaqueSecretBytes, RealProfileCliError> {
-    #[cfg(target_os = "macos")]
-    {
-        let _ = (official_home, client_version, provider);
-        let credential = MacOsKeychainCredentialStore
-            .read(16 * 1024)
-            .map_err(|_| RealProfileCliError::UnsafeStorage)?;
-        OpaqueSecretBytes::new(credential.into_secret_bytes(), 16 * 1024)
-            .map_err(map_credential_error)
-    }
-    #[cfg(not(target_os = "macos"))]
-    {
-        let envelope = OfficialCredentialSourceFiles::new(official_home)
-            .map_err(|_| RealProfileCliError::UnsafeStorage)?
-            .read(Path::new(ANTIGRAVITY_TOKEN_RELATIVE_PATH), 16 * 1024)
-            .map_err(|_| RealProfileCliError::UnsafeStorage)?;
-        provider
-            .extract_refresh(
-                client_version,
-                OpaqueSecretBytes::new(envelope.into_secret_bytes(), 16 * 1024)
-                    .map_err(map_credential_error)?,
-            )
-            .map_err(map_credential_error)
-    }
+    let envelope = OfficialCredentialSourceFiles::new(official_home)
+        .map_err(|_| RealProfileCliError::UnsafeStorage)?
+        .read(Path::new(ANTIGRAVITY_TOKEN_RELATIVE_PATH), 16 * 1024)
+        .map_err(|_| RealProfileCliError::UnsafeStorage)?;
+    provider
+        .extract_refresh(
+            client_version,
+            OpaqueSecretBytes::new(envelope.into_secret_bytes(), 16 * 1024)
+                .map_err(map_credential_error)?,
+        )
+        .map_err(map_credential_error)
 }
 
 #[cfg(feature = "profile-cli")]
@@ -327,42 +306,15 @@ fn materialize_official_refresh(
     provider: AntigravityCredentialEnvelope,
     refresh: &OpaqueSecretBytes,
 ) -> Result<(), RealProfileCliError> {
-    #[cfg(target_os = "macos")]
-    {
-        let _ = (official_home, client_version, provider);
-        let credential = OpaqueCredentialBytes::new(refresh.expose_secret().to_vec(), 16 * 1024)
-            .map_err(|_| RealProfileCliError::UnsafeStorage)?;
-        MacOsKeychainCredentialStore
-            .materialize(&credential)
-            .map_err(|_| RealProfileCliError::UnsafeStorage)
-    }
-    #[cfg(not(target_os = "macos"))]
-    {
-        let plan = provider
-            .build_plan(client_version, refresh)
-            .map_err(map_credential_error)?;
-        let credential = OpaqueCredentialBytes::new(plan.envelope.into_secret_bytes(), 16 * 1024)
-            .map_err(|_| RealProfileCliError::UnsafeStorage)?;
-        OfficialCredentialSourceFiles::new(official_home)
-            .map_err(|_| RealProfileCliError::UnsafeStorage)?
-            .materialize(Path::new(ANTIGRAVITY_TOKEN_RELATIVE_PATH), &credential)
-            .map_err(|_| RealProfileCliError::UnsafeStorage)
-    }
-}
-
-#[cfg(feature = "profile-cli")]
-fn account_hint_from_official_home(home: &Path) -> Option<String> {
-    #[cfg(target_os = "macos")]
-    {
-        // The macOS credential contract is Keychain-backed. Avoid touching the default
-        // ~/.gemini tree merely to discover an optional display label.
-        let _ = home;
-        None
-    }
-    #[cfg(not(target_os = "macos"))]
-    {
-        masked_account_hint_from_home(home)
-    }
+    let plan = provider
+        .build_plan(client_version, refresh)
+        .map_err(map_credential_error)?;
+    let credential = OpaqueCredentialBytes::new(plan.envelope.into_secret_bytes(), 16 * 1024)
+        .map_err(|_| RealProfileCliError::UnsafeStorage)?;
+    OfficialCredentialSourceFiles::new(official_home)
+        .map_err(|_| RealProfileCliError::UnsafeStorage)?
+        .materialize(Path::new(ANTIGRAVITY_TOKEN_RELATIVE_PATH), &credential)
+        .map_err(|_| RealProfileCliError::UnsafeStorage)
 }
 
 #[cfg(feature = "profile-cli")]
@@ -446,7 +398,7 @@ fn run_experimental_import(
             .map_err(|_| RealProfileCliError::UnsafeStorage)?;
         let provider = AntigravityCredentialEnvelope;
         let refresh = read_official_refresh(from_home, &client_version, provider)?;
-        let account_hint = account_hint_from_official_home(from_home);
+        let account_hint = masked_account_hint_from_home(from_home);
 
         catalog
             .reserve(&profile)

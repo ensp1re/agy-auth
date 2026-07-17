@@ -99,10 +99,10 @@ Scenarios:
 |---|---|---|---|
 | Ubuntu latest | Required | Secret Service test container/session | Required |
 | Ubuntu headless | Required | Expected unavailable path | Required |
-| macOS current + previous | Required | Keychain test namespace | Required |
 | Windows current | Required | Credential Manager test namespace | Required |
 
-Keyring tests use a unique service namespace and delete it in teardown. They must never enumerate unrelated entries.
+Keyring tests use a unique service namespace and delete it in teardown. They must never enumerate
+unrelated entries. macOS is outside the supported platform matrix.
 
 ## Official-client smoke tests
 

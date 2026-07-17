@@ -7,7 +7,7 @@ The isolated-home and default-token activation contracts are approved by ADRs 00
 ## Remaining compatibility research
 
 1. Which minimal cleared environment makes Linux SSH homes independent for `agy 1.1.2`?
-2. Which paths and keyring entries contain authentication state on Linux, macOS, Windows, and SSH?
+2. Which paths and keyring entries contain authentication state on Linux, Windows, and SSH?
 3. Does an override isolate credentials, settings, workspace trust, conversations, and policy together?
 4. How does `agy` behave if authentication state is switched while it or a child process is running?
 5. Does refresh preserve unknown fields and remain associated with the selected account?

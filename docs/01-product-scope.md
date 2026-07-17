@@ -33,6 +33,10 @@ The first release is capability-gated:
    running-process safety without reading or copying credential contents.
 5. Refuse mutation in unsupported desktop/keyring or unknown modes.
 
+Supported build targets are Linux and Windows. The real profile workflow is currently enabled only
+for the verified Linux SSH/headless contract. Windows remains build-verified and mutation-gated.
+macOS is deferred and is not built, tested, distributed, or claimed as supported.
+
 ## Explicit exclusions
 
 - Gemini/model backend calls, proxies, protocol emulation, or OAuth implementation.
@@ -40,6 +44,7 @@ The first release is capability-gated:
 - Shared/team vaults, credential synchronization, impersonation, or account pooling.
 - Keyring enumeration, private database modification, fingerprint spoofing, or anti-ban claims.
 - Gemini CLI consumer support; legacy enterprise compatibility requires a separate approved task.
+- macOS Keychain integration or macOS distribution.
 
 ## Success criteria
 

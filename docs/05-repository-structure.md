@@ -122,7 +122,7 @@ Unix-style illustration:
 └── diagnostics/                  # opt-in and redacted
 ```
 
-On macOS use Application Support/Preferences/Caches conventions; on Windows use LocalAppData. Do not hardcode Unix paths in application services.
+On Windows use LocalAppData. Do not hardcode Unix paths in application services.
 
 ## Registry schema sketch
 

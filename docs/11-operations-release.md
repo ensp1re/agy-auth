@@ -12,8 +12,6 @@ Initial:
 
 - `x86_64-unknown-linux-gnu`
 - `aarch64-unknown-linux-gnu`
-- `x86_64-apple-darwin`
-- `aarch64-apple-darwin`
 - `x86_64-pc-windows-msvc`
 - `aarch64-pc-windows-msvc` after keyring/process tests are stable
 
@@ -44,7 +42,7 @@ Nightly/scheduled:
 - Release only from a protected signed tag.
 - Build on clean hosted runners.
 - Produce archives, SHA-256 checksums, SBOM, and provenance attestations.
-- Code-sign/notarize macOS and sign Windows binaries when sustainable.
+- Sign Windows binaries when sustainable.
 - Publish a human-reviewed changelog with credential schema/storage changes highlighted.
 - Never auto-update the binary in v1; package managers are the update channel.
 
