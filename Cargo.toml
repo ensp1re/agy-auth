@@ -11,7 +11,7 @@ members = [
 ]
 
 [workspace.package]
-version = "0.2.0-rc.2"
+version = "0.2.1"
 edition = "2024"
 rust-version = "1.88"
 publish = false
@@ -23,14 +23,13 @@ clap = { version = "4.5.41", features = ["derive"] }
 crossterm = "0.29.0"
 fs2 = "0.4.3"
 libc = "0.2.174"
-agy-auth-app = { version = "=0.2.0-rc.2", path = "crates/agy-auth-app" }
-agy-auth-domain = { version = "=0.2.0-rc.2", path = "crates/agy-auth-domain" }
-agy-auth-process = { version = "=0.2.0-rc.2", path = "crates/agy-auth-process" }
-agy-auth-storage = { version = "=0.2.0-rc.2", path = "crates/agy-auth-storage" }
-provider-antigravity-cli = { version = "=0.2.0-rc.2", path = "crates/provider-antigravity-cli" }
+agy-auth-app = { version = "=0.2.1", path = "crates/agy-auth-app" }
+agy-auth-domain = { version = "=0.2.1", path = "crates/agy-auth-domain" }
+agy-auth-process = { version = "=0.2.1", path = "crates/agy-auth-process" }
+agy-auth-storage = { version = "=0.2.1", path = "crates/agy-auth-storage" }
+provider-antigravity-cli = { version = "=0.2.1", path = "crates/provider-antigravity-cli" }
 serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0.140"
-security-framework = "3.7.0"
 thiserror = "2.0.12"
 time = { version = "=0.3.47", features = ["formatting", "parsing"] }
 unicode-normalization = "0.1.24"

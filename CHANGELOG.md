@@ -7,17 +7,26 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-### Fixed
-
-- Removed CI and release badges that resolve poorly for private repository viewers.
-- Added explicit GitHub CLI authentication diagnostics for private release installation.
-- Allowed post-release maintenance commits while still requiring the published tag to remain in
-  main's history.
+## [0.2.1] - 2026-07-17
 
 ### Added
 
 - Repository-local Husky pre-commit hook that requires a successful locked release build before
   every commit.
+- Stable Linux and Windows CI coverage for the supported build matrix.
+
+### Changed
+
+- Promoted the release-candidate workflow to the stable `0.2.1` release.
+- Limited published platform scope to Linux and Windows while keeping Windows profile mutation
+  capability-gated until separately verified.
+
+### Fixed
+
+- Updated public installation examples and installer defaults to the stable release tag.
+- Allowed post-release maintenance commits while still requiring the published tag to remain in
+  main's history.
+- Removed an unvalidated desktop-keyring credential adapter and its dependency.
 
 ## [0.2.0-rc.2] - 2026-07-16
 
@@ -99,7 +108,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Added explicit prohibitions on OAuth implementation, backend calls, quota handling, credential
   sharing, and automatic account rotation.
 
-[Unreleased]: https://github.com/ensp1re/agy-auth/compare/v0.2.0-rc.2...HEAD
+[Unreleased]: https://github.com/ensp1re/agy-auth/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/ensp1re/agy-auth/compare/v0.2.0-rc.2...v0.2.1
 [0.2.0-rc.2]: https://github.com/ensp1re/agy-auth/compare/v0.2.0-rc.1...v0.2.0-rc.2
 [0.2.0-rc.1]: https://github.com/ensp1re/agy-auth/compare/v0.1.0-rc.1...v0.2.0-rc.1
 [0.1.0-rc.1]: https://github.com/ensp1re/agy-auth/releases/tag/v0.1.0-rc.1

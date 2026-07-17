@@ -52,14 +52,12 @@ Switched to personal. Run `agy` to start.
 | Platform | Build and tests | Diagnostics | Account profile workflows |
 |---|:---:|:---:|:---:|
 | Linux x86_64 SSH/headless | ✅ | ✅ | ✅ `agy` 1.1.2–1.1.3 |
-| macOS | ✅ | ✅ | ❌ fails closed |
 | Windows | ✅ | Build verified | ❌ fails closed |
 | Linux ARM64 | Not tested | Not tested | ❌ fails closed |
 
-macOS and Windows users can install and run the CLI. macOS diagnostics are exercised in CI; Windows
-release compilation is exercised in CI, while installed-client diagnostics have not been runtime
-validated there. Saving, enrolling, executing, and switching profiles remain disabled on both
-platforms until their official-client storage contracts are independently verified.
+Windows release compilation is exercised in CI, while installed-client diagnostics have not been
+runtime validated there. Saving, enrolling, executing, and switching profiles remain disabled on
+Windows until its official-client storage contract is independently verified.
 
 ## Installation
 
@@ -70,7 +68,7 @@ The installer downloads the pinned Linux x86_64 release, verifies its SHA-256 ch
 
 ```bash
 curl --proto '=https' --tlsv1.2 -fsSL \
-  https://github.com/ensp1re/agy-auth/releases/download/v0.2.0-rc.2/agy-auth-installer.sh |
+  https://github.com/ensp1re/agy-auth/releases/download/v0.2.1/agy-auth-installer.sh |
   sh
 ```
 
@@ -78,7 +76,7 @@ To review the installer before running it:
 
 ```bash
 curl --proto '=https' --tlsv1.2 -fLO \
-  https://github.com/ensp1re/agy-auth/releases/download/v0.2.0-rc.2/agy-auth-installer.sh
+  https://github.com/ensp1re/agy-auth/releases/download/v0.2.1/agy-auth-installer.sh
 less agy-auth-installer.sh
 sh agy-auth-installer.sh
 ```
@@ -88,25 +86,6 @@ If necessary, add the installation directory to your shell:
 ```bash
 echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.profile
 export PATH="$HOME/.local/bin:$PATH"
-```
-
-### macOS — install with Cargo
-
-Install the Xcode command-line tools and Rust:
-
-```bash
-xcode-select --install
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-source "$HOME/.cargo/env"
-```
-
-Then install the latest reviewed release:
-
-```bash
-cargo install --locked \
-  --git https://github.com/ensp1re/agy-auth \
-  --tag v0.2.0-rc.2 \
-  agy-auth-cli
 ```
 
 ### Windows — install with Cargo
@@ -120,14 +99,14 @@ Open a new PowerShell window, then run:
 rustup default stable-msvc
 cargo install --locked `
   --git https://github.com/ensp1re/agy-auth `
-  --tag v0.2.0-rc.2 `
+  --tag v0.2.1 `
   agy-auth-cli
 ```
 
 Cargo installs the executable into `%USERPROFILE%\.cargo\bin`, which rustup normally adds to
 `PATH`.
 
-### Any platform — build from a checkout
+### Linux or Windows — build from a checkout
 
 Requires Git and Rust `1.88` or newer:
 
@@ -139,7 +118,7 @@ cargo build --locked --release -p agy-auth-cli
 
 The executable is written to:
 
-- Linux/macOS: `target/release/agy-auth`
+- Linux: `target/release/agy-auth`
 - Windows: `target\release\agy-auth.exe`
 
 ### Verify the installation
@@ -155,9 +134,8 @@ whether account mutation is enabled for the current platform.
 ## Quick start
 
 > [!NOTE]
-> The profile workflow is production-enabled on the verified Linux environment in the
-> [platform support](#platform-support) table. The macOS Keychain adapter remains an explicit
-> validation candidate until its two-account gate is complete.
+> The profile workflow is production-enabled only on the verified Linux environment in the
+> [platform support](#platform-support) table.
 
 First, sign in normally with the official client:
 
@@ -200,11 +178,6 @@ agy
 ```
 
 `switch` only updates the selected local account. It deliberately does not launch `agy`.
-
-On macOS, profile import and switching use the official `gemini` / `antigravity` login-Keychain
-item and do not require access to the default `~/.gemini` directory. macOS may ask once whether the
-newly installed `agy-auth` binary may access that Keychain item; this is an operating-system
-security prompt, not a folder-access requirement.
 
 Run an isolated session without changing the default account:
 
@@ -279,7 +252,7 @@ Update a Cargo installation:
 ```bash
 cargo install --force --locked \
   --git https://github.com/ensp1re/agy-auth \
-  --tag v0.2.0-rc.2 \
+  --tag v0.2.1 \
   agy-auth-cli
 ```
 

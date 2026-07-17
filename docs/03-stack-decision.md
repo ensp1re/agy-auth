@@ -2,7 +2,9 @@
 
 ## Decision summary
 
-Build the CLI in stable Rust as a Cargo workspace. Produce one native binary for Linux, macOS, and Windows. Use typed provider adapters, a JSON metadata registry, native OS credential storage where available, and an encrypted-file fallback only after the MVP.
+Build the CLI in stable Rust as a Cargo workspace. Produce native binaries for Linux and Windows.
+Use typed provider adapters, a JSON metadata registry, native OS credential storage where available,
+and an encrypted-file fallback only after the MVP. macOS distribution is deferred by ADR 0010.
 
 ## Evaluation criteria
 
@@ -29,7 +31,8 @@ Weights reflect the product's risk profile.
 - Cross-compilation and release artifacts are well-supported.
 - `clap` derive provides a typed CLI contract and generated help/completions.
 - `serde` supports tolerant read/strict write schema handling.
-- The current `keyring` ecosystem supports macOS Keychain, Windows Credential Store, and Linux Secret Service. Headless Linux remains a known limitation and therefore needs a file-vault fallback design.
+- The current `keyring` ecosystem supports Windows Credential Store and Linux Secret Service.
+  Headless Linux remains a known limitation and therefore needs a file-vault fallback design.
 
 ## Why not TypeScript
 

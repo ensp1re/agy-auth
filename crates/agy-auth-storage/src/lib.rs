@@ -4,8 +4,6 @@ mod active_selection;
 mod credential_files;
 #[cfg(feature = "experimental-profile-credentials")]
 mod import_transaction;
-#[cfg(target_os = "macos")]
-mod macos_keychain;
 mod profiles;
 mod registry;
 #[cfg(feature = "experimental-profile-credentials")]
@@ -21,8 +19,6 @@ pub use import_transaction::{
     ImportRecoveryReport, ImportTransaction, ImportTransactionError, ImportTransactionJournal,
     ImportTransactionStage,
 };
-#[cfg(target_os = "macos")]
-pub use macos_keychain::{MacOsKeychainCredentialStore, MacOsKeychainError};
 pub use profiles::{ManagedProfileHomeError, ManagedProfileHomes};
 pub use registry::{RegistryCatalog, RegistryDoctorProbe, RegistryFile, RegistryStoreError};
 #[cfg(feature = "experimental-profile-credentials")]

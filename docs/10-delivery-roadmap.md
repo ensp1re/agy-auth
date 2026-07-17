@@ -59,7 +59,7 @@ fallback, and interruption recovery is demonstrated.
 ## Phase 4 — Hardening and platform coverage
 
 - fault injection and recovery;
-- Linux, macOS, and Windows permission/atomic behavior;
+- Linux and Windows permission/atomic behavior;
 - schema/version compatibility matrix;
 - packaging, SBOM, provenance, and release documentation.
 
@@ -67,6 +67,7 @@ fallback, and interruption recovery is demonstrated.
 
 - Gemini CLI enterprise/API-key compatibility;
 - desktop keyring mutation;
+- macOS support and distribution;
 - encrypted export/import;
 - GUI and plugin SDK.
 

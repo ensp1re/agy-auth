@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-VERSION="${AGY_AUTH_VERSION:-0.2.0-rc.2}"
+VERSION="${AGY_AUTH_VERSION:-0.2.1}"
 REPOSITORY="${AGY_AUTH_REPOSITORY:-ensp1re/agy-auth}"
 INSTALL_DIR="${AGY_AUTH_INSTALL_DIR:-${HOME}/.local/bin}"
 
